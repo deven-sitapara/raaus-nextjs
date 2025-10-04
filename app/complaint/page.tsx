@@ -33,6 +33,7 @@ export default function ComplaintForm() {
   const [memberWarning, setMemberWarning] = useState("");
   const [occurrenceDate, setOccurrenceDate] = useState("");
   const [occurrenceTime, setOccurrenceTime] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
 
   const {
@@ -69,15 +70,32 @@ export default function ComplaintForm() {
     setIsSubmitting(true);
 
     try {
-      // Convert date and time to ISO 8601 format for Zoho CRM
-      let fullOccurrenceDate = "";
-      if (occurrenceDate && occurrenceTime) {
-        const datetime = new Date(`${occurrenceDate}T${occurrenceTime}`);
-        fullOccurrenceDate = datetime.toISOString();
-      } else if (occurrenceDate) {
-        const datetime = new Date(occurrenceDate);
-        fullOccurrenceDate = datetime.toISOString();
+      // Validate required fields
+      if (!occurrenceDate || !occurrenceTime) {
+        alert("Please provide both occurrence date and time");
+        setIsSubmitting(false);
+        return;
       }
+
+      // Convert date and time to ISO 8601 format for Zoho CRM
+      const datetime = new Date(`${occurrenceDate}T${occurrenceTime}`);
+
+      // Check if date is valid
+      if (isNaN(datetime.getTime())) {
+        alert("Invalid date or time provided");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Format as YYYY-MM-DDTHH:mm:ss+10:00 (Australia timezone)
+      const year = datetime.getFullYear();
+      const month = String(datetime.getMonth() + 1).padStart(2, '0');
+      const day = String(datetime.getDate()).padStart(2, '0');
+      const hours = String(datetime.getHours()).padStart(2, '0');
+      const minutes = String(datetime.getMinutes()).padStart(2, '0');
+      const seconds = String(datetime.getSeconds()).padStart(2, '0');
+
+      const fullOccurrenceDate = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+10:00`;
 
       // Upload attachments if any
       let attachmentLinks: string[] = [];
@@ -95,19 +113,42 @@ export default function ComplaintForm() {
       const crmData = {
         ...data,
         Name: `${data.Name1} ${data.Last_Name}`, // Required combined name field
+        Contact_Phone: contactPhone,
         Occurrence_Date1: fullOccurrenceDate,
         attachmentLinks: attachmentLinks.join(", "),
       };
 
-      await axios.post("/api/zoho-crm", {
+      console.log("Submitting to CRM:", {
+        module: "Occurrence_Management",
+        data: crmData,
+        dateDebug: {
+          occurrenceDate,
+          occurrenceTime,
+          combined: `${occurrenceDate}T${occurrenceTime}`,
+          iso: fullOccurrenceDate
+        }
+      });
+
+      const response = await axios.post("/api/zoho-crm", {
         module: "Occurrence_Management",
         data: crmData,
       });
 
-      setSubmitSuccess(true);
-    } catch (error) {
+      console.log("CRM Response:", response.data);
+
+      // Only show success if we get a record ID from CRM
+      if (response.data?.data?.[0]?.code === "SUCCESS" && response.data?.data?.[0]?.details?.id) {
+        setSubmitSuccess(true);
+      } else {
+        const errorDetails = response.data?.data?.[0];
+        console.error("CRM Error:", errorDetails);
+        throw new Error(errorDetails?.message || "Failed to create record");
+      }
+    } catch (error: any) {
       console.error("Submission failed:", error);
-      alert("Failed to submit form. Please try again.");
+      console.error("Error response:", error.response?.data);
+      const errorMessage = error.response?.data?.data?.[0]?.message || error.message || "Failed to submit form. Please try again.";
+      alert(`Submission Error: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -213,7 +254,8 @@ export default function ComplaintForm() {
               <PhoneInput
                 label="Contact Phone"
                 placeholder="0412 345 678"
-                onChange={(value) => register("Contact_Phone").onChange({ target: { value } })}
+                value={contactPhone}
+                onChange={(value) => setContactPhone(value)}
                 defaultCountry="AU"
                 countries={["AU", "CA", "GB"]}
               />
