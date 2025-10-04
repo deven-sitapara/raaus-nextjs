@@ -1,0 +1,1276 @@
+{
+  "form_title": "Lodge a New Accident or Incident",
+  "form_id": "115",
+  "form_key": "y5w1mg",
+  "form_data_id": "33565",
+  "date_format": "MM/DD/YYYY",
+  "pages": [
+    "Pilot Information",
+    "Occurrence Information",
+    "Aircraft Information"
+  ],
+  "fields": [
+    {
+      "id": "640",
+      "label": "Person Reporting",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "641",
+      "label": "Role",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "- Please Select -\n                            \n                            \n                              Pilot in Command\n                            \n                            \n                              Owner\n                            \n                            \n                              L1\n                            \n                            \n                              L2\n                            \n                            \n                              LAME\n                            \n                            \n                              Maintenance Personnel\n                            \n                            \n                              Witness"
+      ],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "642",
+      "label": "Member Number",
+      "type": "number",
+      "required": false,
+      "placeholder": "123456",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "643",
+      "label": "Contact Phone",
+      "type": "phone",
+      "required": true,
+      "placeholder": "0412 345 678",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "644",
+      "label": "First Name",
+      "type": "text",
+      "required": true,
+      "placeholder": "John",
+      "validation": "^[a-zA-Z -]{3,16}$",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "648",
+      "label": "Pilot in Command",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "649",
+      "label": "Date of Birth",
+      "type": "date",
+      "required": false,
+      "placeholder": "dd/mm/yyyy",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "650",
+      "label": "Member Number",
+      "type": "number",
+      "required": false,
+      "placeholder": "123456",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "651",
+      "label": "First Name",
+      "type": "text",
+      "required": false,
+      "placeholder": "John",
+      "validation": "^[a-zA-Z -]{3,16}$",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "652",
+      "label": "Contact Phone",
+      "type": "phone",
+      "required": false,
+      "placeholder": "0412 345 678",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "653",
+      "label": "Flying Hours",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "655",
+      "label": "Hours Last 90 Days",
+      "type": "number",
+      "required": false,
+      "placeholder": "45.2",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "656",
+      "label": "Hours on Type",
+      "type": "text",
+      "required": false,
+      "placeholder": "850.3",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "657",
+      "label": "Hours on Type Last 90 Days",
+      "type": "text",
+      "required": true,
+      "placeholder": "25.5",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 1
+    },
+    {
+      "id": "659",
+      "label": "Occurrence Information",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "660",
+      "label": "Occurrence Date",
+      "type": "date",
+      "required": true,
+      "placeholder": "DD/MM/YYYY HH:MM AM/PM",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "664",
+      "label": "Location",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "665",
+      "label": "State",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "ACT\n                            \n                            \n                              NSW\n                            \n                            \n                              NT\n                            \n                            \n                              QLD\n                            \n                            \n                              SA\n                            \n                            \n                              TAS\n                            \n                            \n                              VIC\n                            \n                            \n                              WA"
+      ],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "666",
+      "label": "Details of Incident/Accident (Please give a clear and accurate description of what happened)",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "667",
+      "label": "Damage to Aircraft",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "– Please select –\n                            \n                            \n                              Destroyed\n                            \n                            \n                              Minor\n                            \n                            \n                              Nil\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "668",
+      "label": "Most Serious Injury to Pilot",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "– Please select –\n                            \n                            \n                              Fatal\n                            \n                            \n                              Serious\n                            \n                            \n                              Minor\n                            \n                            \n                              Nil\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "669",
+      "label": "Passenger Details",
+      "type": "text",
+      "required": false,
+      "placeholder": "",
+      "validation": "^[a-zA-Z\\s]*$",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "670",
+      "label": "Passenger Injury",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "– Please select –\n                            \n                            \n                              Fatal\n                            \n                            \n                              Serious\n                            \n                            \n                              Minor\n                            \n                            \n                              Nil\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "671",
+      "label": "Persons on the Ground Injury",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "– Please select –\n                            \n                            \n                              Fatal\n                            \n                            \n                              Serious\n                            \n                            \n                              Minor\n                            \n                            \n                              Nil\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "672",
+      "label": "Description of Damage to Aircraft",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "673",
+      "label": "Maintainer First Name",
+      "type": "text",
+      "required": false,
+      "placeholder": "Robert Johnson",
+      "validation": "^[a-z A-Z -]{3,16}$",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "674",
+      "label": "Maintainer Member Number",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. 6789",
+      "validation": "^[0-9]*$",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "675",
+      "label": "Maintainer Level",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "– Please select –\n                            \n                            \n                              Level 1 Maintainer (L1)\n                            \n                            \n                              Level 2 Maintainer (L2)\n                            \n                            \n                              Level 4 Maintainer (L4)"
+      ],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "676",
+      "label": "Is this Occurrence an Accident or an Incident?",
+      "type": "radio",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "677",
+      "label": "What may have contributed to the event?",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "678",
+      "label": "Do you have further suggestions on how to prevent similar occurrences?",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "679",
+      "label": "Is this an Immediately Reportable Matter (IRM) or a Routinely Reportable Matter (RRM)?",
+      "type": "radio",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "680",
+      "label": "Departure Location",
+      "type": "",
+      "required": false,
+      "placeholder": "Enter departure location",
+      "validation": "^[a-zA-Z0-9\\s]*$",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "681",
+      "label": "Attachments",
+      "type": "file",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "696",
+      "label": "Environment",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "697",
+      "label": "Light Conditions",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Not answered\n                            \n                            \n                              Dawn\n                            \n                            \n                              Daylight\n                            \n                            \n                              Dusk\n                            \n                            \n                              Night\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "698",
+      "label": "Visibility",
+      "type": "number",
+      "required": false,
+      "placeholder": "30.0",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "699",
+      "label": "Temperature",
+      "type": "number",
+      "required": false,
+      "placeholder": "20.0",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "700",
+      "label": "Visibility Reduced By",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Cloud\n                            \n                            \n                              Fog\n                            \n                            \n                              Smoke\n                            \n                            \n                              Haze\n                            \n                            \n                              unknown"
+      ],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "701",
+      "label": "Wind Direction",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "- Please Select -\n                            \n                            \n                              N\n                            \n                            \n                              NE\n                            \n                            \n                              E\n                            \n                            \n                              SE\n                            \n                            \n                              S\n                            \n                            \n                              SW\n                            \n                            \n                              W\n                            \n                            \n                              NW"
+      ],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "702",
+      "label": "Wind Speed",
+      "type": "number",
+      "required": false,
+      "placeholder": "10.0",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "732",
+      "label": "Propeller Details",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 2
+    },
+    {
+      "id": "745",
+      "label": "Flight Details",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "746",
+      "label": "Departure Location",
+      "type": "text",
+      "required": false,
+      "placeholder": "Enter departure location",
+      "validation": "^[a-zA-Z0-9\\s]*$",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "747",
+      "label": "Destination Location",
+      "type": "text",
+      "required": false,
+      "placeholder": "Enter destination location",
+      "validation": "^[a-zA-Z0-9\\s]*$",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "749",
+      "label": "Landing",
+      "type": "text",
+      "required": false,
+      "placeholder": "Enter landing location",
+      "validation": "^[a-zA-Z0-9\\s]*$",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "750",
+      "label": "Type of Operation",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "– Please Select –\n                            \n                            \n                              Flying Training – Dual\n                            \n                            \n                              Flying Training – Solo\n                            \n                            \n                              Private/Business\n                            \n                            \n                              Sports Aviation"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "751",
+      "label": "Name of Flight Training School",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Adelaide Biplanes\n                            \n                            \n                              Adelaide Biplanes - Weightshift (Group B)\n                            \n                            \n                              Adelaide Soaring Club Inc\n                            \n                            \n                              Advanced Aviation Training\n                            \n                            \n                              Adventure Flight Training - Moama\n                            \n                            \n                              Aerchute Industries\n                            \n                            \n                              Aerofloat\n                            \n                            \n                              Aerohunter Flight Training\n                            \n                            \n                              AeroLINQ\n                            \n                            \n                              AeroLINQ - Watsbridge\n                            \n                            \n                              Agnes Water Air Services\n                            \n                            \n                              Air Escape\n                            \n                            \n                              Airspeed Aviation\n                            \n                            \n                              Airsports Flying School\n                            \n                            \n                              Airwego\n                            \n                            \n                              Airwings Flight Centre\n                            \n                            \n                              Alpine Aviation Australia\n                            \n                            \n                              Ariel Aviation\n                            \n                            \n                              Ausflight Pty Ltd\n                            \n                            \n                              Avid Aviation\n                            \n                            \n                              Ayr Flying Services\n                            \n                            \n                              Balantree Aviation\n                            \n                            \n                              Ballarat Aero Club\n                            \n                            \n                              Ballarat Flight Training\n                            \n                            \n                              Batchelor Flight Training\n                            \n                            \n                              Benalla Aero Club\n                            \n                            \n                              Benalla Recreational Flying\n                            \n                            \n                              Bendigo Flying Club\n                            \n                            \n                              Bendigo Recreational Aviation School - Comfly\n                            \n                            \n                              BJs Aviation\n                            \n                            \n                              Blue Shed Aviation\n                            \n                            \n                              Blue Shed Aviation - Temora\n                            \n                            \n                              Blue Sky Flight Training\n                            \n                            \n                              Blue Sky Flight Training (West Sale)\n                            \n                            \n                              Bob Harris’ Flying School\n                            \n                            \n                              Bunbury Aero Club\n                            \n                            \n                              Bunbury Aero Club - Manjimup\n                            \n                            \n                              Busselton Aero Club\n                            \n                            \n                              Caboolture Flight School\n                            \n                            \n                              Caboolture Recreational Aviation\n                            \n                            \n                              Classic Air\n                            \n                            \n                              Clement’s Flying School\n                            \n                            \n                              Cloud Dancer Pilot Training\n                            \n                            \n                              Coffs Harbour & District Aero Club\n                            \n                            \n                              Colac Flight Training\n                            \n                            \n                              Corowa Recreational Flying\n                            \n                            \n                              Cory Air – Coonawara\n                            \n                            \n                              Cowra Aero Club - Forbes\n                            \n                            \n                              Cowra And District Aero Club Inc\n                            \n                            \n                              Dave’s Flying School\n                            \n                            \n                              Eagle Air Pty Ltd\n                            \n                            \n                              Eagle Air Pty Ltd - Boonah\n                            \n                            \n                              EAS Flight Training\n                            \n                            \n                              Echuca Moama School of Aviation Pty Ltd\n                            \n                            \n                              Edge Aerospace\n                            \n                            \n                              Edge Aerospace - Riddells Creek\n                            \n                            \n                              Flight Testing\n                            \n                            \n                              Flightscope Aviation\n                            \n                            \n                              Fly Illawarra\n                            \n                            \n                              Fly Now Redcliffe\n                            \n                            \n                              Fly Riverina - Cootamundra\n                            \n                            \n                              Fly Riverina - Deniliquin\n                            \n                            \n                              Flying with Grace\n                            \n                            \n                              FN Aviation\n                            \n                            \n                              Gladstone Flying Training & Aircharter\n                            \n                            \n                              GoFly Aviation\n                            \n                            \n                              Gold Coast Sports Flying Training\n                            \n                            \n                              Golden Plains Aviation Pty Ltd\n                            \n                            \n                              Goolwa Air Flight Training\n                            \n                            \n                              Goulburn Aviation Pty Ltd\n                            \n                            \n                              Goulburn Flight Training Centre\n                            \n                            \n                              Granite Field Flight Training\n                            \n                            \n                              Griffith Aero Club\n                            \n                            \n                              Griffith Aero Club - Hillston\n                            \n                            \n                              Hastings District Flying Club\n                            \n                            \n                              Hawkesbury Powered Parachute Centre\n                            \n                            \n                              Howatharra Aviation\n                            \n                            \n                              JDH Aviation Pty Ltd T/A Recreational Pilots\n                              Academy\n                            \n                            \n                              John McBryde - Recreational Flying\n                            \n                            \n                              Kangawallaafox Flight School\n                            \n                            \n                              KB’s Flying School\n                            \n                            \n                              Knowsley Airpark\n                            \n                            \n                              Kyneton Aero Club\n                            \n                            \n                              Lake Keepit Soaring Club\n                            \n                            \n                              Latrobe Valley Aero Club\n                            \n                            \n                              Learn 2 Fly Bathurst\n                            \n                            \n                              Learn 2 Fly Canberra\n                            \n                            \n                              Lilydale Flying School\n                            \n                            \n                              Lite Air Flying Training\n                            \n                            \n                              Lone Eagle Flying School\n                            \n                            \n                              Matts Flying\n                            \n                            \n                              Melbourne West Flight Training\n                            \n                            \n                              Mid Coast Flying\n                            \n                            \n                              Midlands Flying School\n                            \n                            \n                              Murray Bridge Light Aircraft Flying School\n                            \n                            \n                              Myrup Flight Training\n                            \n                            \n                              Namoi Aviation\n                            \n                            \n                              Namoi Aviation - Gunnedah\n                            \n                            \n                              New England Aviation Flight Training School\n                            \n                            \n                              Northern Rivers Aero Club\n                            \n                            \n                              NT Flight Training\n                            \n                            \n                              Oasis Flight Training Pty Ltd\n                            \n                            \n                              Oasis Flight Training Pty Ltd - Swan Hill\n                            \n                            \n                              Orange Flight Training\n                            \n                            \n                              Parkes Recreational Aviation Centre\n                            \n                            \n                              Pathfinder Aviation\n                            \n                            \n                              Peace Aviation\n                            \n                            \n                              Peace Aviation - Bundaberg\n                            \n                            \n                              Peninsula Aero Club\n                            \n                            \n                              Pro-Sky Flight Training\n                            \n                            \n                              Pro-sky Maryborough\n                            \n                            \n                              Pro-Sky Port Augusta\n                            \n                            \n                              RAMAIR Flying Services\n                            \n                            \n                              Recreational Aviation Newcastle\n                            \n                            \n                              Riverina Wings Flight Training\n                            \n                            \n                              Riverland Flight Training\n                            \n                            \n                              Riverland Flight Training Wentworth\n                            \n                            \n                              Riviera Aeronautics\n                            \n                            \n                              Rockhampton Sport Aviation\n                            \n                            \n                              Rotor-Sport Australia\n                            \n                            \n                              Royal Aero Club of Western Australia\n                            \n                            \n                              Sarge’s Light Sport Aviation\n                            \n                            \n                              Secure Air Flight Training\n                            \n                            \n                              SFA Recreational Aviation\n                            \n                            \n                              SkyEast Aviation\n                            \n                            \n                              Skyflyte ULA Pty Ltd - Devonport\n                            \n                            \n                              Skyflyte ULA Pty Ltd\n                            \n                            \n                              Skywise Microlights\n                            \n                            \n                              Smartair\n                            \n                            \n                              Spencer Gulf Flight Training Pty Ltd\n                            \n                            \n                              Sport Aviation Flight Academy\n                            \n                            \n                              SportAviation Pty Ltd\n                            \n                            \n                              Sportflly Aviation\n                            \n                            \n                              Sportsflite Australia\n                            \n                            \n                              Stick ’n Rudder\n                            \n                            \n                              Strike Aviation Training\n                            \n                            \n                              Sunshine Coast Aero Club Queensland Ltd\n                            \n                            \n                              Sunshine Coast Sports Flying Training\n                            \n                            \n                              Surf Coast Flying School\n                            \n                            \n                              Sydney Recreational Flying Club - Taree\n                            \n                            \n                              Sydney Recreational Flying Club Inc\n                            \n                            \n                              The Recreational Flying Company\n                            \n                            \n                              Tooradin Flying School\n                            \n                            \n                              Topfun Aviation - Greenside\n                            \n                            \n                              Topfun Aviation - Moora\n                            \n                            \n                              Townsville Sport Aviation\n                            \n                            \n                              Victory Flight Training\n                            \n                            \n                              Wagga Air Centre\n                            \n                            \n                              Wagga Bike Tyres - Aviation Division\n                            \n                            \n                              Walters Aviation\n                            \n                            \n                              Warrnambool Flight Training\n                            \n                            \n                              Watson Fly\n                            \n                            \n                              West Coast Aviation\n                            \n                            \n                              Westside Aviation\n                            \n                            \n                              White Star Aviation Pty Ltd\n                            \n                            \n                              Willflyhire\n                            \n                            \n                              Wings Out West\n                            \n                            \n                              Wrighton Aviation\n                            \n                            \n                              Yarra Valley Flight Training\n                            \n                            \n                              YET TO BE DETERMINED\n                            \n                            \n                              Other"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "752",
+      "label": "Phase of Flight",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Not Answered\n                            \n                            \n                              Standing\n                            \n                            \n                              Taxiing\n                            \n                            \n                              Takeoff\n                            \n                            \n                              Initial Climb\n                            \n                            \n                              Cruise\n                            \n                            \n                              Manoeuvring/airwork\n                            \n                            \n                              Descent\n                            \n                            \n                              Approach\n                            \n                            \n                              Landing\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "753",
+      "label": "Effect of Flight",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "No Effect\n                            \n                            \n                              Rejected Take-off\n                            \n                            \n                              Precautionary Landing\n                            \n                            \n                              Engines Shut Down\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "754",
+      "label": "Flight Rules",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Not Answered\n                            \n                            \n                              VFR\n                            \n                            \n                              IFR\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "755",
+      "label": "Airspace",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "756",
+      "label": "Airspace Class",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Not Answered\n                            \n                            \n                              A\n                            \n                            \n                              C\n                            \n                            \n                              D\n                            \n                            \n                              E\n                            \n                            \n                              G\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "757",
+      "label": "Airspace Type",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Not Answered\n                            \n                            \n                              CTA\n                            \n                            \n                              CTR\n                            \n                            \n                              CAF\n                            \n                            \n                              OCTA\n                            \n                            \n                              PRD\n                            \n                            \n                              OCA"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "758",
+      "label": "Altitude",
+      "type": "number",
+      "required": false,
+      "placeholder": "200",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "759",
+      "label": "Altitude Type",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Not answered\n                            \n                            \n                              AMSL (Above mean sea level)\n                            \n                            \n                              AGL (Above ground level)\n                            \n                            \n                              Surface\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "760",
+      "label": "Engine Details",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "761",
+      "label": "Engine Make",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "762",
+      "label": "Engine Model",
+      "type": "text",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "764",
+      "label": "Total Engine Hours",
+      "type": "number",
+      "required": false,
+      "placeholder": "200",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "765",
+      "label": "Total Hours Since Service",
+      "type": "number",
+      "required": false,
+      "placeholder": "103",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "766",
+      "label": "Propeller Make",
+      "type": "text",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "767",
+      "label": "Propeller Model",
+      "type": "text",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "768",
+      "label": "Propeller Serial",
+      "type": "number",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "770",
+      "label": "Attachments",
+      "type": "checkbox",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1206",
+      "label": "Wind Gusting",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "-None-\n                            \n                            \n                              Not sure\n                            \n                            \n                              Yes\n                            \n                            \n                              No"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1207",
+      "label": "Personal Locator Beacon carried",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "-None-\n                            \n                            \n                              Yes\n                            \n                            \n                              No"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1217",
+      "label": "Bird/animal strike",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1218",
+      "label": "Type of Strike",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Not answered\n                            \n                            \n                              Bird\n                            \n                            \n                              Animal\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1222",
+      "label": "Species",
+      "type": "text",
+      "required": false,
+      "placeholder": "Enter species name",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1223",
+      "label": "Number (approx)",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Not answered\n                            \n                            \n                              1\n                            \n                            \n                              2-10\n                            \n                            \n                              >10\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1224",
+      "label": "Number Struck (approx)",
+      "type": "select",
+      "required": false,
+      "placeholder": "10-1122 or E13-1199",
+      "validation": "[a-z0-9_-]{3,16}",
+      "options": [
+        "Not answered\n                            \n                            \n                              1\n                            \n                            \n                              2-10\n                            \n                            \n                              >10\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1225",
+      "label": "Size",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Not answered\n                            \n                            \n                              Small\n                            \n                            \n                              Medium\n                            \n                            \n                              Large\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1226",
+      "label": "Type of Strike",
+      "type": "checkbox",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1227",
+      "label": "",
+      "type": "checkbox",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1228",
+      "label": "Near Collision with another aircraft",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1229",
+      "label": "Second Aircraft Registration",
+      "type": "text",
+      "required": false,
+      "placeholder": "10-1122 or E13-1199",
+      "validation": "[a-z0-9_-]{3,16}",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1230",
+      "label": "Second Aircraft Manufacturer",
+      "type": "text",
+      "required": false,
+      "placeholder": "abc-123",
+      "validation": "^[a-z0-9_ /-]{3,16}$",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1231",
+      "label": "Second Aircraft Model",
+      "type": "text",
+      "required": false,
+      "placeholder": "abc-123",
+      "validation": "^[a-z0-9_ /-]{3,16}$",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1232",
+      "label": "Horizontal Proximity",
+      "type": "number",
+      "required": false,
+      "placeholder": "e.g., 150",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1233",
+      "label": "Horizontal Proximity Unit",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "None\n                            \n                            \n                              Metres (m)\n                            \n                            \n                              Nautical Miles (nm)\n                            \n                            \n                              Minutes"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1234",
+      "label": "Vertical Proximity",
+      "type": "number",
+      "required": false,
+      "placeholder": "e.g., 0.5",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1235",
+      "label": "Vertical Proximity Unit",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "None\n                            \n                            \n                              Feet (ft)\n                            \n                            \n                              Metres (m)"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1236",
+      "label": "Relative Track",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "None\n                            \n                            \n                              Converging\n                            \n                            \n                              Crossing\n                            \n                            \n                              Diverging\n                            \n                            \n                              Reciprocal\n                            \n                            \n                              Same Track\n                            \n                            \n                              Other\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1237",
+      "label": "Avoidance Manoeuvre Needed?",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Yes\n                            \n                            \n                              No\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1238",
+      "label": "Alert Received",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "ATC Verbal\n                            \n                            \n                              TCAS RA\n                            \n                            \n                              TCAS TA\n                            \n                            \n                              Other\n                            \n                            \n                              None\n                            \n                            \n                              Unknown"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1239",
+      "label": "Bird/animal strike",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1242",
+      "label": "Total Flying Hours",
+      "type": "text",
+      "required": false,
+      "placeholder": "5280.7",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1250",
+      "label": "Last Name",
+      "type": "text",
+      "required": true,
+      "placeholder": "Doe",
+      "validation": "^[a-z A-Z -]{3,16}$",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1282",
+      "label": "Email Address",
+      "type": "email",
+      "required": false,
+      "placeholder": "example@domain.com",
+      "validation": "[\\p{L}0-9._-]+@[\\p{L}0-9.-]+\\.[\\p{L}]+",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1283",
+      "label": "Last Name",
+      "type": "text",
+      "required": false,
+      "placeholder": "Smith",
+      "validation": "^[a-zA-Z -]{3,16}$",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1284",
+      "label": "Email",
+      "type": "email",
+      "required": false,
+      "placeholder": "example@domain.com",
+      "validation": "[\\p{L}0-9._-]+@[\\p{L}0-9.-]+\\.[\\p{L}]+",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1285",
+      "label": "Maintainer Last Name",
+      "type": "text",
+      "required": false,
+      "placeholder": "Johnson",
+      "validation": "^[a-z A-Z -]{3,16}$",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1398",
+      "label": "Engine Serial",
+      "type": "text",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1457",
+      "label": "Aircraft Information",
+      "type": "section",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1458",
+      "label": "Registration Number Prefix",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "--\n                            \n                            \n                              E24\n                            \n                            \n                              E23\n                            \n                            \n                              10\n                            \n                            \n                              17\n                            \n                            \n                              18\n                            \n                            \n                              19\n                            \n                            \n                              23\n                            \n                            \n                              24\n                            \n                            \n                              25\n                            \n                            \n                              26\n                            \n                            \n                              28\n                            \n                            \n                              29\n                            \n                            \n                              32\n                            \n                            \n                              34\n                            \n                            \n                              55"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1459",
+      "label": "Registration Number Suffix",
+      "type": "number",
+      "required": true,
+      "placeholder": "1234",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1461",
+      "label": "Make",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1462",
+      "label": "Model",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1463",
+      "label": "Registration Status",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "-None-\n                            \n                            \n                              Allocated Number\n                            \n                            \n                              Blocked\n                            \n                            \n                              Deregistered\n                            \n                            \n                              Destroyed\n                            \n                            \n                              Full Registration\n                            \n                            \n                              Provisional Registration\n                            \n                            \n                              Suspended\n                            \n                            \n                              Cancelled"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1464",
+      "label": "Type",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "- Please select -\n                            \n                            \n                              Three Axis Aeroplane\n                            \n                            \n                              Weight-Shift Controlled Aeroplane\n                            \n                            \n                              Powered Parachute"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1465",
+      "label": "Year Built",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "1935\n                            \n                            \n                              1936\n                            \n                            \n                              1937\n                            \n                            \n                              1938\n                            \n                            \n                              1939\n                            \n                            \n                              1940\n                            \n                            \n                              1941\n                            \n                            \n                              1942\n                            \n                            \n                              1943\n                            \n                            \n                              1944\n                            \n                            \n                              1945\n                            \n                            \n                              1946\n                            \n                            \n                              1947\n                            \n                            \n                              1948\n                            \n                            \n                              1949\n                            \n                            \n                              1950\n                            \n                            \n                              1951\n                            \n                            \n                              1952\n                            \n                            \n                              1953\n                            \n                            \n                              1954\n                            \n                            \n                              1955\n                            \n                            \n                              1956\n                            \n                            \n                              1957\n                            \n                            \n                              1958\n                            \n                            \n                              1959\n                            \n                            \n                              1960\n                            \n                            \n                              1961\n                            \n                            \n                              1962\n                            \n                            \n                              1963\n                            \n                            \n                              1964\n                            \n                            \n                              1965\n                            \n                            \n                              1966\n                            \n                            \n                              1967\n                            \n                            \n                              1968\n                            \n                            \n                              1969\n                            \n                            \n                              1970\n                            \n                            \n                              1971\n                            \n                            \n                              1972\n                            \n                            \n                              1973\n                            \n                            \n                              1974\n                            \n                            \n                              1975\n                            \n                            \n                              1976\n                            \n                            \n                              1977\n                            \n                            \n                              1978\n                            \n                            \n                              1979\n                            \n                            \n                              1980\n                            \n                            \n                              1981\n                            \n                            \n                              1982\n                            \n                            \n                              1983\n                            \n                            \n                              1984\n                            \n                            \n                              1985\n                            \n                            \n                              1986\n                            \n                            \n                              1987\n                            \n                            \n                              1988\n                            \n                            \n                              1989\n                            \n                            \n                              1990\n                            \n                            \n                              1991\n                            \n                            \n                              1992\n                            \n                            \n                              1993\n                            \n                            \n                              1994\n                            \n                            \n                              1995\n                            \n                            \n                              1996\n                            \n                            \n                              1997\n                            \n                            \n                              1998\n                            \n                            \n                              1999\n                            \n                            \n                              2000\n                            \n                            \n                              2001\n                            \n                            \n                              2002\n                            \n                            \n                              2003\n                            \n                            \n                              2004\n                            \n                            \n                              2005\n                            \n                            \n                              2006\n                            \n                            \n                              2007\n                            \n                            \n                              2008\n                            \n                            \n                              2009\n                            \n                            \n                              2010\n                            \n                            \n                              2011\n                            \n                            \n                              2012\n                            \n                            \n                              2013\n                            \n                            \n                              2014\n                            \n                            \n                              2015\n                            \n                            \n                              2016\n                            \n                            \n                              2017\n                            \n                            \n                              2018\n                            \n                            \n                              2019\n                            \n                            \n                              2020\n                            \n                            \n                              2021\n                            \n                            \n                              2022\n                            \n                            \n                              2023\n                            \n                            \n                              2024\n                            \n                            \n                              2025"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1466",
+      "label": "Total Airframe Hours",
+      "type": "number",
+      "required": true,
+      "placeholder": "200",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1467",
+      "label": "Serial Number",
+      "type": "text",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1471",
+      "label": "Did this occurrence involve a near miss with another aircraft?",
+      "type": "select",
+      "required": true,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Yes\n                            \n                            \n                              No"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1472",
+      "label": "Did this occurrence involve an aircraft conducting IFR or air transport operations (airline/charter/cargo/medical)",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Yes\n                            \n                            \n                              No"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1473",
+      "label": "Did the occurrence take place in controlled airspace or special use airspace(military/danger/restricted/prohibited)?",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Yes\n                            \n                            \n                              No"
+      ],
+      "description": "",
+      "page": 3
+    },
+    {
+      "id": "1474",
+      "label": "Did this occurrence involve a Bird or Animal Strike",
+      "type": "select",
+      "required": false,
+      "placeholder": "",
+      "validation": "",
+      "options": [
+        "Yes\n                            \n                            \n                              No"
+      ],
+      "description": "",
+      "page": 3
+    }
+  ]
+}
