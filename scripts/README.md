@@ -93,12 +93,14 @@ ZOHO_CRM_MODULE=Occurrence_Management
 - Make sure you have the necessary permissions in Zoho CRM
 - Try generating a new Client ID/Secret with proper scopes
 
+
 ## Required Scopes
 
 The script requests the following scopes:
 - `ZohoCRM.modules.ALL` - Access to all CRM modules
 - `ZohoCRM.settings.ALL` - Access to CRM settings
 - `ZohoCRM.users.READ` - Read user information
+WorkDrive.files.ALL,ZohoCRM.modules.ALL
 
 ## Security Notes
 

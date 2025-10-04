@@ -3,6 +3,8 @@ import { ZohoAuth } from "./auth";
 import { ZohoWorkDriveUploadResponse } from "@/types/forms";
 
 export class ZohoWorkDrive {
+  private static apiDomain = process.env.ZOHO_CRM_API_DOMAIN || "https://www.zohoapis.com.au";
+
   /**
    * Upload files to Zoho WorkDrive
    */
@@ -24,7 +26,7 @@ export class ZohoWorkDrive {
         formData.append("filename", file.name);
 
         const response = await axios.post<ZohoWorkDriveUploadResponse>(
-          "https://www.zohoapis.com/workdrive/api/v1/upload",
+          `${this.apiDomain}/workdrive/api/v1/upload`,
           formData,
           {
             headers: {
@@ -36,8 +38,12 @@ export class ZohoWorkDrive {
         if (response.data.data && response.data.data.length > 0) {
           uploadedFileIds.push(response.data.data[0].id);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Failed to upload file ${file.name}:`, error);
+        if (error.response) {
+          console.error("Upload response data:", error.response.data);
+          console.error("Upload response status:", error.response.status);
+        }
         throw new Error(`Failed to upload ${file.name}`);
       }
     }
@@ -55,7 +61,7 @@ export class ZohoWorkDrive {
     for (const fileId of fileIds) {
       try {
         const response = await axios.post(
-          `https://www.zohoapis.com/workdrive/api/v1/files/${fileId}/share`,
+          `${this.apiDomain}/workdrive/api/v1/files/${fileId}/share`,
           {
             permissions: { type: "user", role: "view" },
           },

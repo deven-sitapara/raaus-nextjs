@@ -1,11 +1,12 @@
 /**
- * Zoho OAuth Refresh Token Generator
+ * Zoho WorkDrive OAuth Refresh Token Generator
  *
- * This script helps you generate a refresh token for Zoho CRM API access.
+ * This script helps you generate a refresh token for Zoho WorkDrive API access.
  *
  * STEPS TO USE:
  *
- * 1. Update your .env file with new CLIENT_ID and CLIENT_SECRET
+ * 1. Update your .env file with CLIENT_ID and CLIENT_SECRET
+ *    (You can use the same ones as CRM)
  *
  * 2. Generate a Grant Token:
  *    - Visit the authorization URL (printed by this script)
@@ -13,7 +14,7 @@
  *    - Copy the code from the redirect URL
  *
  * 3. Run this script with the grant token:
- *    node scripts/generate-zoho-token.js YOUR_GRANT_TOKEN
+ *    node scripts/generate-workdrive-token.js YOUR_GRANT_TOKEN
  *
  * 4. Copy the refresh token to your .env file
  */
@@ -23,14 +24,13 @@ const querystring = require('querystring');
 require('dotenv').config();
 
 // Configuration
-const CLIENT_ID = process.env.ZOHO_CRM_CLIENT_ID;
-const CLIENT_SECRET = process.env.ZOHO_CRM_CLIENT_SECRET;
+const CLIENT_ID = process.env.ZOHO_WORKDRIVE_CLIENT_ID || process.env.ZOHO_CRM_CLIENT_ID;
+const CLIENT_SECRET = process.env.ZOHO_WORKDRIVE_CLIENT_SECRET || process.env.ZOHO_CRM_CLIENT_SECRET;
 const REDIRECT_URI = 'http://localhost:3000/oauth/callback';
 const REGION = 'com.au'; // Australia region
 
-// Scopes for Zoho CRM and WorkDrive - Single token for both services
+// Scopes for Zoho WorkDrive
 const SCOPES = [
-  'ZohoCRM.modules.ALL',
   'WorkDrive.files.ALL',
   'WorkDrive.workspace.ALL'
 ].join(',');
@@ -53,21 +53,21 @@ if (!grantToken) {
     redirect_uri: REDIRECT_URI
   });
 
-  console.log('\n📋 STEP 1: Get Grant Token\n');
+  console.log('\n📋 STEP 1: Get Grant Token for WorkDrive\n');
   console.log('Visit this URL in your browser:\n');
   console.log(authUrl);
   console.log('\n');
   console.log('After authorization, you will be redirected to:');
   console.log(`${REDIRECT_URI}?code=YOUR_GRANT_TOKEN`);
   console.log('\nCopy the "code" parameter value from the URL.\n');
-  console.log('📋 STEP 2: Generate Refresh Token\n');
+  console.log('📋 STEP 2: Generate WorkDrive Refresh Token\n');
   console.log('Run this command with your grant token:');
-  console.log(`node scripts/generate-zoho-token.js YOUR_GRANT_TOKEN\n`);
+  console.log(`node scripts/generate-workdrive-token.js YOUR_GRANT_TOKEN\n`);
   process.exit(0);
 }
 
 // Step 2: Exchange grant token for refresh token
-console.log('\n🔄 Generating refresh token...\n');
+console.log('\n🔄 Generating WorkDrive refresh token...\n');
 
 const postData = querystring.stringify({
   grant_type: 'authorization_code',
@@ -105,15 +105,15 @@ const req = https.request(options, (res) => {
       }
 
       if (response.refresh_token) {
-        console.log('✅ Success! Your refresh token has been generated.\n');
+        console.log('✅ Success! Your WorkDrive refresh token has been generated.\n');
         console.log('📋 Add this to your .env file:\n');
-        console.log(`ZOHO_CRM_REFRESH_TOKEN=${response.refresh_token}\n`);
+        console.log(`ZOHO_WORKDRIVE_REFRESH_TOKEN=${response.refresh_token}\n`);
         console.log('Token Details:');
         console.log('- Access Token:', response.access_token);
         console.log('- Expires In:', response.expires_in, 'seconds');
         console.log('- API Domain:', response.api_domain || `https://www.zohoapis.${REGION}`);
         console.log('- Token Type:', response.token_type);
-        console.log('\n✅ Setup Complete!\n');
+        console.log('\n✅ WorkDrive Setup Complete!\n');
       } else {
         console.error('❌ Unexpected response:', data);
         process.exit(1);

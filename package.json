@@ -9,8 +9,10 @@
     "start": "next start",
     "lint": "next lint",
     "zoho:token": "node scripts/generate-zoho-token.js",
+    "zoho:workdrive-token": "node scripts/generate-workdrive-token.js",
     "test:auth": "node scripts/test-auth.js",
-    "test:complaint": "node scripts/test-complaint-api.js"
+    "test:complaint": "node scripts/test-complaint-api.js",
+    "test:workdrive": "node scripts/test-workdrive.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
