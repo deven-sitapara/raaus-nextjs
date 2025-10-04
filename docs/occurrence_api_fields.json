@@ -1,0 +1,597 @@
+{
+  "pilot_information": {
+    "PIC_Name": {
+      "label": "PIC First Name",
+      "type": "Single Line",
+      "required": true
+    },
+    "PIC_Last_Name": {
+      "label": "PIC Last Name",
+      "type": "Single Line",
+      "required": true
+    },
+    "PIC_Member_Number": {
+      "label": "PIC Member Number",
+      "type": "Number",
+      "required": false
+    },
+    "PIC_Contact_Phone": {
+      "label": "PIC Contact Phone",
+      "type": "Phone",
+      "required": true
+    },
+    "PIC_Email": {
+      "label": "PIC Email",
+      "type": "Email",
+      "required": true
+    },
+    "Date_of_Birth": {
+      "label": "PIC Date of Birth",
+      "type": "DateTime",
+      "required": false
+    },
+    "Total_flying_hours": {
+      "label": "PIC Total flying hours",
+      "type": "Single Line",
+      "required": false
+    },
+    "Hours_last_90_days": {
+      "label": "PIC Hours last 90 days",
+      "type": "Single Line",
+      "required": false
+    },
+    "Hours_on_type": {
+      "label": "PIC Hours on type",
+      "type": "Single Line",
+      "required": false
+    },
+    "Hours_on_type_last_90_days": {
+      "label": "PIC Hours on type last 90 days",
+      "type": "Single Line",
+      "required": false
+    }
+  },
+  "reporter_information": {
+    "Name1": {
+      "label": "Reporter First Name",
+      "type": "Single Line",
+      "required": true
+    },
+    "Last_Name": {
+      "label": "Reporter Last Name",
+      "type": "Single Line",
+      "required": true
+    },
+    "Member_Number": {
+      "label": "Reporter Member Number",
+      "type": "Single Line",
+      "required": false
+    },
+    "Contact_Phone": {
+      "label": "Reporter Phone",
+      "type": "Single Line",
+      "required": true
+    },
+    "Reporter_Email": {
+      "label": "Reporter Email",
+      "type": "Email",
+      "required": true
+    },
+    "Role": {
+      "label": "Role",
+      "type": "Pick List",
+      "required": true
+    },
+    "Role_Other": {
+      "label": "Role, if Other...",
+      "type": "Single Line",
+      "required": false
+    },
+    "Address": {
+      "label": "Reporter Address",
+      "type": "Multi Line (Small)",
+      "required": false
+    },
+    "Reporter_Date_of_Birth": {
+      "label": "Reporter Date of Birth",
+      "type": "DateTime",
+      "required": false
+    }
+  },
+  "occurrence_information": {
+    "Occurrence_Date1": {
+      "label": "Occurrence Date",
+      "type": "DateTime",
+      "required": true
+    },
+    "Description_of_Occurrence": {
+      "label": "Description of Occurrence",
+      "type": "Multi Line (Large)",
+      "required": true
+    },
+    "Is_this_occurrence_an_Accident_or_an_Incident": {
+      "label": "Is this occurrence an Accident or an Incident?",
+      "type": "Pick List",
+      "required": true
+    },
+    "Accident_or_Incident": {
+      "label": "Accident or Incident?",
+      "type": "Pick List",
+      "required": false
+    },
+    "Location": {
+      "label": "Location",
+      "type": "Single Line",
+      "required": false
+    },
+    "State": {
+      "label": "State",
+      "type": "Pick List",
+      "required": false
+    },
+    "Latitude": {
+      "label": "Latitude",
+      "type": "Single Line",
+      "required": false
+    },
+    "Longitude": {
+      "label": "Longitude",
+      "type": "Single Line",
+      "required": false
+    },
+    "Phase_of_flight": {
+      "label": "Phase of flight",
+      "type": "Pick List",
+      "required": false
+    },
+    "Light_conditions": {
+      "label": "Light conditions",
+      "type": "Pick List",
+      "required": false
+    },
+    "Visibility": {
+      "label": "Visibility",
+      "type": "Decimal",
+      "required": false
+    },
+    "Wind_speed": {
+      "label": "Wind speed",
+      "type": "Decimal",
+      "required": false
+    },
+    "Wind_direction": {
+      "label": "Wind direction",
+      "type": "Pick List",
+      "required": false
+    },
+    "Wind_gusting": {
+      "label": "Wind gusting",
+      "type": "Pick List",
+      "required": false
+    }
+  },
+  "injury_information": {
+    "Highest_Injury": {
+      "label": "Highest Injury",
+      "type": "Pick List",
+      "required": false
+    },
+    "Most_serious_injury_to_pilot": {
+      "label": "Pilot injury",
+      "type": "Pick List",
+      "required": false
+    },
+    "Passenger_injury": {
+      "label": "Passenger injury",
+      "type": "Pick List",
+      "required": false
+    },
+    "Persons_on_the_ground_injury": {
+      "label": "Persons on the ground injury",
+      "type": "Pick List",
+      "required": false
+    },
+    "Passenger_details": {
+      "label": "Passenger name",
+      "type": "Single Line",
+      "required": false
+    }
+  },
+  "aircraft_information": {
+    "Registration_number": {
+      "label": "Registration number",
+      "type": "Single Line",
+      "required": true
+    },
+    "Make": {
+      "label": "Manufacturer",
+      "type": "Single Line",
+      "required": false
+    },
+    "Model": {
+      "label": "Model",
+      "type": "Single Line",
+      "required": false
+    },
+    "Serial_number": {
+      "label": "Serial number",
+      "type": "Single Line",
+      "required": false
+    },
+    "Year_built": {
+      "label": "Manufacture date",
+      "type": "Pick List",
+      "required": false
+    },
+    "Total_airframe_hours": {
+      "label": "Total airframe hours",
+      "type": "Decimal",
+      "required": false
+    },
+    "Damage_to_aircraft": {
+      "label": "Damage to aircraft",
+      "type": "Pick List",
+      "required": false
+    },
+    "Description_of_damage_to_aircraft": {
+      "label": "Description of damage to aircraft",
+      "type": "Multi Line (Small)",
+      "required": false
+    },
+    "Part_of_aircraft_damaged1": {
+      "label": "Part of aircraft damaged",
+      "type": "Pick List",
+      "required": false
+    }
+  },
+  "engine_information": {
+    "Engine_Details": {
+      "label": "Engine make",
+      "type": "Single Line",
+      "required": false
+    },
+    "Engine_model": {
+      "label": "Engine model",
+      "type": "Single Line",
+      "required": false
+    },
+    "Engine_serial": {
+      "label": "Engine serial",
+      "type": "Single Line",
+      "required": false
+    },
+    "Total_engine_hours": {
+      "label": "Total engine hours",
+      "type": "Single Line",
+      "required": false
+    }
+  },
+  "propeller_information": {
+    "Propeller_make": {
+      "label": "Propeller make",
+      "type": "Single Line",
+      "required": false
+    },
+    "Propeller_model": {
+      "label": "Propeller model",
+      "type": "Single Line",
+      "required": false
+    },
+    "Propeller_serial": {
+      "label": "Propeller serial",
+      "type": "Single Line",
+      "required": false
+    }
+  },
+  "bird_animal_strike": {
+    "Bird_or_Animal_Strike": {
+      "label": "Bird or Animal Strike",
+      "type": "Boolean",
+      "required": false
+    },
+    "Species": {
+      "label": "Species",
+      "type": "Single Line",
+      "required": false
+    },
+    "Size": {
+      "label": "Size",
+      "type": "Pick List",
+      "required": false
+    },
+    "Number_approx": {
+      "label": "Number (approx)",
+      "type": "Pick List",
+      "required": false
+    },
+    "Number_struck_approx": {
+      "label": "Number struck (approx)",
+      "type": "Pick List",
+      "required": false
+    },
+    "Bird_or_animal_activity": {
+      "label": "Bird or animal activity",
+      "type": "Pick List",
+      "required": false
+    },
+    "Was_the_pilot_warned_of_birds_or_animals": {
+      "label": "Was the pilot warned of birds or animals?",
+      "type": "Pick List",
+      "required": false
+    },
+    "Type_of_strike": {
+      "label": "Type of strike",
+      "type": "Pick List",
+      "required": false
+    }
+  },
+  "near_collision": {
+    "Involve_near_miss_with_another_aircraft": {
+      "label": "Involve near miss with another aircraft",
+      "type": "Boolean",
+      "required": false
+    },
+    "Second_aircraft_registration": {
+      "label": "Second aircraft registration",
+      "type": "Single Line",
+      "required": false
+    },
+    "Second_Aircraft_Manufacturer": {
+      "label": "Second Aircraft Manufacturer",
+      "type": "Single Line",
+      "required": false
+    },
+    "Second_Aircraft_Model": {
+      "label": "Second Aircraft Model",
+      "type": "Single Line",
+      "required": false
+    },
+    "Horizontal_Proximity": {
+      "label": "Horizontal Proximity",
+      "type": "Number",
+      "required": false
+    },
+    "Horizontal_Proximity_Unit": {
+      "label": "Horizontal Proximity Unit",
+      "type": "Pick List",
+      "required": false
+    },
+    "Vertical_Proximity": {
+      "label": "Vertical Proximity",
+      "type": "Number",
+      "required": false
+    },
+    "Vertical_Proximity_Unit": {
+      "label": "Vertical Proximity Unit",
+      "type": "Pick List",
+      "required": false
+    },
+    "Relative_Track": {
+      "label": "Relative Track",
+      "type": "Pick List",
+      "required": false
+    },
+    "Avoidance_manoeuvre_needed": {
+      "label": "Avoidance manoeuvre needed?",
+      "type": "Pick List",
+      "required": false
+    }
+  },
+  "defect_information": {
+    "Defect": {
+      "label": "Defect",
+      "type": "Boolean",
+      "required": false
+    },
+    "Date_Defect_Identified": {
+      "label": "Date Defect Identified",
+      "type": "DateTime",
+      "required": false
+    },
+    "Location_of_aircraft_when_defect_was_found": {
+      "label": "Location of aircraft when defect was found",
+      "type": "Single Line",
+      "required": false
+    },
+    "Provide_description_of_defect": {
+      "label": "Provide description of defect",
+      "type": "Multi Line (Small)",
+      "required": false
+    },
+    "Defective_component": {
+      "label": "Defective component",
+      "type": "Single Line",
+      "required": false
+    },
+    "Causal_Factors": {
+      "label": "Defect Causal Factors",
+      "type": "Multiselect",
+      "required": false
+    },
+    "Contributing_factors": {
+      "label": "Defect Contributing Factors",
+      "type": "Multiselect",
+      "required": false
+    },
+    "Maintainer_Name": {
+      "label": "Maintainer First Name",
+      "type": "Single Line",
+      "required": false
+    },
+    "Maintainer_Last_Name": {
+      "label": "Maintainer Last Name",
+      "type": "Single Line",
+      "required": false
+    },
+    "Maintainer_Member_Number": {
+      "label": "Maintainer Member Number",
+      "type": "Single Line",
+      "required": false
+    },
+    "Maintainer_Level": {
+      "label": "Maintainer Level",
+      "type": "Pick List",
+      "required": false
+    }
+  },
+  "complaint_information": {
+    "Complaint": {
+      "label": "Complaint",
+      "type": "Boolean",
+      "required": false
+    },
+    "Complaint_details": {
+      "label": "Complaint details",
+      "type": "Multi Line (Small)",
+      "required": false
+    }
+  },
+  "hazard_information": {
+    "Hazard": {
+      "label": "Hazard",
+      "type": "Boolean",
+      "required": false
+    },
+    "Date_Hazard_Identified": {
+      "label": "Date Hazard Identified",
+      "type": "DateTime",
+      "required": false
+    },
+    "Location_of_hazard": {
+      "label": "Location of hazard",
+      "type": "Single Line",
+      "required": false
+    },
+    "Please_fully_describe_the_identified_hazard": {
+      "label": "Please fully describe the identified hazard",
+      "type": "Multi Line (Small)",
+      "required": false
+    },
+    "Potential_Consequences_of_Hazard": {
+      "label": "Potential Consequences of Hazard",
+      "type": "Multi Line (Large)",
+      "required": false
+    },
+    "Action_taken_to_reduce_or_eliminate_hazard": {
+      "label": "Action taken to reduce or eliminate hazard",
+      "type": "Multi Line (Large)",
+      "required": false
+    },
+    "How_likely_is_this_to_happen_again": {
+      "label": "In your opinion, likelihood event happening again?",
+      "type": "Pick List",
+      "required": false
+    },
+    "What_s_the_worst_that_could_happen": {
+      "label": "What consider could worst possible consequences?",
+      "type": "Pick List",
+      "required": false
+    }
+  },
+  "file_uploads": {
+    "File_Upload_1": {
+      "label": "File Upload 1",
+      "type": "File Upload",
+      "required": false
+    },
+    "Occurrence_Workdrive_Folder_ID": {
+      "label": "Occurrence Workdrive Folder ID",
+      "type": "Single Line",
+      "required": false
+    },
+    "Workdrive_ID": {
+      "label": "Workdrive ID",
+      "type": "Single Line",
+      "required": false
+    }
+  },
+  "operational_details": {
+    "Type_of_operation": {
+      "label": "Type of operation",
+      "type": "Pick List",
+      "required": false
+    },
+    "Flight_Rules": {
+      "label": "Flight Rules",
+      "type": "Pick List",
+      "required": false
+    },
+    "Flight_Conditions": {
+      "label": "Flight Conditions",
+      "type": "Pick List",
+      "required": false
+    },
+    "Departure_location": {
+      "label": "Departure location",
+      "type": "Single Line",
+      "required": false
+    },
+    "Destination_location": {
+      "label": "Destination location",
+      "type": "Single Line",
+      "required": false
+    },
+    "Altitude": {
+      "label": "Altitude",
+      "type": "Number",
+      "required": false
+    },
+    "Altitude_type": {
+      "label": "Altitude type",
+      "type": "Pick List",
+      "required": false
+    },
+    "Personal_Locator_Beacon_carried": {
+      "label": "Personal Locator Beacon carried",
+      "type": "Pick List",
+      "required": false
+    },
+    "PLB_Activated": {
+      "label": "PLB Activated",
+      "type": "Boolean",
+      "required": false
+    }
+  },
+  "system_fields": {
+    "Name": {
+      "label": "Occurrence Management Name",
+      "type": "Single Line",
+      "required": false
+    },
+    "Owner": {
+      "label": "Occurrence Management Owner",
+      "type": "Lookup",
+      "required": false
+    },
+    "OccurrenceId": {
+      "label": "OccurrenceId",
+      "type": "Auto Number",
+      "required": false
+    },
+    "Occurrence_Status": {
+      "label": "Occurrence Status",
+      "type": "Pick List",
+      "required": false
+    },
+    "Occurrence_Number": {
+      "label": "Occurrence Number",
+      "type": "Single Line",
+      "required": false
+    },
+    "Date_Reported": {
+      "label": "Date Reported",
+      "type": "DateTime",
+      "required": false
+    },
+    "Created_By": {
+      "label": "Created By",
+      "type": "Single Line",
+      "required": false
+    },
+    "Modified_By": {
+      "label": "Modified By",
+      "type": "Single Line",
+      "required": false
+    }
+  }
+}

@@ -69,12 +69,14 @@ export default function ComplaintForm() {
     setIsSubmitting(true);
 
     try {
-      // Merge date and time
+      // Convert date and time to ISO 8601 format for Zoho CRM
       let fullOccurrenceDate = "";
       if (occurrenceDate && occurrenceTime) {
-        fullOccurrenceDate = `${occurrenceDate} ${occurrenceTime}`;
+        const datetime = new Date(`${occurrenceDate}T${occurrenceTime}`);
+        fullOccurrenceDate = datetime.toISOString();
       } else if (occurrenceDate) {
-        fullOccurrenceDate = occurrenceDate;
+        const datetime = new Date(occurrenceDate);
+        fullOccurrenceDate = datetime.toISOString();
       }
 
       // Upload attachments if any
@@ -92,12 +94,13 @@ export default function ComplaintForm() {
       // Submit to Zoho CRM
       const crmData = {
         ...data,
+        Name: `${data.Name1} ${data.Last_Name}`, // Required combined name field
         Occurrence_Date1: fullOccurrenceDate,
         attachmentLinks: attachmentLinks.join(", "),
       };
 
       await axios.post("/api/zoho-crm", {
-        module: "Complaints",
+        module: "Occurrence_Management",
         data: crmData,
       });
 

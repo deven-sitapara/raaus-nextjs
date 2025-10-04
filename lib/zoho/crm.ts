@@ -26,8 +26,12 @@ export class ZohoCRM {
       );
 
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create CRM record:", error);
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+      }
       throw new Error("Failed to submit to Zoho CRM");
     }
   }

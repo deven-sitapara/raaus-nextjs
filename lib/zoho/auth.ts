@@ -5,6 +5,14 @@ export class ZohoAuth {
   private static accessToken: string | null = null;
   private static tokenExpiry: number = 0;
 
+  private static getAccountsUrl(): string {
+    // Extract region from API domain (e.g., https://www.zohoapis.com.au -> com.au)
+    const apiDomain = process.env.ZOHO_CRM_API_DOMAIN || "https://www.zohoapis.com.au";
+    const regionMatch = apiDomain.match(/\.zohoapis\.(com(?:\.\w+)?)/);
+    const region = regionMatch ? regionMatch[1] : "com";
+    return `https://accounts.zoho.${region}/oauth/v2/token`;
+  }
+
   static async getAccessToken(service: "crm" | "workdrive"): Promise<string> {
     // Check if we have a valid cached token
     if (this.accessToken && Date.now() < this.tokenExpiry) {
@@ -30,8 +38,9 @@ export class ZohoAuth {
     }
 
     try {
+      const accountsUrl = this.getAccountsUrl();
       const response = await axios.post<ZohoAuthResponse>(
-        "https://accounts.zoho.com/oauth/v2/token",
+        accountsUrl,
         null,
         {
           params: {
@@ -48,8 +57,12 @@ export class ZohoAuth {
       this.tokenExpiry = Date.now() + (response.data.expires_in - 300) * 1000;
 
       return this.accessToken;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to get Zoho access token:", error);
+      if (error.response) {
+        console.error("Auth response data:", error.response.data);
+        console.error("Auth response status:", error.response.status);
+      }
       throw new Error("Failed to authenticate with Zoho");
     }
   }
