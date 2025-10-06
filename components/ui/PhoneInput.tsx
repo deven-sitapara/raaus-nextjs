@@ -8,7 +8,8 @@ export interface PhoneInputProps {
   error?: string;
   required?: boolean;
   value?: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
+  onValueChange?: (value: string) => void;
   defaultCountry?: "AU" | "CA" | "GB" | "US";
   countries?: Array<"AU" | "CA" | "GB" | "US">;
   placeholder?: string;
@@ -30,6 +31,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       required,
       value = "",
       onChange,
+      onValueChange,
       defaultCountry = "AU",
       countries = ["AU", "CA", "GB", "US"],
       placeholder = "0412 345 678",
@@ -60,9 +62,9 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     };
 
     return (
-      <div className="w-full">
+      <div className="w-full" style={{marginBottom: '10px'}}>
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-base font-medium text-black mb-1" style={{fontSize: '16px', color: '#000000', marginBottom: '10px'}}>
             {label}
             {required && <span className="text-red-600 ml-1">*</span>}
           </label>
@@ -103,7 +105,11 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
               ref={ref}
               type="tel"
               value={value}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                onChange?.(newValue);
+                onValueChange?.(newValue);
+              }}
               placeholder={placeholder}
               className="flex-1 px-3 py-2 text-sm outline-none bg-white"
               {...props}

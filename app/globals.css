@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --color-gray-50: #f6f7fb;
+  --color-white: #f6f7fb;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -14,7 +16,7 @@
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -25,6 +27,44 @@ select {
   color: #000000 !important;
 }
 
+/* Global label styling - Black color, 16px font size, 10px margin-bottom */
+label {
+  color: #000000 !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  margin-bottom: 10px !important;
+}
+
+/* Global description styling - Black color, 12px font size */
+.form-description,
+p[class*="description"],
+.step-description {
+  color: #000000 !important;
+  font-size: 12px !important;
+}
+
+/* Global form field spacing - 10px margin-bottom */
+.form-field,
+.input-field,
+.select-field,
+.textarea-field,
+.checkbox-field,
+.file-upload-field,
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="password"],
+select,
+textarea {
+  margin-bottom: 10px !important;
+}
+
+/* Form container spacing */
+.space-y-4 > * {
+  margin-bottom: 10px !important;
+}
+
 /* Hide phone input flag image */
 .PhoneInputCountryIcon {
   display: none !important;
@@ -32,4 +72,14 @@ select {
 
 .PhoneInputCountryIconImg {
   display: none !important;
+}
+
+/* Custom form background color */
+.bg-gray-50 {
+  background-color: var(--color-gray-50) !important;
+}
+
+/* Override bg-white for form elements */
+.bg-white {
+  background-color: var(--color-white) !important;
 }

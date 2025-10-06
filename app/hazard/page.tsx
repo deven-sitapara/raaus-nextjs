@@ -8,9 +8,8 @@ import { Textarea } from "@/components/ui/Textarea";
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { FileUpload } from "@/components/ui/FileUpload";
-import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
-import { ComplaintFormData } from "@/types/forms";
+import { HazardFormData } from "@/types/forms";
 import { validationPatterns } from "@/lib/validations/patterns";
 import axios from "axios";
 import Link from "next/link";
@@ -27,13 +26,24 @@ const roleOptions = [
   { value: "Other", label: "Other" },
 ];
 
-export default function ComplaintForm() {
-  const [currentStep, setCurrentStep] = useState(0);
+const stateOptions = [
+  { value: "", label: "- Please Select -" },
+  { value: "ACT", label: "ACT" },
+  { value: "NSW", label: "NSW" },
+  { value: "NT", label: "NT" },
+  { value: "QLD", label: "QLD" },
+  { value: "SA", label: "SA" },
+  { value: "TAS", label: "TAS" },
+  { value: "VIC", label: "VIC" },
+  { value: "WA", label: "WA" },
+];
+
+export default function HazardForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [memberWarning, setMemberWarning] = useState("");
-  const [occurrenceDate, setOccurrenceDate] = useState("");
-  const [occurrenceTime, setOccurrenceTime] = useState("");
+  const [hazardDate, setHazardDate] = useState("");
+  const [hazardTime, setHazardTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
 
@@ -42,9 +52,7 @@ export default function ComplaintForm() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<ComplaintFormData>();
-
-  const wishToRemainAnonymous = watch("wishToRemainAnonymous");
+  } = useForm<HazardFormData>();
 
   // Validate member number
   const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
@@ -67,21 +75,20 @@ export default function ComplaintForm() {
     }
   };
 
-  const onSubmit = async (data: ComplaintFormData) => {
+  const onSubmit = async (data: HazardFormData) => {
     setIsSubmitting(true);
 
     try {
       // Validate required fields
-      if (!occurrenceDate || !occurrenceTime) {
-        alert("Please provide both occurrence date and time");
+      if (!hazardDate || !hazardTime) {
+        alert("Please provide both hazard date and time");
         setIsSubmitting(false);
         return;
       }
 
-      // Convert date and time to ISO 8601 format for Zoho CRM
-      const datetime = new Date(`${occurrenceDate}T${occurrenceTime}`);
+      // Convert date and time to ISO 8601 format
+      const datetime = new Date(`${hazardDate}T${hazardTime}`);
 
-      // Check if date is valid
       if (isNaN(datetime.getTime())) {
         alert("Invalid date or time provided");
         setIsSubmitting(false);
@@ -96,7 +103,7 @@ export default function ComplaintForm() {
       const minutes = String(datetime.getMinutes()).padStart(2, '0');
       const seconds = String(datetime.getSeconds()).padStart(2, '0');
 
-      const fullOccurrenceDate = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+10:00`;
+      const fullHazardDate = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+10:00`;
 
       // Upload attachments if any
       let attachmentLinks: string[] = [];
@@ -115,23 +122,17 @@ export default function ComplaintForm() {
         ...data,
         Name: `${data.Name1} ${data.Last_Name}`, // Required combined name field
         Contact_Phone: contactPhone,
-        Occurrence_Date1: fullOccurrenceDate,
+        Hazard_Date: fullHazardDate,
         attachmentLinks: attachmentLinks.join(", "),
       };
 
-      console.log("Submitting to CRM:", {
-        module: "Occurrence_Management",
+      console.log("Submitting hazard to CRM:", {
+        module: "Hazard_Management", // Assuming similar module structure
         data: crmData,
-        dateDebug: {
-          occurrenceDate,
-          occurrenceTime,
-          combined: `${occurrenceDate}T${occurrenceTime}`,
-          iso: fullOccurrenceDate
-        }
       });
 
       const response = await axios.post("/api/zoho-crm", {
-        module: "Occurrence_Management",
+        module: "Hazard_Management",
         data: crmData,
       });
 
@@ -168,9 +169,9 @@ export default function ComplaintForm() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Complaint Submitted</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Hazard Report Submitted</h2>
           <p className="text-gray-600 mb-6">
-            Your complaint has been successfully submitted to RAAus. You will receive a confirmation email shortly.
+            Your hazard report has been successfully submitted to RAAus. You will receive a confirmation email shortly.
           </p>
           <Button onClick={() => (window.location.href = "/")}>Return to Home</Button>
         </div>
@@ -194,7 +195,7 @@ export default function ComplaintForm() {
           </Link>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Lodge a New Complaint</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Lodge a New Hazard</h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Person Reporting Section */}
@@ -276,6 +277,7 @@ export default function ComplaintForm() {
               <PhoneInput
                 label="Contact Phone"
                 placeholder="0412 345 678"
+                required
                 value={contactPhone}
                 onChange={(value) => setContactPhone(value)}
                 defaultCountry="AU"
@@ -290,37 +292,59 @@ export default function ComplaintForm() {
             )}
           </div>
 
-          {/* Complaint Information Section */}
+          {/* Hazard Information Section */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Complaint Information</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Hazard Information</h2>
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Occurrence Date"
+                  label="Date Hazard Identified"
                   type="date"
                   required
-                  value={occurrenceDate}
-                  onChange={(e) => setOccurrenceDate(e.target.value)}
+                  value={hazardDate}
+                  onChange={(e) => setHazardDate(e.target.value)}
                   min="1875-01-01"
-                  max="2025-10-03"
+                  max="2025-10-06"
                 />
-                <Input
-                  label="Occurrence Time"
-                  type="time"
+                <Select
+                  label="State"
                   required
-                  value={occurrenceTime}
-                  onChange={(e) => setOccurrenceTime(e.target.value)}
+                  options={stateOptions}
+                  {...register("State", { required: true })}
+                  error={errors.State?.message}
                 />
               </div>
 
               <Textarea
-                label="Complaint Details"
+                label="Location of Hazard"
                 required
-                rows={6}
-                {...register("Description_of_Occurrence", { required: "Complaint details are required" })}
-                error={errors.Description_of_Occurrence?.message}
+                rows={3}
+                {...register("Location_of_Hazard", { required: "Location of hazard is required" })}
+                error={errors.Location_of_Hazard?.message}
               />
+
+              <Textarea
+                label="Please Fully Describe the Identified Hazard"
+                required
+                rows={4}
+                {...register("Hazard_Description", { required: "Hazard description is required" })}
+                error={errors.Hazard_Description?.message}
+              />
+
+              <Textarea
+                label="Do You Have Further Suggestions on How to Prevent Similar Occurrences?"
+                rows={3}
+                {...register("Prevention_Suggestions")}
+                error={errors.Prevention_Suggestions?.message}
+              />
+
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-800">
+                  Immediately reportable matters are required to be notified to RAAus via phone as soon as practicable. 
+                  RAAus can be contacted on 02 6280 4700.
+                </p>
+              </div>
 
               <FileUpload
                 label="Attachments"
@@ -329,25 +353,6 @@ export default function ComplaintForm() {
                 maxFiles={5}
                 maxSize={256}
               />
-
-              <Checkbox
-                label="Do you wish to remain anonymous?"
-                {...register("wishToRemainAnonymous")}
-              />
-
-              {wishToRemainAnonymous && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-sm text-blue-800">
-                    Reporter details will remain confidential from the complainant unless otherwise
-                    authorised. Reporters are encouraged to provide their details so that RAAus may
-                    make contact to obtain further information and ascertain validity of the
-                    complaint. Where information is provided anonymously, however, it may not be
-                    possible for us to obtain further important details about the matter reported.
-                    This may result in the inability for RAAus to progress any review of the
-                    complaint provided.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 

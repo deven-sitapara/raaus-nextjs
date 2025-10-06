@@ -102,7 +102,7 @@ export function FormWizard({
           {steps[currentStep].title}
         </h2>
         {steps[currentStep].description && (
-          <p className="text-gray-600 mb-6">{steps[currentStep].description}</p>
+          <p className="text-black mb-6" style={{fontSize: '12px', color: '#000000'}}>{steps[currentStep].description}</p>
         )}
         <div className="space-y-4">{steps[currentStep].fields}</div>
       </div>

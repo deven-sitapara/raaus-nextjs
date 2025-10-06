@@ -10,7 +10,8 @@ export interface DatePickerProps {
   error?: string;
   required?: boolean;
   selected?: Date | null;
-  onChange: (date: Date | null) => void;
+  onChange?: (date: Date | null) => void;
+  onValueChange?: (date: Date | null) => void;
   showTimeSelect?: boolean;
   dateFormat?: string;
   placeholderText?: string;
@@ -27,6 +28,7 @@ const DatePicker = React.forwardRef<ReactDatePicker, DatePickerProps>(
       required,
       selected,
       onChange,
+      onValueChange,
       showTimeSelect = false,
       dateFormat = "MM/dd/yyyy",
       placeholderText,
@@ -48,7 +50,10 @@ const DatePicker = React.forwardRef<ReactDatePicker, DatePickerProps>(
         <ReactDatePicker
           ref={ref}
           selected={selected}
-          onChange={onChange}
+          onChange={(date) => {
+            onChange?.(date);
+            onValueChange?.(date);
+          }}
           showTimeSelect={showTimeSelect}
           dateFormat={dateFormat}
           placeholderText={placeholderText}

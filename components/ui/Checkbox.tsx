@@ -4,12 +4,13 @@ import { cn } from "@/lib/utils/cn";
 export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  onCheckedChange?: (checked: boolean) => void;
 }
 
 const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ className, label, error, ...props }, ref) => {
+  ({ className, label, error, onCheckedChange, ...props }, ref) => {
     return (
-      <div className="w-full">
+      <div className="w-full" style={{marginBottom: '10px'}}>
         <div className="flex items-center">
           <input
             type="checkbox"
@@ -20,10 +21,14 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
               className
             )}
             ref={ref}
+            onChange={(e) => {
+              props.onChange?.(e);
+              onCheckedChange?.(e.target.checked);
+            }}
             {...props}
           />
           {label && (
-            <label htmlFor={props.id} className="ml-2 text-sm text-gray-700">
+            <label htmlFor={props.id} className="ml-2 text-base text-black" style={{fontSize: '16px', color: '#000000'}}>
               {label}
             </label>
           )}
