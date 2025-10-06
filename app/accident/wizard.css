@@ -1,0 +1,188 @@
+/* Wizard Navigation Styles */
+.wizard-container {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.wizard-upper-tab {
+  display: flex;
+  height: 50px;
+  width: 100%;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+  border-collapse: collapse;
+  border: none;
+  overflow: visible;
+  line-height: normal;
+}
+
+.page-nav {
+  font-size: 16px;
+  font-family: 'Roboto', Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  padding: 15px 7px;
+  margin: 3px 1px 3px 1px;
+  background: #00ACD0;
+  color: #FFFFFF;
+  text-align: center;
+  line-height: 20px;
+  flex: 1;
+  vertical-align: middle;
+  border-right: 1px solid rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 50px;
+  box-sizing: border-box;
+}
+
+.page-nav:last-child {
+  border-right: none;
+}
+
+.page-nav.clickable {
+  cursor: pointer;
+}
+
+.page-nav.clickable:hover {
+  background: #0098B8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.page-nav.active {
+  background: #007A94;
+  color: #FFFFFF;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.page-nav.completed {
+  background: #28a745;
+  color: #FFFFFF;
+}
+
+.page-nav.completed:hover {
+  background: #218838;
+}
+
+.page-nav:not(.clickable) {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #cccccc;
+  color: #666666;
+}
+
+.step-number {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  line-height: 24px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.page-nav.active .step-number,
+.page-nav.completed .step-number {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.step-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.wizard-lower-tab {
+  display: flex;
+  height: 15px;
+  background: transparent;
+}
+
+.tab-arrow {
+  flex: 1;
+  position: relative;
+  background: transparent;
+  height: 15px;
+}
+
+.tab-arrow.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 15px solid #007A94;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .page-nav {
+    font-size: 14px;
+    padding: 10px 4px;
+  }
+  
+  .step-number {
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 11px;
+  }
+  
+  .step-title {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .step-title {
+    display: none;
+  }
+  
+  .page-nav {
+    padding: 15px 5px;
+  }
+}
+
+/* Animation for step transitions */
+.wizard-container {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulse effect for active step */
+.page-nav.active {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 122, 148, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 122, 148, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 122, 148, 0);
+  }
+}

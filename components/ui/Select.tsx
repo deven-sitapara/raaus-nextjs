@@ -10,9 +10,9 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, label, error, options, required, ...props }, ref) => {
     return (
-      <div className="w-full">
+      <div className="w-full" style={{marginBottom: '10px'}}>
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-base font-medium text-black mb-1" style={{fontSize: '16px', color: '#000000', marginBottom: '10px'}}>
             {label}
             {required && <span className="text-red-600 ml-1">*</span>}
           </label>

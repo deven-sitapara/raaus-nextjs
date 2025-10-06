@@ -117,27 +117,29 @@ export interface AccidentFormData {
   altitudeType?: "AMSL (Above mean sea level)" | "AGL (Above ground level)" | "Surface" | "Unknown";
 
   // Aircraft Information
-  registrationNumberPrefix: RegistrationPrefix;
-  registrationNumberSuffix: string;
-  make: string;
-  model: string;
-  registrationStatus: RegistrationStatus;
-  type: AircraftType;
-  yearBuilt: string;
-  totalAirframeHours: number;
+  registrationPrefix: RegistrationPrefix;
+  registrationSuffix: string;
   serialNumber: string;
+  aircraftMake: string;
+  aircraftModel: string;
+  registrationStatus: RegistrationStatus;
+  aircraftType: AircraftType;
+  yearBuilt: string;
+  totalAirframeHours?: number;
 
   // Engine Details
   engineMake: string;
   engineModel?: string;
   engineSerial?: string;
   totalEngineHours?: number;
-  totalHoursSinceService?: number;
+  hoursSinceService?: number;
 
   // Propeller Details
   propellerMake?: string;
   propellerModel?: string;
-  propellerSerial?: number;
+  propellerSerial?: string;
+  plbCarried: "Yes" | "No";
+  plbActivated?: boolean;
 
   // Bird/Animal Strike
   didInvolveBirdAnimalStrike?: "Yes" | "No";
@@ -227,6 +229,25 @@ export interface ComplaintFormData {
   Description_of_Occurrence: string;
   attachments?: File[];
   wishToRemainAnonymous: boolean;
+}
+
+// Form 4: Hazard Report Types (Using exact CRM API field names)
+export interface HazardFormData {
+  // Person Reporting
+  Role: RoleType;
+  Member_Number?: string;
+  Name1: string;
+  Last_Name: string;
+  Contact_Phone?: string;
+  Reporter_Email?: string;
+
+  // Hazard Information
+  Hazard_Date: string;
+  State: AustralianState;
+  Location_of_Hazard: string;
+  Hazard_Description: string;
+  Prevention_Suggestions?: string;
+  attachments?: File[];
 }
 
 // Form Configuration
