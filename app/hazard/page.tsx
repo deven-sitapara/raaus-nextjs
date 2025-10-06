@@ -122,17 +122,21 @@ export default function HazardForm() {
         ...data,
         Name: `${data.Name1} ${data.Last_Name}`, // Required combined name field
         Contact_Phone: contactPhone,
-        Hazard_Date: fullHazardDate,
+        Date_Hazard_Identified: fullHazardDate,
+        Please_fully_describe_the_identified_hazard: data.Hazard_Description,
+        Location_of_hazard: data.Location_of_Hazard,
+        Potential_Consequences_of_Hazard: data.Prevention_Suggestions,
+        Hazard: true, // Mark this as a hazard report
         attachmentLinks: attachmentLinks.join(", "),
       };
 
       console.log("Submitting hazard to CRM:", {
-        module: "Hazard_Management", // Assuming similar module structure
+        module: "Occurrence_Management",
         data: crmData,
       });
 
       const response = await axios.post("/api/zoho-crm", {
-        module: "Hazard_Management",
+        module: "Occurrence_Management",
         data: crmData,
       });
 
@@ -307,6 +311,16 @@ export default function HazardForm() {
                   min="1875-01-01"
                   max="2025-10-06"
                 />
+                <Input
+                  label="Time Hazard Identified"
+                  type="time"
+                  required
+                  value={hazardTime}
+                  onChange={(e) => setHazardTime(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Select
                   label="State"
                   required

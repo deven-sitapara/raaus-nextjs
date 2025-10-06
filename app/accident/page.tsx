@@ -347,18 +347,123 @@ export default function AccidentForm() {
 
   const onSubmit = async (data: AccidentFormData) => {
     setIsSubmitting(true);
-    // TODO: Implement form submission
-    console.log("Form data:", data);
-    setIsSubmitting(false);
+
+    try {
+      // Validate required fields
+      if (!occurrenceDate || !occurrenceTime) {
+        alert("Please provide both occurrence date and time");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Convert date and time to ISO 8601 format
+      const datetime = new Date(`${occurrenceDate}T${occurrenceTime}`);
+
+      if (isNaN(datetime.getTime())) {
+        alert("Invalid date or time provided");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Format as YYYY-MM-DDTHH:mm:ss+10:00 (Australia timezone)
+      const year = datetime.getFullYear();
+      const month = String(datetime.getMonth() + 1).padStart(2, '0');
+      const day = String(datetime.getDate()).padStart(2, '0');
+      const hours = String(datetime.getHours()).padStart(2, '0');
+      const minutes = String(datetime.getMinutes()).padStart(2, '0');
+      const seconds = String(datetime.getSeconds()).padStart(2, '0');
+
+      const fullOccurrenceDate = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+10:00`;
+
+      // Upload attachments if any
+      let attachmentLinks: string[] = [];
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput?.files && fileInput.files.length > 0) {
+        const formData = new FormData();
+        Array.from(fileInput.files).forEach((file) => {
+          formData.append("files", file);
+        });
+
+        const uploadResponse = await axios.post("/api/zoho-workdrive", formData);
+        attachmentLinks = uploadResponse.data.links || [];
+      }
+
+      // Submit to Zoho CRM
+      const crmData = {
+        ...data,
+        Name: `${data.firstName} ${data.lastName}`, // Required combined name field
+        Contact_Phone: contactPhone,
+        Pilot_Contact_Phone: pilotContactPhone,
+        Occurrence_Date: fullOccurrenceDate,
+        Accident_Incident: true, // Mark this as an accident/incident report
+        attachmentLinks: attachmentLinks.join(", "),
+      };
+
+      console.log("Submitting Accident/Incident to CRM:", {
+        module: "Occurrence_Management",
+        data: crmData,
+        dateDebug: {
+          occurrenceDate,
+          occurrenceTime,
+          iso: fullOccurrenceDate
+        }
+      });
+
+      const response = await axios.post("/api/zoho-crm", {
+        module: "Occurrence_Management",
+        data: crmData,
+      });
+
+      console.log("CRM Response:", response.data);
+
+      // Only show success if we get a record ID from CRM
+      if (response.data?.data?.[0]?.code === "SUCCESS" && response.data?.data?.[0]?.details?.id) {
+        setSubmitSuccess(true);
+      } else {
+        const errorDetails = response.data?.data?.[0];
+        console.error("CRM Error:", errorDetails);
+        throw new Error(errorDetails?.message || "Failed to create record");
+      }
+    } catch (error: any) {
+      console.error("Submission failed:", error);
+      console.error("Error response:", error.response?.data);
+      const errorMessage = error.response?.data?.data?.[0]?.message || error.message || "Failed to submit form. Please try again.";
+      alert(`Submission Error: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (submitSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Accident/Incident Report Submitted</h2>
+          <p className="text-gray-600 mb-6">
+            Your accident/incident report has been successfully submitted to RAAus. You will receive a confirmation email shortly.
+          </p>
+          <Button onClick={() => (window.location.href = "/")}>Return to Home</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Home Button */}
         <div className="mb-6">
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -569,10 +674,11 @@ export default function AccidentForm() {
                       })}
                     />
 
-                    <DatePicker
+                    <Input
                       label="Date of Birth"
-                      error={errors.pilotDateOfBirth?.message}
+                      type="date"
                       {...register("pilotDateOfBirth")}
+                      error={errors.pilotDateOfBirth?.message}
                     />
                   </div>
 
@@ -609,7 +715,6 @@ export default function AccidentForm() {
                       value={pilotContactPhone}
                       onValueChange={setPilotContactPhone}
                       error={errors.pilotContactPhone?.message}
-                      {...register("pilotContactPhone")}
                     />
 
                     <Input

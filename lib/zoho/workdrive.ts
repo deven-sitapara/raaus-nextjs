@@ -20,10 +20,16 @@ export class ZohoWorkDrive {
 
     for (const file of files) {
       try {
+        // Generate unique filename with timestamp to avoid conflicts
+        const timestamp = Date.now();
+        const fileExt = file.name.substring(file.name.lastIndexOf('.'));
+        const baseName = file.name.substring(0, file.name.lastIndexOf('.'));
+        const uniqueFilename = `${baseName}_${timestamp}${fileExt}`;
+
         const formData = new FormData();
         formData.append("content", file);
         formData.append("parent_id", folderId);
-        formData.append("filename", file.name);
+        formData.append("filename", uniqueFilename);
 
         const response = await axios.post<ZohoWorkDriveUploadResponse>(
           `${this.apiDomain}/workdrive/api/v1/upload`,

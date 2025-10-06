@@ -95,6 +95,7 @@ export default function DefectForm() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [memberWarning, setMemberWarning] = useState("");
   const [defectDate, setDefectDate] = useState("");
+  const [defectTime, setDefectTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
 
@@ -131,14 +132,14 @@ export default function DefectForm() {
 
     try {
       // Validate required fields
-      if (!defectDate) {
-        alert("Please provide the defect identification date");
+      if (!defectDate || !defectTime) {
+        alert("Please provide both defect date and time");
         setIsSubmitting(false);
         return;
       }
 
-      // Convert date to ISO 8601 format for Zoho CRM
-      const datetime = new Date(`${defectDate}T12:00:00`);
+      // Convert date and time to ISO 8601 format for Zoho CRM
+      const datetime = new Date(`${defectDate}T${defectTime}`);
 
       // Check if date is valid
       if (isNaN(datetime.getTime())) {
@@ -160,35 +161,80 @@ export default function DefectForm() {
       // Upload attachments if any
       let attachmentLinks: string[] = [];
       if (attachments && attachments.length > 0) {
+        console.log("Uploading attachments:", attachments.length, "files");
         const formData = new FormData();
         Array.from(attachments).forEach((file) => {
+          console.log("Adding file to FormData:", file.name, file.size);
           formData.append("files", file);
         });
 
+        console.log("Calling WorkDrive API...");
         const uploadResponse = await axios.post("/api/zoho-workdrive", formData);
+        console.log("WorkDrive response:", uploadResponse.data);
         attachmentLinks = uploadResponse.data.links || [];
       }
 
-      // Submit to Zoho CRM
+      // Submit to Zoho CRM - Map form fields to CRM API field names
       const crmData = {
-        ...data,
-        Name: `${data.firstName} ${data.lastName}`, // Required combined name field
+        // Person Reporting
+        Role: data.role,
+        Member_Number: data.memberNumber,
+        Name1: data.firstName,
+        Last_Name: data.lastName,
+        Name: `${data.firstName} ${data.lastName}`,
+        Reporter_Email: data.email,
         Contact_Phone: contactPhone,
+
+        // Defect Information
         Date_Defect_Identified: fullDefectDate,
+        State: data.state,
+        Location_of_aircraft_when_defect_was_found: data.locationOfAircraft,
+        Defective_component: data.defectiveComponent,
+        Provide_description_of_defect: data.defectDescription,
+        Maintainer_Name: data.maintainerName,
+        Maintainer_Member_Number: data.maintainerMemberNumber,
+        Maintainer_Level: data.maintainerLevel,
+        Do_you_have_further_suggestions_on_how_to_PSO: data.preventionSuggestions,
+
+        // Aircraft Information
+        Registration_Number_Prefix: data.registrationNumberPrefix,
+        Registration_Number_Suffix: data.registrationNumberSuffix,
+        Serial_Number: data.serialNumber,
+        Registration_Status: data.registrationStatus,
+        Make: data.make,
+        Model: data.model,
+        Year_Built: data.yearBuilt,
+        Type: data.type,
+
+        // Engine Details
+        Engine_Details: data.engineMake,
+        Engine_model: data.engineModel,
+        Engine_serial: data.engineSerial,
+        Total_Engine_Hours: data.totalEngineHours,
+        Total_Hours_Since_Service: data.totalHoursSinceService,
+
+        // Propeller Details
+        Propeller_make: data.propellerMake,
+        Propeller_model: data.propellerModel,
+        Propeller_serial: data.propellerSerial,
+
+        // Mark as defect and add attachments
+        Defect: true,
         attachmentLinks: attachmentLinks.join(", "),
       };
 
       console.log("Submitting Defect to CRM:", {
-        module: "Defect_Reports",
+        module: "Occurrence_Management",
         data: crmData,
         dateDebug: {
           defectDate,
+          defectTime,
           iso: fullDefectDate
         }
       });
 
       const response = await axios.post("/api/zoho-crm", {
-        module: "Defect_Reports",
+        module: "Occurrence_Management",
         data: crmData,
       });
 
@@ -364,6 +410,14 @@ export default function DefectForm() {
                   onChange={(e) => setDefectDate(e.target.value)}
                   min="1875-01-01"
                   max={new Date().toISOString().split('T')[0]}
+                />
+
+            <Input
+                  label="Time Hazard Identified"
+                  type="time"
+                  required
+                  value={defectTime}
+                  onChange={(e) => setDefectTime(e.target.value)}
                 />
 
                 <Select

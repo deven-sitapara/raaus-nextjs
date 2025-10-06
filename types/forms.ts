@@ -242,11 +242,14 @@ export interface HazardFormData {
   Reporter_Email?: string;
 
   // Hazard Information
-  Hazard_Date: string;
+  Date_Hazard_Identified?: string;
   State: AustralianState;
   Location_of_Hazard: string;
+  Location_of_hazard?: string; // CRM field name
   Hazard_Description: string;
+  Please_fully_describe_the_identified_hazard?: string; // CRM field name
   Prevention_Suggestions?: string;
+  Potential_Consequences_of_Hazard?: string; // CRM field name
   attachments?: File[];
 }
 
