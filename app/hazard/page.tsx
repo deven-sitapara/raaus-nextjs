@@ -41,7 +41,9 @@ const stateOptions = [
 export default function HazardForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [memberWarning, setMemberWarning] = useState("");
+  const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
+  const [memberValidationMessage, setMemberValidationMessage] = useState("");
+  const [isValidatingMember, setIsValidatingMember] = useState(false);
   const [hazardDate, setHazardDate] = useState("");
   const [hazardTime, setHazardTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -54,9 +56,16 @@ export default function HazardForm() {
     formState: { errors },
   } = useForm<HazardFormData>();
 
-  // Validate member number
+  // Validate member number with immediate feedback
   const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
-    if (!memberNumber || !firstName || !lastName) return;
+    // Reset validation if any field is empty
+    if (!memberNumber || !firstName || !lastName) {
+      setMemberValidationStatus("");
+      setMemberValidationMessage("");
+      return;
+    }
+
+    setIsValidatingMember(true);
 
     try {
       const response = await axios.post("/api/validate-member", {
@@ -65,13 +74,19 @@ export default function HazardForm() {
         lastName,
       });
 
-      if (!response.data.valid && response.data.warning) {
-        setMemberWarning(response.data.warning);
+      if (response.data.valid) {
+        setMemberValidationStatus("valid");
+        setMemberValidationMessage("✓ Member Number exists in system");
       } else {
-        setMemberWarning("");
+        setMemberValidationStatus("invalid");
+        setMemberValidationMessage(response.data.warning || "Member Number not found");
       }
     } catch (error) {
       console.error("Member validation failed:", error);
+      setMemberValidationStatus("invalid");
+      setMemberValidationMessage("Unable to validate Member Number");
+    } finally {
+      setIsValidatingMember(false);
     }
   };
 
@@ -217,23 +232,40 @@ export default function HazardForm() {
                 error={errors.Role?.message}
               />
 
-              <Input
-                label="Member Number"
-                type="text"
-                placeholder="123456"
-                {...register("Member_Number", {
-                  pattern: {
-                    value: validationPatterns.memberNumber,
-                    message: "Must be 5-6 digits",
-                  },
-                  onBlur: (e) => {
-                    const firstName = watch("Name1");
-                    const lastName = watch("Last_Name");
-                    validateMember(e.target.value, firstName, lastName);
-                  },
-                })}
-                error={errors.Member_Number?.message}
-              />
+              <div>
+                <Input
+                  label="Member Number"
+                  type="text"
+                  placeholder="123456"
+                  {...register("Member_Number", {
+                    pattern: {
+                      value: validationPatterns.memberNumber,
+                      message: "Must be 5-6 digits",
+                    },
+                    onChange: (e) => {
+                      const memberNumber = e.target.value;
+                      const firstName = watch("Name1");
+                      const lastName = watch("Last_Name");
+                      if (memberNumber && firstName && lastName) {
+                        validateMember(memberNumber, firstName, lastName);
+                      } else {
+                        setMemberValidationStatus("");
+                        setMemberValidationMessage("");
+                      }
+                    },
+                  })}
+                  error={errors.Member_Number?.message}
+                />
+                {isValidatingMember && (
+                  <p className="text-sm text-gray-500 mt-1">Validating...</p>
+                )}
+                {!isValidatingMember && memberValidationStatus === "valid" && (
+                  <p className="text-sm text-green-600 mt-1 font-medium">{memberValidationMessage}</p>
+                )}
+                {!isValidatingMember && memberValidationStatus === "invalid" && (
+                  <p className="text-sm text-red-600 mt-1">{memberValidationMessage}</p>
+                )}
+              </div>
 
               <Input
                 label="First Name"
@@ -245,6 +277,14 @@ export default function HazardForm() {
                   pattern: {
                     value: validationPatterns.name,
                     message: "Must be 3-16 characters, letters, spaces, and hyphens only",
+                  },
+                  onChange: (e) => {
+                    const firstName = e.target.value;
+                    const memberNumber = watch("Member_Number");
+                    const lastName = watch("Last_Name");
+                    if (memberNumber && firstName && lastName) {
+                      validateMember(memberNumber, firstName, lastName);
+                    }
                   },
                 })}
                 error={errors.Name1?.message}
@@ -260,6 +300,14 @@ export default function HazardForm() {
                   pattern: {
                     value: validationPatterns.name,
                     message: "Must be 3-16 characters, letters, spaces, and hyphens only",
+                  },
+                  onChange: (e) => {
+                    const lastName = e.target.value;
+                    const memberNumber = watch("Member_Number");
+                    const firstName = watch("Name1");
+                    if (memberNumber && firstName && lastName) {
+                      validateMember(memberNumber, firstName, lastName);
+                    }
                   },
                 })}
                 error={errors.Last_Name?.message}
@@ -288,12 +336,6 @@ export default function HazardForm() {
                 countries={["AU", "CA", "GB"]}
               />
             </div>
-
-            {memberWarning && (
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                <p className="text-sm text-yellow-800">{memberWarning}</p>
-              </div>
-            )}
           </div>
 
           {/* Hazard Information Section */}

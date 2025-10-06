@@ -296,7 +296,17 @@ export default function AccidentForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [memberWarning, setMemberWarning] = useState("");
+
+  // Person Reporting validation states
+  const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
+  const [memberValidationMessage, setMemberValidationMessage] = useState("");
+  const [isValidatingMember, setIsValidatingMember] = useState(false);
+
+  // Pilot in Command validation states
+  const [pilotValidationStatus, setPilotValidationStatus] = useState<"valid" | "invalid" | "">("");
+  const [pilotValidationMessage, setPilotValidationMessage] = useState("");
+  const [isValidatingPilot, setIsValidatingPilot] = useState(false);
+
   const [contactPhone, setContactPhone] = useState("");
   const [pilotContactPhone, setPilotContactPhone] = useState("");
   const [occurrenceDate, setOccurrenceDate] = useState("");
@@ -312,9 +322,16 @@ export default function AccidentForm() {
     formState: { errors },
   } = useForm<AccidentFormData>();
 
-  // Validate member number
+  // Validate member number (Person Reporting) with immediate feedback
   const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
-    if (!memberNumber || !firstName || !lastName) return;
+    // Reset validation if any field is empty
+    if (!memberNumber || !firstName || !lastName) {
+      setMemberValidationStatus("");
+      setMemberValidationMessage("");
+      return;
+    }
+
+    setIsValidatingMember(true);
 
     try {
       const response = await axios.post("/api/validate-member", {
@@ -323,13 +340,53 @@ export default function AccidentForm() {
         lastName,
       });
 
-      if (!response.data.valid && response.data.warning) {
-        setMemberWarning(response.data.warning);
+      if (response.data.valid) {
+        setMemberValidationStatus("valid");
+        setMemberValidationMessage("✓ Member Number exists in system");
       } else {
-        setMemberWarning("");
+        setMemberValidationStatus("invalid");
+        setMemberValidationMessage(response.data.warning || "Member Number not found");
       }
     } catch (error) {
       console.error("Member validation failed:", error);
+      setMemberValidationStatus("invalid");
+      setMemberValidationMessage("Unable to validate Member Number");
+    } finally {
+      setIsValidatingMember(false);
+    }
+  };
+
+  // Validate pilot member number (Pilot in Command) with immediate feedback
+  const validatePilot = async (memberNumber: string, firstName: string, lastName: string) => {
+    // Reset validation if any field is empty
+    if (!memberNumber || !firstName || !lastName) {
+      setPilotValidationStatus("");
+      setPilotValidationMessage("");
+      return;
+    }
+
+    setIsValidatingPilot(true);
+
+    try {
+      const response = await axios.post("/api/validate-member", {
+        memberNumber,
+        firstName,
+        lastName,
+      });
+
+      if (response.data.valid) {
+        setPilotValidationStatus("valid");
+        setPilotValidationMessage("✓ Member Number exists in system");
+      } else {
+        setPilotValidationStatus("invalid");
+        setPilotValidationMessage(response.data.warning || "Member Number not found");
+      }
+    } catch (error) {
+      console.error("Pilot validation failed:", error);
+      setPilotValidationStatus("invalid");
+      setPilotValidationMessage("Unable to validate Member Number");
+    } finally {
+      setIsValidatingPilot(false);
     }
   };
 
@@ -532,30 +589,44 @@ export default function AccidentForm() {
                       })}
                     />
 
-                    <Input
-                      label="Member Number"
-                      type="number"
-                      placeholder="123456"
-                      error={errors.memberNumber?.message}
-                      {...register("memberNumber", {
-                        minLength: {
-                          value: 5,
-                          message: "Minimum 5 characters required"
-                        },
-                        maxLength: {
-                          value: 6,
-                          message: "Maximum 6 characters allowed"
-                        },
-                        onChange: (e) => {
-                          const memberNumber = e.target.value;
-                          const firstName = watch("firstName");
-                          const lastName = watch("lastName");
-                          if (memberNumber && firstName && lastName) {
-                            validateMember(memberNumber, firstName, lastName);
+                    <div>
+                      <Input
+                        label="Member Number"
+                        type="number"
+                        placeholder="123456"
+                        error={errors.memberNumber?.message}
+                        {...register("memberNumber", {
+                          minLength: {
+                            value: 5,
+                            message: "Minimum 5 characters required"
+                          },
+                          maxLength: {
+                            value: 6,
+                            message: "Maximum 6 characters allowed"
+                          },
+                          onChange: (e) => {
+                            const memberNumber = e.target.value;
+                            const firstName = watch("firstName");
+                            const lastName = watch("lastName");
+                            if (memberNumber && firstName && lastName) {
+                              validateMember(memberNumber, firstName, lastName);
+                            } else {
+                              setMemberValidationStatus("");
+                              setMemberValidationMessage("");
+                            }
                           }
-                        }
-                      })}
-                    />
+                        })}
+                      />
+                      {isValidatingMember && (
+                        <p className="text-sm text-gray-500 mt-1">Validating...</p>
+                      )}
+                      {!isValidatingMember && memberValidationStatus === "valid" && (
+                        <p className="text-sm text-green-600 mt-1 font-medium">{memberValidationMessage}</p>
+                      )}
+                      {!isValidatingMember && memberValidationStatus === "invalid" && (
+                        <p className="text-sm text-red-600 mt-1">{memberValidationMessage}</p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -643,36 +714,52 @@ export default function AccidentForm() {
                       error={errors.contactPhone?.message}
                     />
                   </div>
-
-                  {memberWarning && (
-                    <div className="mt-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-                      {memberWarning}
-                    </div>
-                  )}
                 </div>
 
                 {/* Pilot in Command Section */}
                 <div className="border-b border-gray-200 pb-8">
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Pilot in Command</h2>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input
-                      label="Member Number"
-                      type="number"
-                      placeholder="123456"
-                      helpText="Must be 4 digits. If number is less, add 0's to front of number. E.g. 349 becomes 0349. If the pilot was not a member, leave blank."
-                      error={errors.pilotMemberNumber?.message}
-                      {...register("pilotMemberNumber", {
-                        minLength: {
-                          value: 5,
-                          message: "minimum 5 characters length"
-                        },
-                        maxLength: {
-                          value: 6,
-                          message: "Maximum 6 characters allowed"
-                        }
-                      })}
-                    />
+                    <div>
+                      <Input
+                        label="Member Number"
+                        type="number"
+                        placeholder="123456"
+                        helpText="Must be 4 digits. If number is less, add 0's to front of number. E.g. 349 becomes 0349. If the pilot was not a member, leave blank."
+                        error={errors.pilotMemberNumber?.message}
+                        {...register("pilotMemberNumber", {
+                          minLength: {
+                            value: 5,
+                            message: "minimum 5 characters length"
+                          },
+                          maxLength: {
+                            value: 6,
+                            message: "Maximum 6 characters allowed"
+                          },
+                          onChange: (e) => {
+                            const memberNumber = e.target.value;
+                            const firstName = watch("pilotFirstName");
+                            const lastName = watch("pilotLastName");
+                            if (memberNumber && firstName && lastName) {
+                              validatePilot(memberNumber, firstName, lastName);
+                            } else {
+                              setPilotValidationStatus("");
+                              setPilotValidationMessage("");
+                            }
+                          }
+                        })}
+                      />
+                      {isValidatingPilot && (
+                        <p className="text-sm text-gray-500 mt-1">Validating...</p>
+                      )}
+                      {!isValidatingPilot && pilotValidationStatus === "valid" && (
+                        <p className="text-sm text-green-600 mt-1 font-medium">{pilotValidationMessage}</p>
+                      )}
+                      {!isValidatingPilot && pilotValidationStatus === "invalid" && (
+                        <p className="text-sm text-red-600 mt-1">{pilotValidationMessage}</p>
+                      )}
+                    </div>
 
                     <Input
                       label="Date of Birth"
@@ -691,6 +778,14 @@ export default function AccidentForm() {
                         pattern: {
                           value: /^[a-zA-Z -]{3,16}$/,
                           message: "Entered value is invalid"
+                        },
+                        onChange: (e) => {
+                          const firstName = e.target.value;
+                          const memberNumber = watch("pilotMemberNumber");
+                          const lastName = watch("pilotLastName");
+                          if (memberNumber && firstName && lastName) {
+                            validatePilot(memberNumber, firstName, lastName);
+                          }
                         }
                       })}
                     />
@@ -703,6 +798,14 @@ export default function AccidentForm() {
                         pattern: {
                           value: /^[a-zA-Z -]{3,16}$/,
                           message: "Entered value is invalid"
+                        },
+                        onChange: (e) => {
+                          const lastName = e.target.value;
+                          const memberNumber = watch("pilotMemberNumber");
+                          const firstName = watch("pilotFirstName");
+                          if (memberNumber && firstName && lastName) {
+                            validatePilot(memberNumber, firstName, lastName);
+                          }
                         }
                       })}
                     />

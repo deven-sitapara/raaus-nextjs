@@ -93,7 +93,9 @@ const yearOptions = Array.from({ length: currentYear - 1934 }, (_, i) => {
 export default function DefectForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [memberWarning, setMemberWarning] = useState("");
+  const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
+  const [memberValidationMessage, setMemberValidationMessage] = useState("");
+  const [isValidatingMember, setIsValidatingMember] = useState(false);
   const [defectDate, setDefectDate] = useState("");
   const [defectTime, setDefectTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -106,9 +108,16 @@ export default function DefectForm() {
     formState: { errors },
   } = useForm<DefectFormData>();
 
-  // Validate member number
+  // Validate member number with immediate feedback
   const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
-    if (!memberNumber || !firstName || !lastName) return;
+    // Reset validation if any field is empty
+    if (!memberNumber || !firstName || !lastName) {
+      setMemberValidationStatus("");
+      setMemberValidationMessage("");
+      return;
+    }
+
+    setIsValidatingMember(true);
 
     try {
       const response = await axios.post("/api/validate-member", {
@@ -117,13 +126,19 @@ export default function DefectForm() {
         lastName,
       });
 
-      if (!response.data.valid && response.data.warning) {
-        setMemberWarning(response.data.warning);
+      if (response.data.valid) {
+        setMemberValidationStatus("valid");
+        setMemberValidationMessage("✓ Member Number exists in system");
       } else {
-        setMemberWarning("");
+        setMemberValidationStatus("invalid");
+        setMemberValidationMessage(response.data.warning || "Member Number not found");
       }
     } catch (error) {
       console.error("Member validation failed:", error);
+      setMemberValidationStatus("invalid");
+      setMemberValidationMessage("Unable to validate Member Number");
+    } finally {
+      setIsValidatingMember(false);
     }
   };
 
@@ -315,23 +330,40 @@ export default function DefectForm() {
                 error={errors.role?.message}
               />
 
-              <Input
-                label="Member Number"
-                type="text"
-                placeholder="123456"
-                {...register("memberNumber", {
-                  pattern: {
-                    value: validationPatterns.memberNumber,
-                    message: "Must be 5-6 digits",
-                  },
-                  onBlur: (e) => {
-                    const firstName = watch("firstName");
-                    const lastName = watch("lastName");
-                    validateMember(e.target.value, firstName, lastName);
-                  },
-                })}
-                error={errors.memberNumber?.message}
-              />
+              <div>
+                <Input
+                  label="Member Number"
+                  type="text"
+                  placeholder="123456"
+                  {...register("memberNumber", {
+                    pattern: {
+                      value: validationPatterns.memberNumber,
+                      message: "Must be 5-6 digits",
+                    },
+                    onChange: (e) => {
+                      const memberNumber = e.target.value;
+                      const firstName = watch("firstName");
+                      const lastName = watch("lastName");
+                      if (memberNumber && firstName && lastName) {
+                        validateMember(memberNumber, firstName, lastName);
+                      } else {
+                        setMemberValidationStatus("");
+                        setMemberValidationMessage("");
+                      }
+                    },
+                  })}
+                  error={errors.memberNumber?.message}
+                />
+                {isValidatingMember && (
+                  <p className="text-sm text-gray-500 mt-1">Validating...</p>
+                )}
+                {!isValidatingMember && memberValidationStatus === "valid" && (
+                  <p className="text-sm text-green-600 mt-1 font-medium">{memberValidationMessage}</p>
+                )}
+                {!isValidatingMember && memberValidationStatus === "invalid" && (
+                  <p className="text-sm text-red-600 mt-1">{memberValidationMessage}</p>
+                )}
+              </div>
 
               <Input
                 label="First Name"
@@ -343,6 +375,14 @@ export default function DefectForm() {
                   pattern: {
                     value: validationPatterns.name,
                     message: "Must be 3-16 characters, letters, spaces, and hyphens only",
+                  },
+                  onChange: (e) => {
+                    const firstName = e.target.value;
+                    const memberNumber = watch("memberNumber");
+                    const lastName = watch("lastName");
+                    if (memberNumber && firstName && lastName) {
+                      validateMember(memberNumber, firstName, lastName);
+                    }
                   },
                 })}
                 error={errors.firstName?.message}
@@ -358,6 +398,14 @@ export default function DefectForm() {
                   pattern: {
                     value: validationPatterns.name,
                     message: "Must be 3-16 characters, letters, spaces, and hyphens only",
+                  },
+                  onChange: (e) => {
+                    const lastName = e.target.value;
+                    const memberNumber = watch("memberNumber");
+                    const firstName = watch("firstName");
+                    if (memberNumber && firstName && lastName) {
+                      validateMember(memberNumber, firstName, lastName);
+                    }
                   },
                 })}
                 error={errors.lastName?.message}
@@ -386,12 +434,6 @@ export default function DefectForm() {
                 countries={["AU", "CA", "GB"]}
               />
             </div>
-
-            {memberWarning && (
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                <p className="text-sm text-yellow-800">{memberWarning}</p>
-              </div>
-            )}
           </div>
 
           {/* Defect Information Section */}
