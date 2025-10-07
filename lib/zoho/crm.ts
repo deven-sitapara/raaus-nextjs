@@ -3,7 +3,7 @@ import { ZohoAuth } from "./auth";
 import { ZohoCRMResponse } from "@/types/forms";
 
 export class ZohoCRM {
-  private static apiDomain = process.env.ZOHO_CRM_API_DOMAIN || "https://www.zohoapis.com";
+  private static apiDomain = process.env.ZOHO_CRM_API_DOMAIN || "https://www.zohoapis.com.au";
 
   /**
    * Submit a record to Zoho CRM
@@ -29,11 +29,74 @@ export class ZohoCRM {
     } catch (error: any) {
       console.error("Failed to create CRM record:", error);
       if (error.response) {
-        console.error("Response data:", error.response.data);
+        console.error("Response data:", JSON.stringify(error.response.data, null, 2));
         console.error("Response status:", error.response.status);
+        console.error("Response headers:", error.response.headers);
+        
+        // Extract specific error message from Zoho CRM response
+        if (error.response.data && error.response.data.data && error.response.data.data.length > 0) {
+          const errorData = error.response.data.data[0];
+          const errorCode = errorData.code || 'UNKNOWN_ERROR';
+          const errorMessage = errorData.message || 'No error message provided';
+          const errorDetails = errorData.details || {};
+          
+          throw new Error(`CRM API error: ${errorCode} - ${errorMessage}\nError details: ${JSON.stringify(errorDetails)}`);
+        }
       }
-      throw new Error("Failed to submit to Zoho CRM");
+      throw new Error(`Failed to submit to Zoho CRM: ${error.message}`);
     }
+  }
+
+  /**
+   * Fetch OccurrenceId from a CRM record with retry logic
+   * This is needed because OccurrenceId is populated server-side after record creation
+   */
+  static async fetchOccurrenceId(
+    module: string, 
+    recordId: string, 
+    retries: number = 5, 
+    sleepMs: number = 2000
+  ): Promise<string | null> {
+    const accessToken = await ZohoAuth.getAccessToken("crm");
+
+    for (let i = 0; i <= retries; i++) {
+      try {
+        const response = await axios.get(
+          `${this.apiDomain}/crm/v2/${module}/${recordId}?fields=OccurrenceId`,
+          {
+            headers: {
+              Authorization: `Zoho-oauthtoken ${accessToken}`,
+            },
+          }
+        );
+
+        const occurrenceId = response.data.data?.[0]?.OccurrenceId;
+        if (occurrenceId && occurrenceId.trim()) {
+          console.log(`OccurrenceId fetched: ${occurrenceId}`);
+          return occurrenceId.trim();
+        }
+
+        if (i < retries) {
+          console.log(`OccurrenceId not yet populated, retrying in ${sleepMs}ms... (attempt ${i + 1}/${retries})`);
+          await this.sleep(sleepMs);
+        }
+      } catch (error: any) {
+        console.error(`Failed to fetch OccurrenceId (attempt ${i + 1}):`, error);
+        if (i < retries) {
+          await this.sleep(sleepMs);
+        }
+      }
+    }
+
+    console.error(`OccurrenceId not found after ${retries} retries for record ${recordId}`);
+    return null;
+  }
+
+  /**
+   * Helper function to sleep/delay execution
+   */
+  private static sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**

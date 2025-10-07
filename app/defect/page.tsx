@@ -134,7 +134,6 @@ export default function DefectForm() {
         setMemberValidationMessage(response.data.warning || "Member Number not found");
       }
     } catch (error) {
-      console.error("Member validation failed:", error);
       setMemberValidationStatus("invalid");
       setMemberValidationMessage("Unable to validate Member Number");
     } finally {
@@ -153,120 +152,100 @@ export default function DefectForm() {
         return;
       }
 
-      // Convert date and time to ISO 8601 format for Zoho CRM
+      // Convert date and time to ISO format
       const datetime = new Date(`${defectDate}T${defectTime}`);
-
-      // Check if date is valid
       if (isNaN(datetime.getTime())) {
-        alert("Invalid date provided");
+        alert("Invalid date or time provided");
         setIsSubmitting(false);
         return;
       }
 
-      // Format as YYYY-MM-DDTHH:mm:ss+10:00 (Australia timezone)
-      const year = datetime.getFullYear();
-      const month = String(datetime.getMonth() + 1).padStart(2, '0');
-      const day = String(datetime.getDate()).padStart(2, '0');
-      const hours = String(datetime.getHours()).padStart(2, '0');
-      const minutes = String(datetime.getMinutes()).padStart(2, '0');
-      const seconds = String(datetime.getSeconds()).padStart(2, '0');
-
-      const fullDefectDate = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+10:00`;
-
-      // Upload attachments if any
-      let attachmentLinks: string[] = [];
-      if (attachments && attachments.length > 0) {
-        console.log("Uploading attachments:", attachments.length, "files");
-        const formData = new FormData();
-        Array.from(attachments).forEach((file) => {
-          console.log("Adding file to FormData:", file.name, file.size);
-          formData.append("files", file);
-        });
-
-        console.log("Calling WorkDrive API...");
-        const uploadResponse = await axios.post("/api/zoho-workdrive", formData);
-        console.log("WorkDrive response:", uploadResponse.data);
-        attachmentLinks = uploadResponse.data.links || [];
-      }
-
-      // Submit to Zoho CRM - Map form fields to CRM API field names
-      const crmData = {
-        // Person Reporting
+      // Prepare form data for unified API
+      const formData = new FormData();
+      
+      // Add form type and data
+      formData.append('formType', 'defect');
+      
+      const submissionData = {
+        // Map to CRM field names for consistency
         Role: data.role,
-        Member_Number: data.memberNumber,
         Name1: data.firstName,
-        Last_Name: data.lastName,
-        Name: `${data.firstName} ${data.lastName}`,
+        Member_Number: data.memberNumber,
+        Reporter_First_Name: data.firstName,
         Reporter_Email: data.email,
         Contact_Phone: contactPhone,
-
-        // Defect Information
-        Date_Defect_Identified: fullDefectDate,
-        State: data.state,
+        Last_Name: data.lastName,
+        Occurrence_Date1: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
         Location_of_aircraft_when_defect_was_found: data.locationOfAircraft,
+        Location: data.locationOfAircraft,
+        State: data.state,
+        Description_of_Occurrence: data.defectDescription,
         Defective_component: data.defectiveComponent,
         Provide_description_of_defect: data.defectDescription,
+        
+        // Maintainer Information
         Maintainer_Name: data.maintainerName,
         Maintainer_Member_Number: data.maintainerMemberNumber,
         Maintainer_Level: data.maintainerLevel,
         Do_you_have_further_suggestions_on_how_to_PSO: data.preventionSuggestions,
-
+        
         // Aircraft Information
-        Registration_Number_Prefix: data.registrationNumberPrefix,
-        Registration_Number_Suffix: data.registrationNumberSuffix,
-        Serial_Number: data.serialNumber,
-        Registration_Status: data.registrationStatus,
+        Registration_number: data.registrationNumberPrefix && data.registrationNumberSuffix ? 
+          `${data.registrationNumberPrefix}-${data.registrationNumberSuffix}` : '',
+        Registration_status: data.registrationStatus,
+        Serial_number: data.serialNumber,
         Make: data.make,
         Model: data.model,
-        Year_Built: data.yearBuilt,
-        Type: data.type,
-
+        Type1: data.type,
+        Year_Built1: data.yearBuilt,
+        
         // Engine Details
-        Engine_Details: data.engineMake,
         Engine_model: data.engineModel,
         Engine_serial: data.engineSerial,
-        Total_Engine_Hours: data.totalEngineHours,
-        Total_Hours_Since_Service: data.totalHoursSinceService,
-
+        Total_engine_hours: data.totalEngineHours,
+        Total_hours_since_service: data.totalHoursSinceService,
+        
         // Propeller Details
         Propeller_make: data.propellerMake,
         Propeller_model: data.propellerModel,
         Propeller_serial: data.propellerSerial,
-
-        // Mark as defect and add attachments
-        Defect: true,
-        attachmentLinks: attachmentLinks.join(", "),
+        
+        // Legacy aliases for backward compatibility (only non-conflicting keys)
+        contactPhone: contactPhone,
+        dateDefectIdentified: datetime.toISOString().slice(0, 19),
       };
+      
+      formData.append('formData', JSON.stringify(submissionData));
 
-      console.log("Submitting Defect to CRM:", {
-        module: "Occurrence_Management",
-        data: crmData,
-        dateDebug: {
-          defectDate,
-          defectTime,
-          iso: fullDefectDate
-        }
+      // Add attachments if any
+      if (attachments && attachments.length > 0) {
+        Array.from(attachments).forEach((file, index) => {
+          formData.append(`file_${index}`, file);
+        });
+      }
+
+      // Submit to unified API endpoint
+      const response = await axios.post("/api/submit-form", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      const response = await axios.post("/api/zoho-crm", {
-        module: "Occurrence_Management",
-        data: crmData,
-      });
-
-      console.log("CRM Response:", response.data);
-
-      // Only show success if we get a record ID from CRM
-      if (response.data?.data?.[0]?.code === "SUCCESS" && response.data?.data?.[0]?.details?.id) {
+      if (response.data.success) {
         setSubmitSuccess(true);
       } else {
-        const errorDetails = response.data?.data?.[0];
-        console.error("CRM Error:", errorDetails);
-        throw new Error(errorDetails?.message || "Failed to create record");
+        throw new Error(response.data.error || "Failed to process defect report");
       }
     } catch (error: any) {
-      console.error("Submission failed:", error);
-      console.error("Error response:", error.response?.data);
-      const errorMessage = error.response?.data?.data?.[0]?.message || error.message || "Failed to submit form. Please try again.";
+      let errorMessage = "Failed to submit form. Please try again.";
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.data?.[0]?.message) {
+        errorMessage = error.response.data.data[0].message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       alert(`Submission Error: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
@@ -713,6 +692,7 @@ export default function DefectForm() {
             <FileUpload
               label="Upload"
               description="Upload photos and videos as evidence. Additionally include engine, propeller and airframe maintenance inspection documentation from logbooks as it pertains to the report."
+              multiple
               onChange={setAttachments}
               maxFiles={5}
               maxSize={256}

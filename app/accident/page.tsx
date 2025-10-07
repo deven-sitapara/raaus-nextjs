@@ -313,6 +313,7 @@ export default function AccidentForm() {
   const [occurrenceTime, setOccurrenceTime] = useState("");
   const [didInvolveBirdAnimalStrike, setDidInvolveBirdAnimalStrike] = useState(false);
   const [didInvolveNearMiss, setDidInvolveNearMiss] = useState(false);
+  const [attachments, setAttachments] = useState<FileList | null>(null);
 
   const {
     register,
@@ -321,6 +322,12 @@ export default function AccidentForm() {
     setValue,
     formState: { errors },
   } = useForm<AccidentFormData>();
+
+  // Watch the role field to conditionally show/hide Pilot in Command section
+  const selectedRole = watch("role");
+  
+  // Watch the type of operation field to conditionally show flight training school
+  const selectedTypeOfOperation = watch("Type_of_operation");
 
   // Validate member number (Person Reporting) with immediate feedback
   const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
@@ -348,7 +355,6 @@ export default function AccidentForm() {
         setMemberValidationMessage(response.data.warning || "Member Number not found");
       }
     } catch (error) {
-      console.error("Member validation failed:", error);
       setMemberValidationStatus("invalid");
       setMemberValidationMessage("Unable to validate Member Number");
     } finally {
@@ -382,7 +388,6 @@ export default function AccidentForm() {
         setPilotValidationMessage(response.data.warning || "Member Number not found");
       }
     } catch (error) {
-      console.error("Pilot validation failed:", error);
       setPilotValidationStatus("invalid");
       setPilotValidationMessage("Unable to validate Member Number");
     } finally {
@@ -413,78 +418,58 @@ export default function AccidentForm() {
         return;
       }
 
-      // Convert date and time to ISO 8601 format
+      // Convert date and time to ISO format
       const datetime = new Date(`${occurrenceDate}T${occurrenceTime}`);
-
       if (isNaN(datetime.getTime())) {
         alert("Invalid date or time provided");
         setIsSubmitting(false);
         return;
       }
 
-      // Format as YYYY-MM-DDTHH:mm:ss+10:00 (Australia timezone)
-      const year = datetime.getFullYear();
-      const month = String(datetime.getMonth() + 1).padStart(2, '0');
-      const day = String(datetime.getDate()).padStart(2, '0');
-      const hours = String(datetime.getHours()).padStart(2, '0');
-      const minutes = String(datetime.getMinutes()).padStart(2, '0');
-      const seconds = String(datetime.getSeconds()).padStart(2, '0');
+      // Prepare form data for unified API
+      const formData = new FormData();
+      
+      // Add form type and data
+      formData.append('formType', 'accident');
+      
+      const submissionData = {
+        ...data,
+        contactPhone: contactPhone,
+        pilotContactPhone: pilotContactPhone,
+        occurrenceDate: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
+      };
+      
+      formData.append('formData', JSON.stringify(submissionData));
 
-      const fullOccurrenceDate = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+10:00`;
-
-      // Upload attachments if any
-      let attachmentLinks: string[] = [];
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      if (fileInput?.files && fileInput.files.length > 0) {
-        const formData = new FormData();
-        Array.from(fileInput.files).forEach((file) => {
-          formData.append("files", file);
+      // Add attachments if any
+      if (attachments && attachments.length > 0) {
+        Array.from(attachments).forEach((file, index) => {
+          formData.append(`file_${index}`, file);
         });
-
-        const uploadResponse = await axios.post("/api/zoho-workdrive", formData);
-        attachmentLinks = uploadResponse.data.links || [];
       }
 
-      // Submit to Zoho CRM
-      const crmData = {
-        ...data,
-        Name: `${data.firstName} ${data.lastName}`, // Required combined name field
-        Contact_Phone: contactPhone,
-        Pilot_Contact_Phone: pilotContactPhone,
-        Occurrence_Date: fullOccurrenceDate,
-        Accident_Incident: true, // Mark this as an accident/incident report
-        attachmentLinks: attachmentLinks.join(", "),
-      };
-
-      console.log("Submitting Accident/Incident to CRM:", {
-        module: "Occurrence_Management",
-        data: crmData,
-        dateDebug: {
-          occurrenceDate,
-          occurrenceTime,
-          iso: fullOccurrenceDate
-        }
+      // Submit to unified API endpoint
+      const response = await axios.post("/api/submit-form", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      const response = await axios.post("/api/zoho-crm", {
-        module: "Occurrence_Management",
-        data: crmData,
-      });
-
-      console.log("CRM Response:", response.data);
-
-      // Only show success if we get a record ID from CRM
-      if (response.data?.data?.[0]?.code === "SUCCESS" && response.data?.data?.[0]?.details?.id) {
+      if (response.data.success) {
         setSubmitSuccess(true);
       } else {
-        const errorDetails = response.data?.data?.[0];
-        console.error("CRM Error:", errorDetails);
-        throw new Error(errorDetails?.message || "Failed to create record");
+        throw new Error(response.data.error || "Failed to process accident report");
       }
     } catch (error: any) {
-      console.error("Submission failed:", error);
-      console.error("Error response:", error.response?.data);
-      const errorMessage = error.response?.data?.data?.[0]?.message || error.message || "Failed to submit form. Please try again.";
+      let errorMessage = "Failed to submit form. Please try again.";
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.data?.[0]?.message) {
+        errorMessage = error.response.data.data[0].message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       alert(`Submission Error: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
@@ -716,124 +701,126 @@ export default function AccidentForm() {
                   </div>
                 </div>
 
-                {/* Pilot in Command Section */}
-                <div className="border-b border-gray-200 pb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Pilot in Command</h2>
+                {/* Pilot in Command Section - Hidden when Person Reporting role is "Pilot in Command" */}
+                {selectedRole !== "Pilot in Command" && (
+                  <div className="border-b border-gray-200 pb-8">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-6">Pilot in Command</h2>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <Input
+                          label="Member Number"
+                          type="number"
+                          placeholder="123456"
+                          helpText="Must be 4 digits. If number is less, add 0's to front of number. E.g. 349 becomes 0349. If the pilot was not a member, leave blank."
+                          error={errors.PIC_Member_Number?.message}
+                          {...register("PIC_Member_Number", {
+                            minLength: {
+                              value: 5,
+                              message: "minimum 5 characters length"
+                            },
+                            maxLength: {
+                              value: 6,
+                              message: "Maximum 6 characters allowed"
+                            },
+                            onChange: (e) => {
+                              const memberNumber = e.target.value;
+                              const firstName = watch("PIC_Name");
+                              const lastName = watch("PIC_Last_Name");
+                              if (memberNumber && firstName && lastName) {
+                                validatePilot(memberNumber as string, firstName as string, lastName as string);
+                              } else {
+                                setPilotValidationStatus("");
+                                setPilotValidationMessage("");
+                              }
+                            }
+                          })}
+                        />
+                        {isValidatingPilot && (
+                          <p className="text-sm text-gray-500 mt-1">Validating...</p>
+                        )}
+                        {!isValidatingPilot && pilotValidationStatus === "valid" && (
+                          <p className="text-sm text-green-600 mt-1 font-medium">{pilotValidationMessage}</p>
+                        )}
+                        {!isValidatingPilot && pilotValidationStatus === "invalid" && (
+                          <p className="text-sm text-red-600 mt-1">{pilotValidationMessage}</p>
+                        )}
+                      </div>
+
                       <Input
-                        label="Member Number"
-                        type="number"
-                        placeholder="123456"
-                        helpText="Must be 4 digits. If number is less, add 0's to front of number. E.g. 349 becomes 0349. If the pilot was not a member, leave blank."
-                        error={errors.pilotMemberNumber?.message}
-                        {...register("pilotMemberNumber", {
-                          minLength: {
-                            value: 5,
-                            message: "minimum 5 characters length"
-                          },
-                          maxLength: {
-                            value: 6,
-                            message: "Maximum 6 characters allowed"
+                        label="Date of Birth"
+                        type="date"
+                        {...register("Date_of_Birth")}
+                        error={errors.Date_of_Birth?.message}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                      <Input
+                        label="First Name"
+                        placeholder="John"
+                        error={errors.PIC_Name?.message}
+                        {...register("PIC_Name", {
+                          pattern: {
+                            value: /^[a-zA-Z -]{3,16}$/,
+                            message: "Entered value is invalid"
                           },
                           onChange: (e) => {
-                            const memberNumber = e.target.value;
-                            const firstName = watch("pilotFirstName");
-                            const lastName = watch("pilotLastName");
+                            const firstName = e.target.value;
+                            const memberNumber = watch("PIC_Member_Number");
+                            const lastName = watch("PIC_Last_Name");
                             if (memberNumber && firstName && lastName) {
-                              validatePilot(memberNumber, firstName, lastName);
-                            } else {
-                              setPilotValidationStatus("");
-                              setPilotValidationMessage("");
+                              validatePilot(memberNumber as string, firstName as string, lastName as string);
                             }
                           }
                         })}
                       />
-                      {isValidatingPilot && (
-                        <p className="text-sm text-gray-500 mt-1">Validating...</p>
-                      )}
-                      {!isValidatingPilot && pilotValidationStatus === "valid" && (
-                        <p className="text-sm text-green-600 mt-1 font-medium">{pilotValidationMessage}</p>
-                      )}
-                      {!isValidatingPilot && pilotValidationStatus === "invalid" && (
-                        <p className="text-sm text-red-600 mt-1">{pilotValidationMessage}</p>
-                      )}
+
+                      <Input
+                        label="Last Name"
+                        placeholder="Smith"
+                        error={errors.PIC_Last_Name?.message}
+                        {...register("PIC_Last_Name", {
+                          pattern: {
+                            value: /^[a-zA-Z -]{3,16}$/,
+                            message: "Entered value is invalid"
+                          },
+                          onChange: (e) => {
+                            const lastName = e.target.value;
+                            const memberNumber = watch("PIC_Member_Number");
+                            const firstName = watch("PIC_Name");
+                            if (memberNumber && firstName && lastName) {
+                              validatePilot(memberNumber as string, firstName as string, lastName as string);
+                            }
+                          }
+                        })}
+                      />
                     </div>
 
-                    <Input
-                      label="Date of Birth"
-                      type="date"
-                      {...register("pilotDateOfBirth")}
-                      error={errors.pilotDateOfBirth?.message}
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                      <PhoneInput
+                        label="Contact Phone"
+                        placeholder="0412 345 678"
+                        value={pilotContactPhone}
+                        onValueChange={setPilotContactPhone}
+                        error={errors.PIC_Contact_Phone?.message}
+                      />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    <Input
-                      label="First Name"
-                      placeholder="John"
-                      error={errors.pilotFirstName?.message}
-                      {...register("pilotFirstName", {
-                        pattern: {
-                          value: /^[a-zA-Z -]{3,16}$/,
-                          message: "Entered value is invalid"
-                        },
-                        onChange: (e) => {
-                          const firstName = e.target.value;
-                          const memberNumber = watch("pilotMemberNumber");
-                          const lastName = watch("pilotLastName");
-                          if (memberNumber && firstName && lastName) {
-                            validatePilot(memberNumber, firstName, lastName);
+                      <Input
+                        label="Email"
+                        type="email"
+                        placeholder="example@domain.com"
+                        error={errors.PIC_Email?.message}
+                        {...register("PIC_Email", {
+                          pattern: {
+                            value: validationPatterns.email,
+                            message: "Email is invalid"
                           }
-                        }
-                      })}
-                    />
-
-                    <Input
-                      label="Last Name"
-                      placeholder="Smith"
-                      error={errors.pilotLastName?.message}
-                      {...register("pilotLastName", {
-                        pattern: {
-                          value: /^[a-zA-Z -]{3,16}$/,
-                          message: "Entered value is invalid"
-                        },
-                        onChange: (e) => {
-                          const lastName = e.target.value;
-                          const memberNumber = watch("pilotMemberNumber");
-                          const firstName = watch("pilotFirstName");
-                          if (memberNumber && firstName && lastName) {
-                            validatePilot(memberNumber, firstName, lastName);
-                          }
-                        }
-                      })}
-                    />
+                        })}
+                      />
+                    </div>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    <PhoneInput
-                      label="Contact Phone"
-                      placeholder="0412 345 678"
-                      value={pilotContactPhone}
-                      onValueChange={setPilotContactPhone}
-                      error={errors.pilotContactPhone?.message}
-                    />
-
-                    <Input
-                      label="Email"
-                      type="email"
-                      placeholder="example@domain.com"
-                      error={errors.pilotEmail?.message}
-                      {...register("pilotEmail", {
-                        pattern: {
-                          value: validationPatterns.email,
-                          message: "Email is invalid"
-                        }
-                      })}
-                    />
-                  </div>
-                </div>
+                )}
 
                 {/* Flying Hours Section */}
                 <div>
@@ -845,15 +832,15 @@ export default function AccidentForm() {
                       type="number"
                       placeholder="45.2"
                       step="0.1"
-                      error={errors.hoursLast90Days?.message}
-                      {...register("hoursLast90Days")}
+                      error={errors.Hours_last_90_days?.message}
+                      {...register("Hours_last_90_days")}
                     />
 
                     <Input
                       label="Total Flying Hours"
                       placeholder="5280.7"
-                      error={errors.totalFlyingHours?.message}
-                      {...register("totalFlyingHours")}
+                      error={errors.Total_flying_hours?.message}
+                      {...register("Total_flying_hours")}
                     />
                   </div>
 
@@ -861,18 +848,15 @@ export default function AccidentForm() {
                     <Input
                       label="Hours on Type"
                       placeholder="850.3"
-                      error={errors.hoursOnType?.message}
-                      {...register("hoursOnType")}
+                      error={errors.Hours_on_type?.message}
+                      {...register("Hours_on_type")}
                     />
 
                     <Input
                       label="Hours on Type Last 90 Days"
-                      required
                       placeholder="25.5"
-                      error={errors.hoursOnTypeLast90Days?.message}
-                      {...register("hoursOnTypeLast90Days", {
-                        required: "This field cannot be blank."
-                      })}
+                      error={errors.Hours_on_type_last_90_days?.message}
+                      {...register("Hours_on_type_last_90_days")}
                     />
                   </div>
                 </div>
@@ -979,8 +963,8 @@ export default function AccidentForm() {
                       label="Damage to Aircraft"
                       required
                       options={damageOptions}
-                      error={errors.damageToAircraft?.message}
-                      {...register("damageToAircraft", { 
+                      error={errors.Damage_to_aircraft?.message}
+                      {...register("Damage_to_aircraft", { 
                         required: "This field cannot be blank." 
                       })}
                     />
@@ -989,8 +973,8 @@ export default function AccidentForm() {
                       label="Most Serious Injury to Pilot"
                       required
                       options={injuryOptions}
-                      error={errors.mostSeriousInjuryToPilot?.message}
-                      {...register("mostSeriousInjuryToPilot", { 
+                      error={errors.Most_serious_injury_to_pilot?.message}
+                      {...register("Most_serious_injury_to_pilot", { 
                         required: "This field cannot be blank." 
                       })}
                     />
@@ -1000,8 +984,8 @@ export default function AccidentForm() {
                     <Select
                       label="Did this occurrence involve an aircraft conducting IFR or air transport operations (airline/charter/cargo/medical)"
                       options={yesNoOptions}
-                      error={errors.didInvolveIFR?.message}
-                      {...register("didInvolveIFR")}
+                      error={errors.Involve_IFR_or_Air_Transport_Operations?.message}
+                      {...register("Involve_IFR_or_Air_Transport_Operations")}
                     />
                   </div>
 
@@ -1009,8 +993,8 @@ export default function AccidentForm() {
                     <Select
                       label="Did the occurrence take place in controlled airspace or special use airspace(military/danger/restricted/prohibited)?"
                       options={yesNoOptions}
-                      error={errors.didOccurInControlledAirspace?.message}
-                      {...register("didOccurInControlledAirspace")}
+                      error={errors.In_controlled_or_special_use_airspace?.message}
+                      {...register("In_controlled_or_special_use_airspace")}
                     />
                   </div>
 
@@ -1018,8 +1002,8 @@ export default function AccidentForm() {
                     <Input
                       label="Passenger Details"
                       placeholder="Please supply names of other passenger if applicable"
-                      error={errors.passengerDetails?.message}
-                      {...register("passengerDetails", {
+                      error={errors.Passenger_details?.message}
+                      {...register("Passenger_details", {
                         pattern: {
                           value: /^[a-zA-Z\s]*$/,
                           message: "Entered value is invalid"
@@ -1032,15 +1016,15 @@ export default function AccidentForm() {
                     <Select
                       label="Passenger Injury"
                       options={injuryOptions}
-                      error={errors.passengerInjury?.message}
-                      {...register("passengerInjury")}
+                      error={errors.Passenger_injury?.message}
+                      {...register("Passenger_injury")}
                     />
 
                     <Select
                       label="Persons on the Ground Injury"
                       options={injuryOptions}
-                      error={errors.personsOnGroundInjury?.message}
-                      {...register("personsOnGroundInjury")}
+                      error={errors.Persons_on_the_ground_injury?.message}
+                      {...register("Persons_on_the_ground_injury")}
                     />
                   </div>
 
@@ -1050,8 +1034,8 @@ export default function AccidentForm() {
                       required
                       rows={3}
                       maxLength={255}
-                      error={errors.descriptionOfDamage?.message}
-                      {...register("descriptionOfDamage", {
+                      error={errors.Description_of_damage_to_aircraft?.message}
+                      {...register("Description_of_damage_to_aircraft", {
                         required: "This field cannot be blank.",
                         minLength: {
                           value: 4,
@@ -1069,8 +1053,8 @@ export default function AccidentForm() {
                     <Input
                       label="Maintainer First Name"
                       placeholder="Robert Johnson"
-                      error={errors.maintainerFirstName?.message}
-                      {...register("maintainerFirstName", {
+                      error={errors.Maintainer_Name?.message}
+                      {...register("Maintainer_Name", {
                         pattern: {
                           value: /^[a-z A-Z -]{3,16}$/,
                           message: "Entered value is invalid"
@@ -1081,8 +1065,8 @@ export default function AccidentForm() {
                     <Input
                       label="Maintainer Member Number"
                       placeholder="e.g. 6789"
-                      error={errors.maintainerMemberNumber?.message}
-                      {...register("maintainerMemberNumber", {
+                      error={errors.Maintainer_Member_Number?.message}
+                      {...register("Maintainer_Member_Number", {
                         pattern: {
                           value: /^[0-9]*$/,
                           message: "Entered value is invalid"
@@ -1095,8 +1079,8 @@ export default function AccidentForm() {
                     <Input
                       label="Maintainer Last Name"
                       placeholder="Johnson"
-                      error={errors.maintainerLastName?.message}
-                      {...register("maintainerLastName", {
+                      error={errors.Maintainer_Level?.message}
+                      {...register("Maintainer_Level", {
                         pattern: {
                           value: /^[a-z A-Z -]{3,16}$/,
                           message: "Entered value is invalid"
@@ -1107,8 +1091,8 @@ export default function AccidentForm() {
                     <Select
                       label="Maintainer Level"
                       options={maintainerLevelOptions}
-                      error={errors.maintainerLevel?.message}
-                      {...register("maintainerLevel")}
+                      error={errors.Maintainer_Level?.message}
+                      {...register("Maintainer_Level")}
                     />
                   </div>
 
@@ -1122,7 +1106,7 @@ export default function AccidentForm() {
                           <input
                             type="radio"
                             value="Accident"
-                            {...register("isAccidentOrIncident", { required: "This field cannot be blank." })}
+                            {...register("Accident_or_Incident", { required: "This field cannot be blank." })}
                             className="mr-2"
                           />
                           Accident
@@ -1131,14 +1115,14 @@ export default function AccidentForm() {
                           <input
                             type="radio"
                             value="Incident"
-                            {...register("isAccidentOrIncident", { required: "This field cannot be blank." })}
+                            {...register("Accident_or_Incident", { required: "This field cannot be blank." })}
                             className="mr-2"
                           />
                           Incident
                         </label>
                       </div>
-                      {errors.isAccidentOrIncident && (
-                        <p className="text-red-500 text-sm mt-1">{errors.isAccidentOrIncident.message}</p>
+                      {errors.Accident_or_Incident && (
+                        <p className="text-red-500 text-sm mt-1">{errors.Accident_or_Incident.message}</p>
                       )}
                     </fieldset>
                   </div>
@@ -1148,8 +1132,8 @@ export default function AccidentForm() {
                       label="What may have contributed to the event?"
                       required
                       rows={3}
-                      error={errors.whatContributed?.message}
-                      {...register("whatContributed", {
+                      error={errors.Details_of_incident_accident?.message}
+                      {...register("Details_of_incident_accident", {
                         required: "This field cannot be blank."
                       })}
                     />
@@ -1160,8 +1144,8 @@ export default function AccidentForm() {
                       label="Do you have further suggestions on how to prevent similar occurrences?"
                       required
                       rows={3}
-                      error={errors.preventionSuggestions?.message}
-                      {...register("preventionSuggestions", {
+                      error={errors.Reporter_Suggestions?.message}
+                      {...register("Reporter_Suggestions", {
                         required: "This field cannot be blank."
                       })}
                     />
@@ -1177,7 +1161,7 @@ export default function AccidentForm() {
                           <input
                             type="radio"
                             value="IRM"
-                            {...register("reportingMatter", { required: "This field cannot be blank." })}
+                            {...register("ATSB_reportable_status", { required: "This field cannot be blank." })}
                             className="mr-2"
                           />
                           Immediately reportable matter
@@ -1186,14 +1170,14 @@ export default function AccidentForm() {
                           <input
                             type="radio"
                             value="RRM"
-                            {...register("reportingMatter", { required: "This field cannot be blank." })}
+                            {...register("ATSB_reportable_status", { required: "This field cannot be blank." })}
                             className="mr-2"
                           />
                           Routinely reportable matter
                         </label>
                       </div>
-                      {errors.reportingMatter && (
-                        <p className="text-red-500 text-sm mt-1">{errors.reportingMatter.message}</p>
+                      {errors.ATSB_reportable_status && (
+                        <p className="text-red-500 text-sm mt-1">{errors.ATSB_reportable_status.message}</p>
                       )}
                     </fieldset>
                   </div>
@@ -1214,8 +1198,8 @@ export default function AccidentForm() {
                     <Input
                       label="Departure Location"
                       placeholder="Enter departure location"
-                      error={errors.departureLocation?.message}
-                      {...register("departureLocation", {
+                      error={errors.Departure_location?.message}
+                      {...register("Departure_location", {
                         pattern: {
                           value: /^[a-zA-Z0-9\s]*$/,
                           message: "Entered value is invalid"
@@ -1226,8 +1210,8 @@ export default function AccidentForm() {
                     <Input
                       label="Destination Location"
                       placeholder="Enter destination location"
-                      error={errors.destinationLocation?.message}
-                      {...register("destinationLocation", {
+                      error={errors.Destination_location?.message}
+                      {...register("Destination_location", {
                         pattern: {
                           value: /^[a-zA-Z0-9\s]*$/,
                           message: "Entered value is invalid"
@@ -1241,8 +1225,8 @@ export default function AccidentForm() {
                       label="Landing"
                       placeholder="Enter landing location"
                       helpText="(if different to destination)"
-                      error={errors.landing?.message}
-                      {...register("landing", {
+                      error={errors.Landing?.message}
+                      {...register("Landing", {
                         pattern: {
                           value: /^[a-zA-Z0-9\s]*$/,
                           message: "Entered value is invalid"
@@ -1254,29 +1238,32 @@ export default function AccidentForm() {
                       label="Type of Operation"
                       required
                       options={typeOfOperationOptions}
-                      error={errors.typeOfOperation?.message}
-                      {...register("typeOfOperation", { 
+                      error={errors.Type_of_operation?.message}
+                      {...register("Type_of_operation", { 
                         required: "This field cannot be blank." 
                       })}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    <Select
-                      label="Name of Flight Training School"
-                      required
-                      options={flightTrainingSchoolOptions}
-                      error={errors.nameOfFlightTrainingSchool?.message}
-                      {...register("nameOfFlightTrainingSchool", { 
-                        required: "This field cannot be blank." 
-                      })}
-                    />
+                    {/* Flight Training School - Only show when Type of Operation is Flying Training */}
+                    {(selectedTypeOfOperation === "Flying Training – Dual" || selectedTypeOfOperation === "Flying Training – Solo") && (
+                      <Select
+                        label="Name of Flight Training School"
+                        required
+                        options={flightTrainingSchoolOptions}
+                        error={errors.Name_of_Flight_Training_School?.message}
+                        {...register("Name_of_Flight_Training_School", { 
+                          required: "This field cannot be blank." 
+                        })}
+                      />
+                    )}
 
                     <Select
                       label="Phase of Flight"
                       options={phaseOfFlightOptions}
-                      error={errors.phaseOfFlight?.message}
-                      {...register("phaseOfFlight")}
+                      error={errors.Phase_of_flight?.message}
+                      {...register("Phase_of_flight")}
                     />
                   </div>
 
@@ -1284,15 +1271,15 @@ export default function AccidentForm() {
                     <Select
                       label="Effect of Flight"
                       options={effectOfFlightOptions}
-                      error={errors.effectOfFlight?.message}
-                      {...register("effectOfFlight")}
+                      error={errors.Effect_of_flight?.message}
+                      {...register("Effect_of_flight")}
                     />
 
                     <Select
                       label="Flight Rules"
                       options={flightRulesOptions}
-                      error={errors.flightRules?.message}
-                      {...register("flightRules")}
+                      error={errors.Flight_Rules?.message}
+                      {...register("Flight_Rules")}
                     />
                   </div>
                 </div>
@@ -1305,15 +1292,15 @@ export default function AccidentForm() {
                     <Select
                       label="Airspace Class"
                       options={airspaceClassOptions}
-                      error={errors.airspaceClass?.message}
-                      {...register("airspaceClass")}
+                      error={errors.Airspace_class?.message}
+                      {...register("Airspace_class")}
                     />
 
                     <Select
                       label="Airspace Type"
                       options={airspaceTypeOptions}
-                      error={errors.airspaceType?.message}
-                      {...register("airspaceType")}
+                      error={errors.Airspace_type?.message}
+                      {...register("Airspace_type")}
                     />
                   </div>
 
@@ -1322,15 +1309,15 @@ export default function AccidentForm() {
                       label="Altitude"
                       type="number"
                       placeholder="200"
-                      error={errors.altitude?.message}
-                      {...register("altitude")}
+                      error={errors.Altitude?.message}
+                      {...register("Altitude")}
                     />
 
                     <Select
                       label="Altitude Type"
                       options={altitudeTypeOptions}
-                      error={errors.altitudeType?.message}
-                      {...register("altitudeType")}
+                      error={errors.Altitude_type?.message}
+                      {...register("Altitude_type")}
                     />
                   </div>
                 </div>
@@ -1343,8 +1330,8 @@ export default function AccidentForm() {
                     <Select
                       label="Light Conditions"
                       options={lightConditionsOptions}
-                      error={errors.lightConditions?.message}
-                      {...register("lightConditions")}
+                      error={errors.Light_conditions?.message}
+                      {...register("Light_conditions")}
                     />
 
                     <Input
@@ -1353,8 +1340,8 @@ export default function AccidentForm() {
                       step="0.1"
                       placeholder="30.0"
                       suffix="NM"
-                      error={errors.visibility?.message}
-                      {...register("visibility")}
+                      error={errors.Visibility?.message}
+                      {...register("Visibility")}
                     />
                   </div>
 
@@ -1365,15 +1352,15 @@ export default function AccidentForm() {
                       step="0.1"
                       placeholder="10.0"
                       suffix="knots"
-                      error={errors.windSpeed?.message}
-                      {...register("windSpeed")}
+                      error={errors.Wind_speed?.message}
+                      {...register("Wind_speed")}
                     />
 
                     <Select
                       label="Wind Direction"
                       options={windDirectionOptions}
-                      error={errors.windDirection?.message}
-                      {...register("windDirection")}
+                      error={errors.Wind_direction?.message}
+                      {...register("Wind_direction")}
                     />
                   </div>
 
@@ -1381,8 +1368,8 @@ export default function AccidentForm() {
                     <Select
                       label="Visibility Reduced By"
                       options={visibilityReducedByOptions}
-                      error={errors.visibilityReducedBy?.message}
-                      {...register("visibilityReducedBy")}
+                      error={errors.Visibility_reduced_by?.message}
+                      {...register("Visibility_reduced_by")}
                     />
 
                     <Input
@@ -1391,8 +1378,8 @@ export default function AccidentForm() {
                       step="0.1"
                       placeholder="20.0"
                       suffix="°C"
-                      error={errors.temperature?.message}
-                      {...register("temperature")}
+                      error={errors.Temperature?.message}
+                      {...register("Temperature")}
                     />
                   </div>
 
@@ -1401,8 +1388,8 @@ export default function AccidentForm() {
                       label="Wind Gusting"
                       required
                       options={windGustingOptions}
-                      error={errors.windGusting?.message}
-                      {...register("windGusting", { 
+                      error={errors.Wind_gusting?.message}
+                      {...register("Wind_gusting", { 
                         required: "This field cannot be blank." 
                       })}
                     />
@@ -1411,8 +1398,8 @@ export default function AccidentForm() {
                       label="Personal Locator Beacon carried"
                       required
                       options={yesNoOptions}
-                      error={errors.personalLocatorBeacon?.message}
-                      {...register("personalLocatorBeacon", { 
+                      error={errors.Personal_Locator_Beacon_carried?.message}
+                      {...register("Personal_Locator_Beacon_carried", { 
                         required: "This field cannot be blank." 
                       })}
                     />
@@ -1429,7 +1416,7 @@ export default function AccidentForm() {
                         onCheckedChange={(checked) => {
                           setDidInvolveNearMiss(checked);
                           // Also update the form value
-                          setValue("didInvolveNearMiss", checked ? "Yes" : "No");
+                          setValue("Involve_near_miss_with_another_aircraft", checked ? "Yes" : "No");
                         }}
                       />
                     </div>
@@ -1441,7 +1428,7 @@ export default function AccidentForm() {
                         onCheckedChange={(checked) => {
                           setDidInvolveBirdAnimalStrike(checked);
                           // Also update the form value
-                          setValue("didInvolveBirdAnimalStrike", checked ? "Yes" : "No");
+                          setValue("Bird_or_Animal_Strike", checked ? "Yes" : "No");
                         }}
                       />
                     </div>
@@ -1457,15 +1444,15 @@ export default function AccidentForm() {
                       <Select
                         label="Type of Strike"
                         options={strikeTypeOptions}
-                        error={errors.typeOfStrike?.message}
-                        {...register("typeOfStrike")}
+                        error={errors.Type_of_strike?.message}
+                        {...register("Type_of_strike")}
                       />
 
                       <Select
                         label="Size"
                         options={sizeOptions}
-                        error={errors.size?.message}
-                        {...register("size")}
+                        error={errors.Size?.message}
+                        {...register("Size")}
                       />
                     </div>
 
@@ -1473,8 +1460,8 @@ export default function AccidentForm() {
                       <Input
                         label="Species"
                         placeholder="Enter species name"
-                        error={errors.species?.message}
-                        {...register("species")}
+                        error={errors.Species?.message}
+                        {...register("Species")}
                       />
                     </div>
 
@@ -1482,15 +1469,15 @@ export default function AccidentForm() {
                       <Select
                         label="Number (approx)"
                         options={numberOptions}
-                        error={errors.numberApprox?.message}
-                        {...register("numberApprox")}
+                        error={errors.Number_approx?.message}
+                        {...register("Number_approx")}
                       />
 
                       <Select
                         label="Number Struck (approx)"
                         options={numberOptions}
-                        error={errors.numberStruckApprox?.message}
-                        {...register("numberStruckApprox")}
+                        error={errors.Number_struck_approx?.message}
+                        {...register("Number_struck_approx")}
                       />
                     </div>
                   </div>
@@ -1505,8 +1492,8 @@ export default function AccidentForm() {
                       <Input
                         label="Second Aircraft Registration"
                         placeholder="10-1122 or E13-1199"
-                        error={errors.secondAircraftRegistration?.message}
-                        {...register("secondAircraftRegistration", {
+                        error={errors.Second_aircraft_registration?.message}
+                        {...register("Second_aircraft_registration", {
                           pattern: {
                             value: /[a-z0-9_-]{3,16}/,
                             message: "Entered value is invalid"
@@ -1517,8 +1504,8 @@ export default function AccidentForm() {
                       <Input
                         label="Second Aircraft Manufacturer"
                         placeholder="abc-123"
-                        error={errors.secondAircraftManufacturer?.message}
-                        {...register("secondAircraftManufacturer", {
+                        error={errors.Second_Aircraft_Manufacturer?.message}
+                        {...register("Second_Aircraft_Manufacturer", {
                           pattern: {
                             value: /^[a-z0-9_ /-]{3,16}$/,
                             message: "Entered value is invalid"
@@ -1531,8 +1518,8 @@ export default function AccidentForm() {
                       <Input
                         label="Second Aircraft Model"
                         placeholder="abc-123"
-                        error={errors.secondAircraftModel?.message}
-                        {...register("secondAircraftModel", {
+                        error={errors.Second_Aircraft_Model?.message}
+                        {...register("Second_Aircraft_Model", {
                           pattern: {
                             value: /^[a-z0-9_ /-]{3,16}$/,
                             message: "Entered value is invalid"
@@ -1544,8 +1531,8 @@ export default function AccidentForm() {
                         label="Horizontal Proximity"
                         type="number"
                         placeholder="e.g., 150"
-                        error={errors.horizontalProximity?.message}
-                        {...register("horizontalProximity")}
+                        error={errors.Horizontal_Proximity?.message}
+                        {...register("Horizontal_Proximity")}
                       />
                     </div>
 
@@ -1553,8 +1540,8 @@ export default function AccidentForm() {
                       <Select
                         label="Horizontal Proximity Unit"
                         options={proximityUnitOptions}
-                        error={errors.horizontalProximityUnit?.message}
-                        {...register("horizontalProximityUnit")}
+                        error={errors.Horizontal_Proximity_Unit?.message}
+                        {...register("Horizontal_Proximity_Unit")}
                       />
 
                       <Input
@@ -1562,8 +1549,8 @@ export default function AccidentForm() {
                         type="number"
                         step="0.1"
                         placeholder="e.g., 0.5"
-                        error={errors.verticalProximity?.message}
-                        {...register("verticalProximity")}
+                        error={errors.Vertical_Proximity?.message}
+                        {...register("Vertical_Proximity")}
                       />
                     </div>
 
@@ -1571,15 +1558,15 @@ export default function AccidentForm() {
                       <Select
                         label="Vertical Proximity Unit"
                         options={verticalProximityUnitOptions}
-                        error={errors.verticalProximityUnit?.message}
-                        {...register("verticalProximityUnit")}
+                        error={errors.Vertical_Proximity_Unit?.message}
+                        {...register("Vertical_Proximity_Unit")}
                       />
 
                       <Select
                         label="Relative Track"
                         options={relativeTrackOptions}
-                        error={errors.relativeTrack?.message}
-                        {...register("relativeTrack")}
+                        error={errors.Relative_Track?.message}
+                        {...register("Relative_Track")}
                       />
                     </div>
 
@@ -1587,18 +1574,15 @@ export default function AccidentForm() {
                       <Select
                         label="Avoidance Manoeuvre Needed?"
                         options={avoidanceManoeuvreOptions}
-                        error={errors.avoidanceManoeuvreNeeded?.message}
-                        {...register("avoidanceManoeuvreNeeded")}
+                        error={errors.Avoidance_manoeuvre_needed?.message}
+                        {...register("Avoidance_manoeuvre_needed")}
                       />
 
                       <Select
                         label="Alert Received"
-                        required
                         options={alertReceivedOptions}
-                        error={errors.alertReceived?.message}
-                        {...register("alertReceived", { 
-                          required: "This field cannot be blank." 
-                        })}
+                        error={errors.Alert_Received?.message}
+                        {...register("Alert_Received")}
                       />
                     </div>
                   </div>
@@ -1636,8 +1620,8 @@ export default function AccidentForm() {
                       label="Registration Number Prefix"
                       required
                       options={registrationPrefixOptions}
-                      {...register('registrationPrefix', { required: 'Registration prefix is required' })}
-                      error={errors.registrationPrefix?.message}
+                      {...register('Registration_number', { required: 'Registration number is required' })}
+                      error={errors.Registration_number?.message}
                     />
                     
                     <Input
@@ -1646,64 +1630,64 @@ export default function AccidentForm() {
                       required
                       maxLength={4}
                       minLength={4}
-                      {...register('registrationSuffix', { 
-                        required: 'Registration suffix is required',
+                      {...register('Serial_number1', { 
+                        required: 'Serial number is required',
                         minLength: { value: 4, message: 'Minimum 4 characters required' }
                       })}
-                      error={errors.registrationSuffix?.message}
+                      error={errors.Serial_number1?.message}
                     />
                     
                     <Input
                       label="Serial Number"
                       required
-                      {...register('serialNumber', { required: 'Serial number is required' })}
-                      error={errors.serialNumber?.message}
+                      {...register('Serial_number', { required: 'Serial number is required' })}
+                      error={errors.Serial_number?.message}
                     />
                     
                     <Input
                       label="Make"
                       required
-                      {...register('aircraftMake', { required: 'Aircraft make is required' })}
-                      error={errors.aircraftMake?.message}
+                      {...register('Make1', { required: 'Aircraft make is required' })}
+                      error={errors.Make1?.message}
                     />
                     
                     <Input
                       label="Model"
                       required
-                      {...register('aircraftModel', { required: 'Aircraft model is required' })}
-                      error={errors.aircraftModel?.message}
+                      {...register('Model', { required: 'Aircraft model is required' })}
+                      error={errors.Model?.message}
                     />
                     
                     <Select
                       label="Registration Status"
                       required
                       options={registrationStatusOptions}
-                      {...register('registrationStatus', { required: 'Registration status is required' })}
-                      error={errors.registrationStatus?.message}
+                      {...register('Registration_status', { required: 'Registration status is required' })}
+                      error={errors.Registration_status?.message}
                     />
                     
                     <Select
                       label="Type"
                       required
                       options={aircraftTypeOptions}
-                      {...register('aircraftType', { required: 'Aircraft type is required' })}
-                      error={errors.aircraftType?.message}
+                      {...register('Type1', { required: 'Aircraft type is required' })}
+                      error={errors.Type1?.message}
                     />
                     
                     <Select
                       label="Year Built"
                       required
                       options={yearBuiltOptions}
-                      {...register('yearBuilt', { required: 'Year built is required' })}
-                      error={errors.yearBuilt?.message}
+                      {...register('Year_Built1', { required: 'Year built is required' })}
+                      error={errors.Year_Built1?.message}
                     />
                     
                     <Input
                       label="Total Airframe Hours"
                       type="number"
                       placeholder="200"
-                      {...register('totalAirframeHours')}
-                      error={errors.totalAirframeHours?.message}
+                      {...register('Total_airframe_hours')}
+                      error={errors.Total_airframe_hours?.message}
                     />
                   </div>
                 </div>
@@ -1716,28 +1700,28 @@ export default function AccidentForm() {
                     <Input
                       label="Engine Make"
                       required
-                      {...register('engineMake', { required: 'Engine make is required' })}
-                      error={errors.engineMake?.message}
+                      {...register('Engine_Details', { required: 'Engine make is required' })}
+                      error={errors.Engine_Details?.message}
                     />
                     
                     <Input
                       label="Engine Model"
-                      {...register('engineModel')}
-                      error={errors.engineModel?.message}
+                      {...register('Engine_model')}
+                      error={errors.Engine_model?.message}
                     />
                     
                     <Input
                       label="Engine Serial"
-                      {...register('engineSerial')}
-                      error={errors.engineSerial?.message}
+                      {...register('Engine_serial')}
+                      error={errors.Engine_serial?.message}
                     />
                     
                     <Input
                       label="Total Engine Hours"
                       type="number"
                       placeholder="200"
-                      {...register('totalEngineHours')}
-                      error={errors.totalEngineHours?.message}
+                      {...register('Total_engine_hours')}
+                      error={errors.Total_engine_hours?.message}
                     />
                     
                     <div className="md:col-start-2">
@@ -1745,8 +1729,8 @@ export default function AccidentForm() {
                         label="Total Hours Since Service"
                         type="number"
                         placeholder="103"
-                        {...register('hoursSinceService')}
-                        error={errors.hoursSinceService?.message}
+                        {...register('Total_hours_since_service')}
+                        error={errors.Total_hours_since_service?.message}
                       />
                     </div>
                   </div>
@@ -1759,34 +1743,34 @@ export default function AccidentForm() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
                       label="Propeller Make"
-                      {...register('propellerMake')}
-                      error={errors.propellerMake?.message}
+                      {...register('Propeller_make')}
+                      error={errors.Propeller_make?.message}
                     />
                     
                     <Input
                       label="Propeller Model"
-                      {...register('propellerModel')}
-                      error={errors.propellerModel?.message}
+                      {...register('Propeller_model')}
+                      error={errors.Propeller_model?.message}
                     />
                     
                     <Input
                       label="Propeller Serial"
-                      {...register('propellerSerial')}
-                      error={errors.propellerSerial?.message}
+                      {...register('Propeller_serial')}
+                      error={errors.Propeller_serial?.message}
                     />
                     
                     <Select
                       label="Personal Locator Beacon carried"
                       required
                       options={plbOptions}
-                      {...register('plbCarried', { required: 'PLB status is required' })}
-                      error={errors.plbCarried?.message}
+                      {...register('Personal_Locator_Beacon_carried', { required: 'PLB status is required' })}
+                      error={errors.Personal_Locator_Beacon_carried?.message}
                     />
                     
                     <div className="md:col-span-2">
                       <div className="flex items-center space-x-2">
                         <Checkbox
-                          {...register('plbActivated')}
+                          {...register('PLB_Activated')}
                           id="plbActivated"
                         />
                         <label htmlFor="plbActivated" className="text-sm font-medium text-gray-700">
@@ -1811,10 +1795,9 @@ export default function AccidentForm() {
                       <FileUpload
                         accept=".csv,.doc,.docm,.docx,.gif,.jpg,.jpeg,.jpe,.pdf,.txt,.asc,.c,.cc,.h,.srt,.xla,.xls,.xlt,.xlw,.xlsx,.zip"
                         multiple
-                        onChange={(files) => {
-                          // Handle file upload here if needed
-                          console.log('Files selected:', files);
-                        }}
+                        onChange={setAttachments}
+                        maxFiles={5}
+                        maxSize={256}
                         error={errors.attachments?.message}
                       />
                     </div>

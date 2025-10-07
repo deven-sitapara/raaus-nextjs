@@ -19,8 +19,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(result);
-  } catch (error) {
-    console.error("Member validation error:", error);
+  } catch (error: any) {
     return NextResponse.json(
       { error: "Failed to validate member number" },
       { status: 500 }
