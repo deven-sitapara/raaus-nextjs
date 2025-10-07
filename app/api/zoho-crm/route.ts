@@ -15,8 +15,7 @@ export async function POST(request: NextRequest) {
     const result = await ZohoCRM.createRecord(module, data);
 
     return NextResponse.json(result);
-  } catch (error) {
-    console.error("CRM submission error:", error);
+  } catch (error: any) {
     return NextResponse.json(
       { error: "Failed to submit to Zoho CRM" },
       { status: 500 }

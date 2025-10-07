@@ -82,7 +82,6 @@ export default function HazardForm() {
         setMemberValidationMessage(response.data.warning || "Member Number not found");
       }
     } catch (error) {
-      console.error("Member validation failed:", error);
       setMemberValidationStatus("invalid");
       setMemberValidationMessage("Unable to validate Member Number");
     } finally {
@@ -101,74 +100,57 @@ export default function HazardForm() {
         return;
       }
 
-      // Convert date and time to ISO 8601 format
+      // Convert date and time to ISO format
       const datetime = new Date(`${hazardDate}T${hazardTime}`);
-
       if (isNaN(datetime.getTime())) {
         alert("Invalid date or time provided");
         setIsSubmitting(false);
         return;
       }
 
-      // Format as YYYY-MM-DDTHH:mm:ss+10:00 (Australia timezone)
-      const year = datetime.getFullYear();
-      const month = String(datetime.getMonth() + 1).padStart(2, '0');
-      const day = String(datetime.getDate()).padStart(2, '0');
-      const hours = String(datetime.getHours()).padStart(2, '0');
-      const minutes = String(datetime.getMinutes()).padStart(2, '0');
-      const seconds = String(datetime.getSeconds()).padStart(2, '0');
+      // Prepare form data for unified API
+      const formData = new FormData();
+      
+      // Add form type and data
+      formData.append('formType', 'hazard');
+      
+      const submissionData = {
+        ...data,
+        Contact_Phone: contactPhone,
+        Date_Hazard_Identified: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
+      };
+      
+      formData.append('formData', JSON.stringify(submissionData));
 
-      const fullHazardDate = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+10:00`;
-
-      // Upload attachments if any
-      let attachmentLinks: string[] = [];
+      // Add attachments if any
       if (attachments && attachments.length > 0) {
-        const formData = new FormData();
-        Array.from(attachments).forEach((file) => {
-          formData.append("files", file);
+        Array.from(attachments).forEach((file, index) => {
+          formData.append(`file_${index}`, file);
         });
-
-        const uploadResponse = await axios.post("/api/zoho-workdrive", formData);
-        attachmentLinks = uploadResponse.data.links || [];
       }
 
-      // Submit to Zoho CRM
-      const crmData = {
-        ...data,
-        Name: `${data.Name1} ${data.Last_Name}`, // Required combined name field
-        Contact_Phone: contactPhone,
-        Date_Hazard_Identified: fullHazardDate,
-        Please_fully_describe_the_identified_hazard: data.Hazard_Description,
-        Location_of_hazard: data.Location_of_Hazard,
-        Potential_Consequences_of_Hazard: data.Prevention_Suggestions,
-        Hazard: true, // Mark this as a hazard report
-        attachmentLinks: attachmentLinks.join(", "),
-      };
-
-      console.log("Submitting hazard to CRM:", {
-        module: "Occurrence_Management",
-        data: crmData,
+      // Submit to unified API endpoint
+      const response = await axios.post("/api/submit-form", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      const response = await axios.post("/api/zoho-crm", {
-        module: "Occurrence_Management",
-        data: crmData,
-      });
-
-      console.log("CRM Response:", response.data);
-
-      // Only show success if we get a record ID from CRM
-      if (response.data?.data?.[0]?.code === "SUCCESS" && response.data?.data?.[0]?.details?.id) {
+      if (response.data.success) {
         setSubmitSuccess(true);
       } else {
-        const errorDetails = response.data?.data?.[0];
-        console.error("CRM Error:", errorDetails);
-        throw new Error(errorDetails?.message || "Failed to create record");
+        throw new Error(response.data.error || "Failed to process hazard report");
       }
     } catch (error: any) {
-      console.error("Submission failed:", error);
-      console.error("Error response:", error.response?.data);
-      const errorMessage = error.response?.data?.data?.[0]?.message || error.message || "Failed to submit form. Please try again.";
+      let errorMessage = "Failed to submit form. Please try again.";
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.data?.[0]?.message) {
+        errorMessage = error.response.data.data[0].message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       alert(`Submission Error: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
@@ -405,6 +387,7 @@ export default function HazardForm() {
               <FileUpload
                 label="Attachments"
                 description="Upload photos and videos as evidence. Additionally include engine, propeller and airframe maintenance inspection documentation from logbooks as it pertains to the report."
+                multiple
                 onChange={setAttachments}
                 maxFiles={5}
                 maxSize={256}
