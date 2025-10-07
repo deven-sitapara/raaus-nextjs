@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -315,6 +315,11 @@ export default function AccidentForm() {
   const [didInvolveNearMiss, setDidInvolveNearMiss] = useState(false);
   const [attachments, setAttachments] = useState<FileList | null>(null);
 
+  // Aircraft lookup states
+  const [isLookingUpAircraft, setIsLookingUpAircraft] = useState(false);
+  const [aircraftLookupStatus, setAircraftLookupStatus] = useState<"success" | "error" | "">("");
+  const [aircraftLookupMessage, setAircraftLookupMessage] = useState("");
+
   const {
     register,
     handleSubmit,
@@ -328,6 +333,26 @@ export default function AccidentForm() {
   
   // Watch the type of operation field to conditionally show flight training school
   const selectedTypeOfOperation = watch("Type_of_operation");
+  
+  // Watch registration fields for aircraft lookup
+  const registrationPrefix = watch("Registration_number");
+  const registrationSuffix = watch("Serial_number1");
+
+  // Auto-lookup aircraft when both prefix and suffix are provided
+  useEffect(() => {
+    if (registrationPrefix && registrationSuffix) {
+      // Debounce the lookup to avoid excessive API calls
+      const timeoutId = setTimeout(() => {
+        lookupAircraft(registrationPrefix, registrationSuffix);
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Clear aircraft lookup status when fields are empty
+      setAircraftLookupStatus("");
+      setAircraftLookupMessage("");
+    }
+  }, [registrationPrefix, registrationSuffix]);
 
   // Validate member number (Person Reporting) with immediate feedback
   const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
@@ -392,6 +417,101 @@ export default function AccidentForm() {
       setPilotValidationMessage("Unable to validate Member Number");
     } finally {
       setIsValidatingPilot(false);
+    }
+  };
+
+  // Aircraft lookup function
+  const lookupAircraft = async (registrationPrefix: string, registrationSuffix: string) => {
+    // Reset lookup status
+    if (!registrationPrefix || !registrationSuffix) {
+      setAircraftLookupStatus("");
+      setAircraftLookupMessage("");
+      return;
+    }
+
+    // Validate suffix is 4 digits
+    const cleanSuffix = registrationSuffix.replace(/\D/g, '');
+    if (cleanSuffix.length !== 4) {
+      setAircraftLookupStatus("error");
+      setAircraftLookupMessage("Registration suffix must be exactly 4 digits");
+      return;
+    }
+
+    // Combine prefix and suffix
+    const combinedRegistration = `${registrationPrefix}-${cleanSuffix}`;
+    
+    setIsLookingUpAircraft(true);
+    setAircraftLookupStatus("");
+    setAircraftLookupMessage("");
+
+    try {
+      const response = await axios.post("/api/aircraft-lookup", {
+        aircraftConcat: combinedRegistration,
+      });
+
+      if (response.data.success && response.data.data) {
+        const aircraftData = response.data.data;
+        
+        console.log("Aircraft lookup response:", aircraftData);
+        
+        // Auto-fill aircraft fields
+        setValue("Serial_number", aircraftData.Serial_Number1 || "");
+        setValue("Make1", aircraftData.Manufacturer || "");
+        setValue("Model", aircraftData.Model || "");
+        setValue("Registration_status", aircraftData.Registration_Type || "");
+        setValue("Type1", aircraftData.Type || "");
+        setValue("Year_Built1", aircraftData.Year_Built1 || aircraftData.Manufacturer_Date || "");
+        
+        // Auto-fill engine fields
+        setValue("Engine_Details", aircraftData.Engine_Details || "");
+        setValue("Engine_model", aircraftData.Engine_model || "");
+        setValue("Engine_serial", aircraftData.Engines_Serial || "");
+        
+        // Auto-fill propeller fields with debug logging
+        console.log("Propeller data from API:", {
+          make: aircraftData.Propeller_make,
+          model: aircraftData.Propeller_model,
+          serial: aircraftData.Propeller_serial,
+          propeller_found: aircraftData.propeller_found
+        });
+        
+        setValue("Propeller_make", aircraftData.Propeller_make || "");
+        setValue("Propeller_model", aircraftData.Propeller_model || "");
+        setValue("Propeller_serial", aircraftData.Propeller_serial || "");
+
+        let fieldsPopulated = 0;
+        const aircraftFields = ["Serial_number", "Make1", "Model", "Registration_status", "Type1", "Year_Built1"];
+        const engineFields = ["Engine_Details", "Engine_model", "Engine_serial"];
+        const propellerFields = ["Propeller_make", "Propeller_model", "Propeller_serial"];
+        
+        aircraftFields.forEach(field => aircraftData[field.replace("1", "_Number1")] && fieldsPopulated++);
+        engineFields.forEach(field => aircraftData[field] && fieldsPopulated++);
+        propellerFields.forEach(field => aircraftData[field] && fieldsPopulated++);
+
+        setAircraftLookupStatus("success");
+        const message = `✓ Aircraft data loaded for ${combinedRegistration} (${fieldsPopulated} fields populated)`;
+        if (aircraftData.propeller_found) {
+          setAircraftLookupMessage(message + " - Propeller data included");
+        } else {
+          setAircraftLookupMessage(message + " - No propeller data found");
+        }
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          if (aircraftLookupStatus === "success") {
+            setAircraftLookupMessage("");
+          }
+        }, 5000);
+      } else {
+        setAircraftLookupStatus("error");
+        setAircraftLookupMessage(response.data.message || `No aircraft found for registration ${combinedRegistration}`);
+      }
+    } catch (error: any) {
+      setAircraftLookupStatus("error");
+      setAircraftLookupMessage("Unable to lookup aircraft data. Please try again.");
+      console.error("Aircraft lookup error:", error);
+    } finally {
+      setIsLookingUpAircraft(false);
     }
   };
 
@@ -577,17 +697,13 @@ export default function AccidentForm() {
                     <div>
                       <Input
                         label="Member Number"
-                        type="number"
+                        type="text"
                         placeholder="123456"
                         error={errors.memberNumber?.message}
                         {...register("memberNumber", {
-                          minLength: {
-                            value: 5,
-                            message: "Minimum 5 characters required"
-                          },
-                          maxLength: {
-                            value: 6,
-                            message: "Maximum 6 characters allowed"
+                          pattern: {
+                            value: validationPatterns.memberNumber,
+                            message: "Must be 5-6 digits",
                           },
                           onChange: (e) => {
                             const memberNumber = e.target.value;
@@ -623,16 +739,8 @@ export default function AccidentForm() {
                       {...register("firstName", {
                         required: "This field cannot be blank.",
                         pattern: {
-                          value: /^[a-zA-Z -]{3,16}$/,
-                          message: "Entered value is invalid"
-                        },
-                        minLength: {
-                          value: 2,
-                          message: "Invalid minimum characters"
-                        },
-                        maxLength: {
-                          value: 30,
-                          message: "Maximum 30 characters allowed"
+                          value: validationPatterns.name,
+                          message: "Must be 3-16 characters, letters, spaces, and hyphens only"
                         },
                         onChange: (e) => {
                           const firstName = e.target.value;
@@ -653,16 +761,8 @@ export default function AccidentForm() {
                       {...register("lastName", {
                         required: "This field cannot be blank.",
                         pattern: {
-                          value: /^[a-z A-Z -]{3,16}$/,
-                          message: "Entered value is invalid"
-                        },
-                        minLength: {
-                          value: 2,
-                          message: "Invalid minimum characters"
-                        },
-                        maxLength: {
-                          value: 30,
-                          message: "Maximum 30 characters allowed"
+                          value: validationPatterns.name,
+                          message: "Must be 3-16 characters, letters, spaces, and hyphens only"
                         },
                         onChange: (e) => {
                           const lastName = e.target.value;
@@ -681,8 +781,10 @@ export default function AccidentForm() {
                       label="Email Address"
                       type="email"
                       placeholder="example@domain.com"
+                      required
                       error={errors.emailAddress?.message}
                       {...register("emailAddress", {
+                        required: "Email address is required",
                         pattern: {
                           value: validationPatterns.email,
                           message: "Email is invalid"
@@ -710,25 +812,21 @@ export default function AccidentForm() {
                       <div>
                         <Input
                           label="Member Number"
-                          type="number"
+                          type="text"
                           placeholder="123456"
-                          helpText="Must be 4 digits. If number is less, add 0's to front of number. E.g. 349 becomes 0349. If the pilot was not a member, leave blank."
+                          helpText="Must be 5-6 digits. If the pilot was not a member, leave blank."
                           error={errors.PIC_Member_Number?.message}
                           {...register("PIC_Member_Number", {
-                            minLength: {
-                              value: 5,
-                              message: "minimum 5 characters length"
-                            },
-                            maxLength: {
-                              value: 6,
-                              message: "Maximum 6 characters allowed"
+                            pattern: {
+                              value: validationPatterns.memberNumber,
+                              message: "Must be 5-6 digits",
                             },
                             onChange: (e) => {
                               const memberNumber = e.target.value;
                               const firstName = watch("PIC_Name");
                               const lastName = watch("PIC_Last_Name");
                               if (memberNumber && firstName && lastName) {
-                                validatePilot(memberNumber as string, firstName as string, lastName as string);
+                                validatePilot(memberNumber, firstName, lastName);
                               } else {
                                 setPilotValidationStatus("");
                                 setPilotValidationMessage("");
@@ -762,15 +860,15 @@ export default function AccidentForm() {
                         error={errors.PIC_Name?.message}
                         {...register("PIC_Name", {
                           pattern: {
-                            value: /^[a-zA-Z -]{3,16}$/,
-                            message: "Entered value is invalid"
+                            value: validationPatterns.name,
+                            message: "Must be 3-16 characters, letters, spaces, and hyphens only",
                           },
                           onChange: (e) => {
                             const firstName = e.target.value;
                             const memberNumber = watch("PIC_Member_Number");
                             const lastName = watch("PIC_Last_Name");
                             if (memberNumber && firstName && lastName) {
-                              validatePilot(memberNumber as string, firstName as string, lastName as string);
+                              validatePilot(memberNumber, firstName, lastName);
                             }
                           }
                         })}
@@ -782,15 +880,15 @@ export default function AccidentForm() {
                         error={errors.PIC_Last_Name?.message}
                         {...register("PIC_Last_Name", {
                           pattern: {
-                            value: /^[a-zA-Z -]{3,16}$/,
-                            message: "Entered value is invalid"
+                            value: validationPatterns.name,
+                            message: "Must be 3-16 characters, letters, spaces, and hyphens only",
                           },
                           onChange: (e) => {
                             const lastName = e.target.value;
                             const memberNumber = watch("PIC_Member_Number");
                             const firstName = watch("PIC_Name");
                             if (memberNumber && firstName && lastName) {
-                              validatePilot(memberNumber as string, firstName as string, lastName as string);
+                              validatePilot(memberNumber, firstName, lastName);
                             }
                           }
                         })}
@@ -892,6 +990,7 @@ export default function AccidentForm() {
                           value={occurrenceDate}
                           onChange={(e) => setOccurrenceDate(e.target.value)}
                           className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          max={new Date().toISOString().split('T')[0]}
                           required
                         />
                         <input
@@ -1615,6 +1714,29 @@ export default function AccidentForm() {
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Aircraft Information</h2>
                   
+                  {/* Aircraft Lookup Status */}
+                  {(isLookingUpAircraft || aircraftLookupMessage) && (
+                    <div className={`mb-4 p-3 rounded-md ${
+                      isLookingUpAircraft 
+                        ? 'bg-blue-50 border border-blue-200 text-blue-700'
+                        : aircraftLookupStatus === 'success'
+                        ? 'bg-green-50 border border-green-200 text-green-700'
+                        : 'bg-red-50 border border-red-200 text-red-700'
+                    }`}>
+                      {isLookingUpAircraft ? (
+                        <div className="flex items-center">
+                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Looking up aircraft data...
+                        </div>
+                      ) : (
+                        aircraftLookupMessage
+                      )}
+                    </div>
+                  )}
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Select
                       label="Registration Number Prefix"
@@ -1632,10 +1754,13 @@ export default function AccidentForm() {
                       minLength={4}
                       {...register('Serial_number1', { 
                         required: 'Serial number is required',
-                        minLength: { value: 4, message: 'Minimum 4 characters required' }
+                        minLength: { value: 4, message: 'Minimum 4 characters required' },
+                        pattern: { value: /^\d{4}$/, message: 'Must be exactly 4 digits' }
                       })}
                       error={errors.Serial_number1?.message}
                     />
+
+
                     
                     <Input
                       label="Serial Number"
