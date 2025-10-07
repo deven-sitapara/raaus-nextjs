@@ -120,11 +120,21 @@ export async function POST(request: NextRequest) {
  */
 async function createCRMRecord(formType: string, data: FormData): Promise<string> {
   try {
+    console.log(`Creating CRM record for form type: ${formType}`);
     let crmData = await prepareCRMData(formType, data);
+    console.log(`CRM data prepared, field count: ${Object.keys(crmData).length}`);
+    console.log(`CRM data sample:`, JSON.stringify(crmData, null, 2).substring(0, 1000) + '...');
+    
     // Final cleanup: drop empty/placeholder values to prevent INVALID_DATA
     crmData = cleanupCRMRecord(crmData);
+    console.log(`CRM data after cleanup, field count: ${Object.keys(crmData).length}`);
     
-    let crmResponse = await ZohoCRM.createRecord("Occurrence_Management", crmData);    if (!crmResponse.data || crmResponse.data.length === 0) {
+    // Validate CRM data before sending
+    validateCRMData(crmData);
+    
+    let crmResponse = await ZohoCRM.createRecord("Occurrence_Management", crmData);
+    
+    if (!crmResponse.data || crmResponse.data.length === 0) {
       throw new Error("CRM API returned empty response");
     }
 
@@ -177,11 +187,19 @@ async function createCRMRecord(formType: string, data: FormData): Promise<string
         throw new Error(`CRM API error: ${firstRecord.code} - ${firstRecord.message || 'Unknown error'}`);
       }
       
+      // If we can't find the record ID in response
+      console.error('Unexpected CRM response structure:', JSON.stringify(firstRecord, null, 2));
       throw new Error(`Could not extract record ID from CRM response. Response structure: ${JSON.stringify(firstRecord, null, 2)}`);
     }
     
+    console.log(`Successfully created CRM record with ID: ${recordId}`);
     return recordId;
   } catch (crmError: any) {
+    console.error('CRM Error Details:', {
+      message: crmError.message,
+      response: crmError.response?.data,
+      status: crmError.response?.status
+    });
     throw new Error(`Failed to create CRM record: ${crmError.message}`);
   }
 }
@@ -278,7 +296,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
   
   // Base record structure
   const baseRecord = {
-    Name: `${formType} Report`,
+    // Name: `${formType} Report`, // Remove this as it might conflict with Name1
     Form_Type: formType,
     Form_ID: getFormId(formType),
   };
@@ -312,6 +330,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
       return cleanupCRMRecord({
         ...baseRecord,
         // Reporter / Person submitting
+        Name: lastName.trim(), // Standard CRM Name field (mandatory)
         Name1: firstName.trim(),
         Role: sanitizePick(accidentData.Role || accidentData.role || 'Other'),
         Member_Number: accidentData.Member_Number || accidentData.memberNumber || null,
@@ -324,15 +343,15 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         PIC_Name: accidentData.PIC_Name || '',
         PIC_Contact_Phone: accidentData.PIC_Contact_Phone || '',
         PIC_Email: accidentData.PIC_Email || '',
-        Date_of_Birth: accidentData.Date_of_Birth || '',
+        Date_of_Birth: formatDateOnly(accidentData.Date_of_Birth),
         PIC_Member_Number: accidentData.PIC_Member_Number || '',
         PIC_Last_Name: accidentData.PIC_Last_Name || '',
 
-        // Experience (convert to proper numeric types)
-        Hours_last_90_days: accidentData.Hours_last_90_days || null,
-        Hours_on_type: accidentData.Hours_on_type || null,
-        Hours_on_type_last_90_days: accidentData.Hours_on_type_last_90_days || null,
-        Total_flying_hours: accidentData.Total_flying_hours || null,
+        // Experience (convert to text format as expected by CRM)
+        Hours_last_90_days: convertToText(accidentData.Hours_last_90_days),
+        Hours_on_type: convertToText(accidentData.Hours_on_type),
+        Hours_on_type_last_90_days: convertToText(accidentData.Hours_on_type_last_90_days),
+        Total_flying_hours: convertToText(accidentData.Total_flying_hours),
   Registration_status: sanitizePick(accidentData.Registration_status),
 
         // Occurrence details
@@ -355,15 +374,15 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         // Aircraft details
         Registration_number: accidentData.Registration_number && accidentData.Serial_number1 ? 
           `${accidentData.Registration_number}-${accidentData.Serial_number1}` : 
-          accidentData.Registration_number || '',
+          (accidentData.Registration_number || null),
   Make: accidentData.Make1 || '',
   Model: accidentData.Model || '',
         Serial_number: accidentData.Serial_number || '',
   Type1: sanitizePick(accidentData.Type1) || '',
   Year_Built1: accidentData.Year_Built1 || '',
-        Total_airframe_hours: accidentData.Total_airframe_hours || '',
-        Total_engine_hours: accidentData.Total_engine_hours || '',
-        Total_hours_since_service: accidentData.Total_hours_since_service || '',
+        Total_airframe_hours: convertToText(accidentData.Total_airframe_hours),
+        Total_engine_hours: convertToText(accidentData.Total_engine_hours),
+        Total_hours_since_service: convertToText(accidentData.Total_hours_since_service),
         Engine_Details: accidentData.Engine_Details || '',
         Engine_model: accidentData.Engine_model || '',
         Engine_serial: accidentData.Engine_serial || '',
@@ -379,14 +398,14 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
   Flight_Rules: mapUnknown(accidentData.Flight_Rules),
   Airspace_class: mapUnknown(accidentData.Airspace_class),
   Airspace_type: mapUnknown(accidentData.Airspace_type),
-        Altitude: accidentData.Altitude || '',
+        Altitude: convertToNumber(accidentData.Altitude),
   Altitude_type: mapUnknown(accidentData.Altitude_type),
   Light_conditions: mapUnknown(accidentData.Light_conditions),
-        Visibility: accidentData.Visibility || '',
-        Temperature: accidentData.Temperature || '',
-  Visibility_reduced_by: accidentData.Visibility_reduced_by ? [sanitizePick(accidentData.Visibility_reduced_by)] : [],
+        Visibility: convertToNumber(accidentData.Visibility),
+        Temperature: convertToNumber(accidentData.Temperature),
+  Visibility_reduced_by: accidentData.Visibility_reduced_by ? [sanitizePick(accidentData.Visibility_reduced_by)].filter(Boolean) : undefined,
         Wind_direction: accidentData.Wind_direction || '',
-        Wind_speed: accidentData.Wind_speed || '',
+        Wind_speed: convertToNumber(accidentData.Wind_speed),
   Wind_gusting: sanitizePick(accidentData.Wind_gusting),
 
         // Injury / Damage
@@ -427,9 +446,9 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Second_aircraft_registration: accidentData.Second_aircraft_registration || '',
         Second_Aircraft_Manufacturer: accidentData.Second_Aircraft_Manufacturer || '',
         Second_Aircraft_Model: accidentData.Second_Aircraft_Model || '',
-        Horizontal_Proximity: accidentData.Horizontal_Proximity || '',
+        Horizontal_Proximity: convertToNumber(accidentData.Horizontal_Proximity),
         Horizontal_Proximity_Unit: accidentData.Horizontal_Proximity_Unit || '',
-        Vertical_Proximity: accidentData.Vertical_Proximity || '',
+        Vertical_Proximity: convertToNumber(accidentData.Vertical_Proximity),
         Vertical_Proximity_Unit: accidentData.Vertical_Proximity_Unit || '',
         Relative_Track: accidentData.Relative_Track || '',
         Avoidance_manoeuvre_needed: accidentData.Avoidance_manoeuvre_needed || '',
@@ -445,6 +464,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
       return cleanupCRMRecord({
         ...baseRecord,
         // Person Reporting
+        Name: defectData.Last_Name || defectData.lastName || '', // Standard CRM Name field (mandatory)
         Role: sanitizePick(defectData.Role || defectData.role || ''),
         Name1: defectData.Name1 || defectData.firstName || '',
         Member_Number: defectData.Member_Number || defectData.memberNumber || '',
@@ -491,8 +511,8 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Engine_Details: defectData.Engine_Details || '',
         Engine_model: defectData.Engine_model || defectData.engineModel || '',
         Engine_serial: defectData.Engine_serial || defectData.engineSerial || '',
-        Total_engine_hours: defectData.Total_engine_hours || defectData.totalEngineHours || '',
-        Total_hours_since_service: defectData.Total_hours_since_service || defectData.totalHoursSinceService || '',
+        Total_engine_hours: convertToText(defectData.Total_engine_hours || defectData.totalEngineHours),
+        Total_hours_since_service: convertToText(defectData.Total_hours_since_service || defectData.totalHoursSinceService),
 
         // Propeller Details
         Propeller_make: defectData.Propeller_make || defectData.propellerMake || '',
@@ -511,6 +531,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
       const complaintData = data as ComplaintFormData;
       return cleanupCRMRecord({
         ...baseRecord,
+        Name: complaintData.Last_Name || '', // Standard CRM Name field (mandatory)
         Role: sanitizePick(complaintData.Role || ''),
         Member_Number: complaintData.Member_Number || '',
         Name1: complaintData.Name1 || '',
@@ -528,6 +549,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
       const hazardData = data as HazardFormData;
       return cleanupCRMRecord({
         ...baseRecord,
+        Name: hazardData.Last_Name || '', // Standard CRM Name field (mandatory)
         Role: sanitizePick(hazardData.Role || ''),
         Member_Number: hazardData.Member_Number || '',
         Reporter_First_Name: hazardData.Name1 || '', // Map Name1 to Reporter_First_Name
@@ -597,6 +619,29 @@ function formatDateForCRM(dateString: string | undefined | null): string {
 }
 
 /**
+ * Format date-only field for CRM as datetime (YYYY-MM-DDTHH:mm:ss format)
+ * Zoho CRM expects datetime format even for birth dates
+ */
+function formatDateOnly(dateString: string | undefined | null): string | null {
+  if (!dateString) {
+    return null;
+  }
+  
+  try {
+    // Convert date-only to datetime by adding midnight time
+    const date = new Date(dateString + 'T00:00:00');
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    
+    // Return in datetime format (YYYY-MM-DDTHH:mm:ss) as expected by Zoho CRM
+    return date.toISOString().slice(0, 19);
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
  * Convert Yes/No string or boolean to boolean for CRM Boolean fields
  * Zoho CRM expects Boolean fields as true/false, not strings
  */
@@ -606,6 +651,27 @@ function convertToBoolean(value: string | boolean | undefined): boolean {
 
   const stringValue = String(value).toLowerCase();
   return stringValue === 'yes' || stringValue === 'true';
+}
+
+/**
+ * Convert string to number for CRM numeric fields
+ * Zoho CRM expects numeric fields as numbers, not strings
+ */
+function convertToNumber(value: string | number | undefined | null): number | null {
+  if (typeof value === 'number') return value;
+  if (!value || value === '') return null;
+  
+  const numValue = parseFloat(String(value));
+  return isNaN(numValue) ? null : numValue;
+}
+
+/**
+ * Convert value to text string for CRM text fields
+ * Some fields that appear numeric are actually text fields in Zoho CRM
+ */
+function convertToText(value: string | number | undefined | null): string | null {
+  if (!value || value === '') return null;
+  return String(value);
 }
 
 /**
@@ -668,24 +734,98 @@ function cleanupCRMRecord(record: Record<string, any>): Record<string, any> {
     'Not Answered',
     'Not answered',
   ]);
+  
   for (const [k, v] of Object.entries(record)) {
     if (v === null || v === undefined) continue;
-    if (typeof v === 'string' && placeholderSet.has(v.trim())) continue;
+    
+    if (typeof v === 'string') {
+      const trimmed = v.trim();
+      if (placeholderSet.has(trimmed) || trimmed === '') continue;
+      
+      // Truncate very long strings to prevent field length issues
+      const maxLength = 255; // Common CRM field limit
+      const finalValue = trimmed.length > maxLength ? trimmed.substring(0, maxLength) : trimmed;
+      
+      cleaned[k] = finalValue;
+      continue;
+    }
+    
     if (Array.isArray(v)) {
       const arr = v.filter((x) => x !== null && x !== undefined && !(typeof x === 'string' && placeholderSet.has(x.trim())));
       if (arr.length === 0) continue;
       cleaned[k] = arr;
       continue;
     }
+    
+    // For numbers, ensure they're valid
+    if (typeof v === 'number' && !isNaN(v)) {
+      cleaned[k] = v;
+      continue;
+    }
+    
+    // For booleans
+    if (typeof v === 'boolean') {
+      cleaned[k] = v;
+      continue;
+    }
+    
+    // For other types, include as-is
     cleaned[k] = v;
   }
+  
+  console.log(`Cleaned record: removed ${Object.keys(record).length - Object.keys(cleaned).length} empty/invalid fields`);
   return cleaned;
 }
+/**
+ * Validate CRM data for common issues before sending to Zoho
+ */
+function validateCRMData(crmData: Record<string, any>): void {
+  console.log("Validating CRM data for common issues...");
+  
+  // Check for problematic field types
+  const problematicFields: string[] = [];
+  
+  for (const [key, value] of Object.entries(crmData)) {
+    // Check for empty strings that should be null
+    if (value === '') {
+      console.warn(`Field '${key}' has empty string value, should be removed`);
+    }
+    
+    // Check for NaN numbers
+    if (typeof value === 'number' && isNaN(value)) {
+      problematicFields.push(`${key}: NaN number`);
+    }
+    
+    // Check for very long strings that might exceed field limits
+    if (typeof value === 'string' && value.length > 1000) {
+      console.warn(`Field '${key}' has very long string (${value.length} chars)`);
+    }
+    
+    // Check for arrays with invalid content
+    if (Array.isArray(value)) {
+      const hasInvalidItems = value.some(item => item === '' || item === null || item === undefined);
+      if (hasInvalidItems) {
+        console.warn(`Field '${key}' has array with invalid items:`, value);
+      }
+    }
+  }
+  
+  if (problematicFields.length > 0) {
+    console.error("Problematic fields found:", problematicFields);
+  }
+  
+  console.log("CRM data validation completed");
+}
+
 /**
  * Validate form data based on form type
  */
 function validateFormData(formType: string, data: any): { isValid: boolean; errors?: string[] } {
   const errors: string[] = [];
+  
+  console.log(`Validating form data for type: ${formType}`);
+  console.log(`Data keys received:`, Object.keys(data));
+  console.log(`Sample data:`, JSON.stringify(data, null, 2).substring(0, 500) + '...');
   
   // Form-specific validation with proper field names
   switch (formType.toLowerCase()) {
@@ -767,20 +907,24 @@ function validateFormData(formType: string, data: any): { isValid: boolean; erro
       // if (!data.Contact_Phone) {
       //   errors.push("Contact phone is required");
       // }
-      if (!data.Date_Hazard_Identified) {
+      if (!data.Date_Hazard_Identified && !data.Occurrence_Date1) {
         errors.push("Date hazard identified is required for hazard reports");
       }
-      if (!data.Hazard_Description && !data.Please_fully_describe_the_identified_hazard) {
+      if (!data.Hazard_Description && !data.Please_fully_describe_the_identified_hazard && !data.Description_of_Occurrence) {
         errors.push("Hazard description is required for hazard reports");
       }
       if (!data.Location_of_Hazard && !data.Location_of_hazard && !data.Location) {
         errors.push("Hazard location is required for hazard reports");
       }
       break;
-      break;
 
     default:
       errors.push(`Unsupported form type: ${formType}`);
+  }
+
+  console.log(`Validation result: ${errors.length === 0 ? 'PASSED' : 'FAILED'}`);
+  if (errors.length > 0) {
+    console.log(`Validation errors:`, errors);
   }
 
   return {

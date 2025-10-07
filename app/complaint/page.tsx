@@ -108,8 +108,15 @@ export default function ComplaintForm() {
       
       const submissionData = {
         ...data,
+        Role: data.Role,
+        Name1: data.Name1,
+        Last_Name: data.Last_Name,
+        Member_Number: data.Member_Number,
+        Reporter_Email: data.Reporter_Email,
         Contact_Phone: contactPhone,
         Occurrence_Date1: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
+        Description_of_Occurrence: data.Description_of_Occurrence,
+        wishToRemainAnonymous: data.wishToRemainAnonymous,
       };
       
       formData.append('formData', JSON.stringify(submissionData));
@@ -291,7 +298,9 @@ export default function ComplaintForm() {
                 label="Email"
                 type="email"
                 placeholder="example@domain.com"
+                required
                 {...register("Reporter_Email", {
+                  required: "Email is required",
                   pattern: {
                     value: validationPatterns.email,
                     message: "Please enter a valid email address",
@@ -324,7 +333,7 @@ export default function ComplaintForm() {
                   value={occurrenceDate}
                   onChange={(e) => setOccurrenceDate(e.target.value)}
                   min="1875-01-01"
-                  max="2025-10-03"
+                  max={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                 />
                 <Input
                   label="Occurrence Time"

@@ -11,6 +11,11 @@ export class ZohoCRM {
   static async createRecord(module: string, data: any): Promise<ZohoCRMResponse> {
     const accessToken = await ZohoAuth.getAccessToken("crm");
 
+    // Log the exact payload being sent
+    console.log(`Creating CRM record in module: ${module}`);
+    console.log(`Payload field count: ${Object.keys(data).length}`);
+    console.log("Full payload being sent to Zoho:", JSON.stringify({data: [data]}, null, 2));
+
     try {
       const response = await axios.post<ZohoCRMResponse>(
         `${this.apiDomain}/crm/v2/${module}`,
@@ -25,13 +30,15 @@ export class ZohoCRM {
         }
       );
 
+      console.log("CRM response received:", JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error: any) {
-      console.error("Failed to create CRM record:", error);
+      console.error("Failed to create CRM record - Full error:", error);
+      
       if (error.response) {
-        console.error("Response data:", JSON.stringify(error.response.data, null, 2));
         console.error("Response status:", error.response.status);
         console.error("Response headers:", error.response.headers);
+        console.error("Full response data:", JSON.stringify(error.response.data, null, 2));
         
         // Extract specific error message from Zoho CRM response
         if (error.response.data && error.response.data.data && error.response.data.data.length > 0) {
@@ -40,9 +47,23 @@ export class ZohoCRM {
           const errorMessage = errorData.message || 'No error message provided';
           const errorDetails = errorData.details || {};
           
-          throw new Error(`CRM API error: ${errorCode} - ${errorMessage}\nError details: ${JSON.stringify(errorDetails)}`);
+          // Log the problematic field if available
+          if (errorDetails.api_name || errorDetails.field_name) {
+            console.error(`Problematic field: ${errorDetails.api_name || errorDetails.field_name}`);
+            console.error(`Expected data type: ${errorDetails.expected_data_type || 'unknown'}`);
+            console.error(`Received value: ${errorDetails.value || 'unknown'}`);
+          }
+          
+          throw new Error(`CRM API error: ${errorCode} - ${errorMessage}\nField: ${errorDetails.api_name || errorDetails.field_name || 'unknown'}\nExpected: ${errorDetails.expected_data_type || 'unknown'}\nError details: ${JSON.stringify(errorDetails, null, 2)}`);
         }
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+        throw new Error(`No response from Zoho CRM API: ${error.message}`);
+      } else {
+        console.error("Request setup error:", error.message);
+        throw new Error(`Request error: ${error.message}`);
       }
+      
       throw new Error(`Failed to submit to Zoho CRM: ${error.message}`);
     }
   }

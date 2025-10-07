@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -101,12 +101,38 @@ export default function DefectForm() {
   const [contactPhone, setContactPhone] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
 
+  // Aircraft lookup states
+  const [isLookingUpAircraft, setIsLookingUpAircraft] = useState(false);
+  const [aircraftLookupStatus, setAircraftLookupStatus] = useState<"success" | "error" | "">("");
+  const [aircraftLookupMessage, setAircraftLookupMessage] = useState("");
+
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<DefectFormData>();
+
+  // Watch registration fields for aircraft lookup
+  const registrationPrefix = watch("registrationNumberPrefix");
+  const registrationSuffix = watch("registrationNumberSuffix");
+
+  // Auto-lookup aircraft when both prefix and suffix are provided
+  useEffect(() => {
+    if (registrationPrefix && registrationSuffix) {
+      // Debounce the lookup to avoid excessive API calls
+      const timeoutId = setTimeout(() => {
+        lookupAircraft(registrationPrefix, registrationSuffix);
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Clear aircraft lookup status when fields are empty
+      setAircraftLookupStatus("");
+      setAircraftLookupMessage("");
+    }
+  }, [registrationPrefix, registrationSuffix]);
 
   // Validate member number with immediate feedback
   const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
@@ -138,6 +164,119 @@ export default function DefectForm() {
       setMemberValidationMessage("Unable to validate Member Number");
     } finally {
       setIsValidatingMember(false);
+    }
+  };
+
+  // Aircraft lookup function
+  const lookupAircraft = async (registrationPrefix: string, registrationSuffix: string) => {
+    // Reset lookup status
+    if (!registrationPrefix || !registrationSuffix) {
+      setAircraftLookupStatus("");
+      setAircraftLookupMessage("");
+      return;
+    }
+
+    // Validate suffix is 4 digits
+    const cleanSuffix = registrationSuffix.replace(/\D/g, '');
+    if (cleanSuffix.length !== 4) {
+      setAircraftLookupStatus("error");
+      setAircraftLookupMessage("Registration suffix must be exactly 4 digits");
+      return;
+    }
+
+    // Combine prefix and suffix
+    const combinedRegistration = `${registrationPrefix}-${cleanSuffix}`;
+    
+    setIsLookingUpAircraft(true);
+    setAircraftLookupStatus("");
+    setAircraftLookupMessage("");
+
+    try {
+      const response = await axios.post("/api/aircraft-lookup", {
+        aircraftConcat: combinedRegistration,
+      });
+
+      if (response.data.success && response.data.data) {
+        const aircraftData = response.data.data;
+        
+        console.log("Aircraft lookup response:", aircraftData);
+        
+        // Auto-fill aircraft fields
+        setValue("serialNumber", aircraftData.Serial_Number1 || "");
+        setValue("make", aircraftData.Manufacturer || "");
+        setValue("model", aircraftData.Model || "");
+        setValue("registrationStatus", aircraftData.Registration_Type || "");
+        setValue("type", aircraftData.Type || "");
+        setValue("yearBuilt", aircraftData.Year_Built1 || aircraftData.Manufacturer_Date || "");
+        
+        // Auto-fill engine fields
+        setValue("engineMake", aircraftData.Engine_Details || "");
+        setValue("engineModel", aircraftData.Engine_model || "");
+        setValue("engineSerial", aircraftData.Engines_Serial || "");
+        
+        // Auto-fill propeller fields
+        console.log("Propeller data from API:", {
+          make: aircraftData.Propeller_make,
+          model: aircraftData.Propeller_model,
+          serial: aircraftData.Propeller_serial,
+          propeller_found: aircraftData.propeller_found
+        });
+        
+        setValue("propellerMake", aircraftData.Propeller_make || "");
+        setValue("propellerModel", aircraftData.Propeller_model || "");
+        setValue("propellerSerial", aircraftData.Propeller_serial || "");
+
+        let fieldsPopulated = 0;
+        const aircraftFields = ["serialNumber", "make", "model", "registrationStatus", "type", "yearBuilt"];
+        const engineFields = ["engineMake", "engineModel", "engineSerial"];
+        const propellerFields = ["propellerMake", "propellerModel", "propellerSerial"];
+        
+        aircraftFields.forEach(field => {
+          const apiField = field === "serialNumber" ? "Serial_Number1" : 
+                          field === "make" ? "Manufacturer" :
+                          field === "model" ? "Model" :
+                          field === "registrationStatus" ? "Registration_Type" :
+                          field === "type" ? "Type" :
+                          field === "yearBuilt" ? "Year_Built1" : field;
+          if (aircraftData[apiField]) fieldsPopulated++;
+        });
+        engineFields.forEach(field => {
+          const apiField = field === "engineMake" ? "Engine_Details" :
+                          field === "engineModel" ? "Engine_model" :
+                          field === "engineSerial" ? "Engines_Serial" : field;
+          if (aircraftData[apiField]) fieldsPopulated++;
+        });
+        propellerFields.forEach(field => {
+          const apiField = field === "propellerMake" ? "Propeller_make" :
+                          field === "propellerModel" ? "Propeller_model" :
+                          field === "propellerSerial" ? "Propeller_serial" : field;
+          if (aircraftData[apiField]) fieldsPopulated++;
+        });
+
+        setAircraftLookupStatus("success");
+        const message = `✓ Aircraft data loaded for ${combinedRegistration} (${fieldsPopulated} fields populated)`;
+        if (aircraftData.propeller_found) {
+          setAircraftLookupMessage(message + " - Propeller data included");
+        } else {
+          setAircraftLookupMessage(message + " - No propeller data found");
+        }
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          if (aircraftLookupStatus === "success") {
+            setAircraftLookupMessage("");
+          }
+        }, 5000);
+      } else {
+        setAircraftLookupStatus("error");
+        setAircraftLookupMessage(response.data.message || `No aircraft found for registration ${combinedRegistration}`);
+      }
+    } catch (error: any) {
+      setAircraftLookupStatus("error");
+      setAircraftLookupMessage("Unable to lookup aircraft data. Please try again.");
+      console.error("Aircraft lookup error:", error);
+    } finally {
+      setIsLookingUpAircraft(false);
     }
   };
 
@@ -200,6 +339,7 @@ export default function DefectForm() {
         Year_Built1: data.yearBuilt,
         
         // Engine Details
+        Engine_Details: data.engineMake, // Map engineMake to Engine_Details
         Engine_model: data.engineModel,
         Engine_serial: data.engineSerial,
         Total_engine_hours: data.totalEngineHours,
@@ -394,7 +534,9 @@ export default function DefectForm() {
                 label="Email"
                 type="email"
                 placeholder="example@domain.com"
+                required
                 {...register("email", {
+                  required: "Email is required",
                   pattern: {
                     value: validationPatterns.email,
                     message: "Please enter a valid email address",
@@ -430,11 +572,11 @@ export default function DefectForm() {
                   value={defectDate}
                   onChange={(e) => setDefectDate(e.target.value)}
                   min="1875-01-01"
-                  max={new Date().toISOString().split('T')[0]}
+                  max={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                 />
 
             <Input
-                  label="Time Hazard Identified"
+                  label="Time Defect Identified"
                   type="time"
                   required
                   value={defectTime}
@@ -531,6 +673,29 @@ export default function DefectForm() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
               Aircraft Information
             </h2>
+
+            {/* Aircraft Lookup Status */}
+            {(isLookingUpAircraft || aircraftLookupMessage) && (
+              <div className={`mb-4 p-3 rounded-md ${
+                isLookingUpAircraft 
+                  ? 'bg-blue-50 border border-blue-200 text-blue-700'
+                  : aircraftLookupStatus === 'success'
+                  ? 'bg-green-50 border border-green-200 text-green-700'
+                  : 'bg-red-50 border border-red-200 text-red-700'
+              }`}>
+                {isLookingUpAircraft ? (
+                  <div className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Looking up aircraft data...
+                  </div>
+                ) : (
+                  aircraftLookupMessage
+                )}
+              </div>
+            )}
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

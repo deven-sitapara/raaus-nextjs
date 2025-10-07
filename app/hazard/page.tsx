@@ -116,8 +116,22 @@ export default function HazardForm() {
       
       const submissionData = {
         ...data,
+        Role: data.Role,
+        Name1: data.Name1,
+        Last_Name: data.Last_Name,
+        Member_Number: data.Member_Number,
+        Reporter_Email: data.Reporter_Email,
         Contact_Phone: contactPhone,
-        Date_Hazard_Identified: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
+        Date_Hazard_Identified: datetime.toISOString().slice(0, 19),
+        Occurrence_Date1: datetime.toISOString().slice(0, 19), // Also map to generic occurrence date
+        Location_of_Hazard: data.Location_of_Hazard,
+        Location: data.Location_of_Hazard, // Map to generic location field
+        State: data.State,
+        Hazard_Description: data.Hazard_Description,
+        Please_fully_describe_the_identified_hazard: data.Hazard_Description,
+        Description_of_Occurrence: data.Hazard_Description, // Map to generic description field
+        Prevention_Suggestions: data.Prevention_Suggestions,
+        Reporter_Suggestions: data.Prevention_Suggestions, // Map to generic suggestions field
       };
       
       formData.append('formData', JSON.stringify(submissionData));
@@ -299,7 +313,9 @@ export default function HazardForm() {
                 label="Email"
                 type="email"
                 placeholder="example@domain.com"
+                required
                 {...register("Reporter_Email", {
+                  required: "Email is required",
                   pattern: {
                     value: validationPatterns.email,
                     message: "Please enter a valid email address",
@@ -333,7 +349,7 @@ export default function HazardForm() {
                   value={hazardDate}
                   onChange={(e) => setHazardDate(e.target.value)}
                   min="1875-01-01"
-                  max="2025-10-06"
+                  max={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                 />
                 <Input
                   label="Time Hazard Identified"
