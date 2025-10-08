@@ -10,7 +10,7 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Button } from "@/components/ui/Button";
 import { DefectFormData } from "@/types/forms";
-import { validationPatterns } from "@/lib/validations/patterns";
+import { validationPatterns, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
 import axios from "axios";
 import Link from "next/link";
 
@@ -199,8 +199,6 @@ export default function DefectForm() {
       if (response.data.success && response.data.data) {
         const aircraftData = response.data.data;
         
-        console.log("Aircraft lookup response:", aircraftData);
-        
         // Auto-fill aircraft fields
         setValue("serialNumber", aircraftData.Serial_Number1 || "");
         setValue("make", aircraftData.Manufacturer || "");
@@ -215,13 +213,6 @@ export default function DefectForm() {
         setValue("engineSerial", aircraftData.Engines_Serial || "");
         
         // Auto-fill propeller fields
-        console.log("Propeller data from API:", {
-          make: aircraftData.Propeller_make,
-          model: aircraftData.Propeller_model,
-          serial: aircraftData.Propeller_serial,
-          propeller_found: aircraftData.propeller_found
-        });
-        
         setValue("propellerMake", aircraftData.Propeller_make || "");
         setValue("propellerModel", aircraftData.Propeller_model || "");
         setValue("propellerSerial", aircraftData.Propeller_serial || "");
@@ -287,6 +278,12 @@ export default function DefectForm() {
       // Validate required fields
       if (!defectDate || !defectTime) {
         alert("Please provide both defect date and time");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!contactPhone) {
+        alert("Please provide a contact phone number");
         setIsSubmitting(false);
         return;
       }
@@ -537,10 +534,7 @@ export default function DefectForm() {
                 required
                 {...register("email", {
                   required: "Email is required",
-                  pattern: {
-                    value: validationPatterns.email,
-                    message: "Please enter a valid email address",
-                  },
+                  validate: (value) => !value || validateEmail(value) || "Please enter a valid email address (e.g., user@example.com)"
                 })}
                 error={errors.email?.message}
               />
@@ -553,6 +547,7 @@ export default function DefectForm() {
                 onChange={(value) => setContactPhone(value)}
                 defaultCountry="AU"
                 countries={["AU", "CA", "GB"]}
+                validateOnBlur={true}
               />
             </div>
           </div>
@@ -565,24 +560,73 @@ export default function DefectForm() {
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Date Defect Identified"
-                  type="date"
-                  required
-                  value={defectDate}
-                  onChange={(e) => setDefectDate(e.target.value)}
-                  min="1875-01-01"
-                  max={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Date Defect Identified <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={defectDate}
+                    onChange={(e) => {
+                      const selectedDateStr = e.target.value;
+                      const selectedDate = new Date(selectedDateStr + 'T00:00:00');
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      
+                      // Only block if selected date is AFTER today
+                      if (selectedDate.getTime() > today.getTime()) {
+                        alert("Defect identification date cannot be in the future");
+                        return;
+                      }
+                      
+                      setDefectDate(selectedDateStr);
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min="1900-01-01"
+                    max={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
 
-            <Input
-                  label="Time Defect Identified"
-                  type="time"
-                  required
-                  value={defectTime}
-                  onChange={(e) => setDefectTime(e.target.value)}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Time Defect Identified <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={defectTime}
+                    onChange={(e) => {
+                      const selectedTime = e.target.value;
+                      
+                      // If today's date is selected, validate time is not in the future
+                      if (defectDate) {
+                        const selectedDate = new Date(defectDate);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        
+                        // If defect date is today
+                        if (selectedDate.getTime() === today.getTime()) {
+                          const [hours, minutes] = selectedTime.split(':');
+                          const currentHours = new Date().getHours();
+                          const currentMinutes = new Date().getMinutes();
+                          
+                          if (parseInt(hours) > currentHours || 
+                              (parseInt(hours) === currentHours && parseInt(minutes) > currentMinutes)) {
+                            alert("Defect identification time cannot be in the future");
+                            return;
+                          }
+                        }
+                      }
+                      
+                      setDefectTime(e.target.value);
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Select
                   label="State"
                   required

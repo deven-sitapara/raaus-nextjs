@@ -120,14 +120,10 @@ export async function POST(request: NextRequest) {
  */
 async function createCRMRecord(formType: string, data: FormData): Promise<string> {
   try {
-    console.log(`Creating CRM record for form type: ${formType}`);
     let crmData = await prepareCRMData(formType, data);
-    console.log(`CRM data prepared, field count: ${Object.keys(crmData).length}`);
-    console.log(`CRM data sample:`, JSON.stringify(crmData, null, 2).substring(0, 1000) + '...');
     
     // Final cleanup: drop empty/placeholder values to prevent INVALID_DATA
     crmData = cleanupCRMRecord(crmData);
-    console.log(`CRM data after cleanup, field count: ${Object.keys(crmData).length}`);
     
     // Validate CRM data before sending
     validateCRMData(crmData);
@@ -189,10 +185,9 @@ async function createCRMRecord(formType: string, data: FormData): Promise<string
       
       // If we can't find the record ID in response
       console.error('Unexpected CRM response structure:', JSON.stringify(firstRecord, null, 2));
-      throw new Error(`Could not extract record ID from CRM response. Response structure: ${JSON.stringify(firstRecord, null, 2)}`);
+      throw new Error(`Could not extract record ID from CRM response.`);
     }
     
-    console.log(`Successfully created CRM record with ID: ${recordId}`);
     return recordId;
   } catch (crmError: any) {
     console.error('CRM Error Details:', {
@@ -367,9 +362,9 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Reporter_Suggestions: accidentData.Reporter_Suggestions || '',
   Name_of_Flight_Training_School: sanitizePick(accidentData.Name_of_Flight_Training_School),
   Involve_IFR_or_Air_Transport_Operations: convertToBoolean(accidentData.Involve_IFR_or_Air_Transport_Operations),
-  Involve_near_miss_with_another_aircraft: convertToYesNoText(accidentData.Involve_near_miss_with_another_aircraft),
+  Involve_near_miss_with_another_aircraft: convertToBoolean(accidentData.Involve_near_miss_with_another_aircraft),
     In_controlled_or_special_use_airspace: convertToBoolean(accidentData.In_controlled_or_special_use_airspace),
-  Bird_or_Animal_Strike: convertToYesNoText(accidentData.Bird_or_Animal_Strike),
+  Bird_or_Animal_Strike: convertToBoolean(accidentData.Bird_or_Animal_Strike),
 
         // Aircraft details
         Registration_number: accidentData.Registration_number && accidentData.Serial_number1 ? 
@@ -773,14 +768,12 @@ function cleanupCRMRecord(record: Record<string, any>): Record<string, any> {
     cleaned[k] = v;
   }
   
-  console.log(`Cleaned record: removed ${Object.keys(record).length - Object.keys(cleaned).length} empty/invalid fields`);
   return cleaned;
 }
 /**
  * Validate CRM data for common issues before sending to Zoho
  */
 function validateCRMData(crmData: Record<string, any>): void {
-  console.log("Validating CRM data for common issues...");
   
   // Check for problematic field types
   const problematicFields: string[] = [];
@@ -788,7 +781,7 @@ function validateCRMData(crmData: Record<string, any>): void {
   for (const [key, value] of Object.entries(crmData)) {
     // Check for empty strings that should be null
     if (value === '') {
-      console.warn(`Field '${key}' has empty string value, should be removed`);
+      console.warn(`Field '${key}' has empty string value`);
     }
     
     // Check for NaN numbers
@@ -805,7 +798,7 @@ function validateCRMData(crmData: Record<string, any>): void {
     if (Array.isArray(value)) {
       const hasInvalidItems = value.some(item => item === '' || item === null || item === undefined);
       if (hasInvalidItems) {
-        console.warn(`Field '${key}' has array with invalid items:`, value);
+        console.warn(`Field '${key}' has array with invalid items`);
       }
     }
   }
@@ -813,8 +806,6 @@ function validateCRMData(crmData: Record<string, any>): void {
   if (problematicFields.length > 0) {
     console.error("Problematic fields found:", problematicFields);
   }
-  
-  console.log("CRM data validation completed");
 }
 
 /**
@@ -822,10 +813,6 @@ function validateCRMData(crmData: Record<string, any>): void {
  */
 function validateFormData(formType: string, data: any): { isValid: boolean; errors?: string[] } {
   const errors: string[] = [];
-  
-  console.log(`Validating form data for type: ${formType}`);
-  console.log(`Data keys received:`, Object.keys(data));
-  console.log(`Sample data:`, JSON.stringify(data, null, 2).substring(0, 500) + '...');
   
   // Form-specific validation with proper field names
   switch (formType.toLowerCase()) {
@@ -920,11 +907,6 @@ function validateFormData(formType: string, data: any): { isValid: boolean; erro
 
     default:
       errors.push(`Unsupported form type: ${formType}`);
-  }
-
-  console.log(`Validation result: ${errors.length === 0 ? 'PASSED' : 'FAILED'}`);
-  if (errors.length > 0) {
-    console.log(`Validation errors:`, errors);
   }
 
   return {
