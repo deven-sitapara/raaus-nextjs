@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { AccidentFormData } from "@/types/forms";
-import { validationPatterns } from "@/lib/validations/patterns";
+import { validationPatterns, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
 import axios from "axios";
 import Link from "next/link";
 import "./wizard.css";
@@ -308,9 +308,14 @@ export default function AccidentForm() {
   const [isValidatingPilot, setIsValidatingPilot] = useState(false);
 
   const [contactPhone, setContactPhone] = useState("");
+  const [contactPhoneError, setContactPhoneError] = useState("");
+  const [contactPhoneCountry, setContactPhoneCountry] = useState<"AU" | "CA" | "GB" | "US">("AU");
   const [pilotContactPhone, setPilotContactPhone] = useState("");
+  const [pilotContactPhoneCountry, setPilotContactPhoneCountry] = useState<"AU" | "CA" | "GB" | "US">("AU");
   const [occurrenceDate, setOccurrenceDate] = useState("");
+  const [occurrenceDateError, setOccurrenceDateError] = useState("");
   const [occurrenceTime, setOccurrenceTime] = useState("");
+  const [occurrenceTimeError, setOccurrenceTimeError] = useState("");
   const [didInvolveBirdAnimalStrike, setDidInvolveBirdAnimalStrike] = useState(false);
   const [didInvolveNearMiss, setDidInvolveNearMiss] = useState(false);
   const [attachments, setAttachments] = useState<FileList | null>(null);
@@ -325,6 +330,7 @@ export default function AccidentForm() {
     handleSubmit,
     watch,
     setValue,
+    trigger,
     formState: { errors },
   } = useForm<AccidentFormData>();
 
@@ -340,13 +346,19 @@ export default function AccidentForm() {
 
   // Auto-lookup aircraft when both prefix and suffix are provided
   useEffect(() => {
+    // AbortController to cancel previous requests
+    const abortController = new AbortController();
+    
     if (registrationPrefix && registrationSuffix) {
       // Debounce the lookup to avoid excessive API calls
       const timeoutId = setTimeout(() => {
-        lookupAircraft(registrationPrefix, registrationSuffix);
+        lookupAircraft(registrationPrefix, registrationSuffix, abortController.signal);
       }, 500);
       
-      return () => clearTimeout(timeoutId);
+      return () => {
+        clearTimeout(timeoutId);
+        abortController.abort(); // Cancel any pending request
+      };
     } else {
       // Clear aircraft lookup status when fields are empty
       setAircraftLookupStatus("");
@@ -421,7 +433,7 @@ export default function AccidentForm() {
   };
 
   // Aircraft lookup function
-  const lookupAircraft = async (registrationPrefix: string, registrationSuffix: string) => {
+  const lookupAircraft = async (registrationPrefix: string, registrationSuffix: string, signal?: AbortSignal) => {
     // Reset lookup status
     if (!registrationPrefix || !registrationSuffix) {
       setAircraftLookupStatus("");
@@ -447,12 +459,12 @@ export default function AccidentForm() {
     try {
       const response = await axios.post("/api/aircraft-lookup", {
         aircraftConcat: combinedRegistration,
+      }, {
+        signal, // Pass the AbortSignal to axios
       });
 
-      if (response.data.success && response.data.data) {
+      if (response?.data?.success && response?.data?.data) {
         const aircraftData = response.data.data;
-        
-        console.log("Aircraft lookup response:", aircraftData);
         
         // Auto-fill aircraft fields
         setValue("Serial_number", aircraftData.Serial_Number1 || "");
@@ -467,14 +479,7 @@ export default function AccidentForm() {
         setValue("Engine_model", aircraftData.Engine_model || "");
         setValue("Engine_serial", aircraftData.Engines_Serial || "");
         
-        // Auto-fill propeller fields with debug logging
-        console.log("Propeller data from API:", {
-          make: aircraftData.Propeller_make,
-          model: aircraftData.Propeller_model,
-          serial: aircraftData.Propeller_serial,
-          propeller_found: aircraftData.propeller_found
-        });
-        
+        // Auto-fill propeller fields
         setValue("Propeller_make", aircraftData.Propeller_make || "");
         setValue("Propeller_model", aircraftData.Propeller_model || "");
         setValue("Propeller_serial", aircraftData.Propeller_serial || "");
@@ -507,6 +512,11 @@ export default function AccidentForm() {
         setAircraftLookupMessage(response.data.message || `No aircraft found for registration ${combinedRegistration}`);
       }
     } catch (error: any) {
+      // Don't show error if request was aborted (user changed fields)
+      if (axios.isCancel(error) || error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+        return;
+      }
+      
       setAircraftLookupStatus("error");
       setAircraftLookupMessage("Unable to lookup aircraft data. Please try again.");
       console.error("Aircraft lookup error:", error);
@@ -515,15 +525,90 @@ export default function AccidentForm() {
     }
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
+    // Clear previous errors
+    setContactPhoneError("");
+    setOccurrenceDateError("");
+    setOccurrenceTimeError("");
+    
+    // Trigger form validation to show inline error messages
+    let fieldsToValidate: string[] = [];
+    let hasError = false;
+
+    if (currentStep === 1) {
+      // Step 1: Pilot Information validation
+      fieldsToValidate = [
+        "role",
+        "firstName", 
+        "lastName",
+        "emailAddress"
+      ];
+      
+      // Validate contact phone with country-specific rules
+      if (!contactPhone || contactPhone.trim() === "") {
+        setContactPhoneError("Contact Phone is required");
+        hasError = true;
+      } else if (!validatePhoneNumber(contactPhone, contactPhoneCountry)) {
+        setContactPhoneError(getPhoneValidationMessage(contactPhoneCountry));
+        hasError = true;
+      }
+    } else if (currentStep === 2) {
+      // Step 2: Occurrence Information validation
+      fieldsToValidate = [
+        "state",
+        "location",
+        "detailsOfIncident",
+        "Damage_to_aircraft",
+        "Most_serious_injury_to_pilot",
+        "Description_of_damage_to_aircraft",
+        "Accident_or_Incident",
+        "Details_of_incident_accident",
+        "Reporter_Suggestions",
+        "ATSB_reportable_status",
+        "Type_of_operation",
+        "Wind_gusting",
+        "Personal_Locator_Beacon_carried"
+      ];
+      
+      // Check date and time separately since they're not in the form
+      if (!occurrenceDate || occurrenceDate.trim() === "") {
+        setOccurrenceDateError("Occurrence Date is required");
+        hasError = true;
+      }
+      if (!occurrenceTime || occurrenceTime.trim() === "") {
+        setOccurrenceTimeError("Occurrence Time is required");
+        hasError = true;
+      }
+    }
+
+    // Trigger validation for all fields in the current step
+    const result = await trigger(fieldsToValidate as any);
+    
+    if (!result || hasError) {
+      // Validation failed, errors are now displayed inline under each field
+      // Scroll to the first error
+      setTimeout(() => {
+        const firstError = document.querySelector('.text-red-500, .text-red-600, .border-red-500');
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return;
+    }
+
+    // If validation passes, move to next step
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
+      // Scroll to top of page when moving to next step
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+      // Scroll to top of page when moving to previous step
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -534,6 +619,12 @@ export default function AccidentForm() {
       // Validate required fields
       if (!occurrenceDate || !occurrenceTime) {
         alert("Please provide both occurrence date and time");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!contactPhone) {
+        alert("Please provide a contact phone number");
         setIsSubmitting(false);
         return;
       }
@@ -552,11 +643,17 @@ export default function AccidentForm() {
       // Add form type and data
       formData.append('formType', 'accident');
       
+      // Convert "Yes"/"No" strings to boolean for Zoho CRM compatibility
       const submissionData = {
         ...data,
         contactPhone: contactPhone,
         pilotContactPhone: pilotContactPhone,
         occurrenceDate: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
+        // Convert Yes/No strings to boolean
+        Involve_IFR_or_Air_Transport_Operations: data.Involve_IFR_or_Air_Transport_Operations === "Yes" ? true : data.Involve_IFR_or_Air_Transport_Operations === "No" ? false : data.Involve_IFR_or_Air_Transport_Operations,
+        In_controlled_or_special_use_airspace: data.In_controlled_or_special_use_airspace === "Yes" ? true : data.In_controlled_or_special_use_airspace === "No" ? false : data.In_controlled_or_special_use_airspace,
+        Involve_near_miss_with_another_aircraft: typeof data.Involve_near_miss_with_another_aircraft === 'boolean' ? data.Involve_near_miss_with_another_aircraft : data.Involve_near_miss_with_another_aircraft === "Yes" ? true : data.Involve_near_miss_with_another_aircraft === "No" ? false : data.Involve_near_miss_with_another_aircraft,
+        Bird_or_Animal_Strike: typeof data.Bird_or_Animal_Strike === 'boolean' ? data.Bird_or_Animal_Strike : data.Bird_or_Animal_Strike === "Yes" ? true : data.Bird_or_Animal_Strike === "No" ? false : data.Bird_or_Animal_Strike,
       };
       
       formData.append('formData', JSON.stringify(submissionData));
@@ -785,10 +882,7 @@ export default function AccidentForm() {
                       error={errors.emailAddress?.message}
                       {...register("emailAddress", {
                         required: "Email address is required",
-                        pattern: {
-                          value: validationPatterns.email,
-                          message: "Email is invalid"
-                        }
+                        validate: (value) => !value || validateEmail(value) || "Please enter a valid email address (e.g., user@example.com)"
                       })}
                     />
 
@@ -797,8 +891,17 @@ export default function AccidentForm() {
                       required
                       placeholder="0412 345 678"
                       value={contactPhone}
-                      onValueChange={setContactPhone}
-                      error={errors.contactPhone?.message}
+                      onChange={(value) => {
+                        setContactPhone(value);
+                        if (value && value.trim() !== "") {
+                          setContactPhoneError("");
+                        }
+                      }}
+                      onCountryChange={(country) => setContactPhoneCountry(country)}
+                      defaultCountry="AU"
+                      countries={["AU", "CA", "GB"]}
+                      error={contactPhoneError}
+                      validateOnBlur={true}
                     />
                   </div>
                 </div>
@@ -848,6 +951,8 @@ export default function AccidentForm() {
                       <Input
                         label="Date of Birth"
                         type="date"
+                        min="1900-01-01"
+                        max={new Date().toISOString().split('T')[0]}
                         {...register("Date_of_Birth")}
                         error={errors.Date_of_Birth?.message}
                       />
@@ -901,7 +1006,11 @@ export default function AccidentForm() {
                         placeholder="0412 345 678"
                         value={pilotContactPhone}
                         onValueChange={setPilotContactPhone}
+                        onCountryChange={(country) => setPilotContactPhoneCountry(country)}
+                        defaultCountry="AU"
+                        countries={["AU", "CA", "GB"]}
                         error={errors.PIC_Contact_Phone?.message}
+                        validateOnBlur={true}
                       />
 
                       <Input
@@ -910,10 +1019,7 @@ export default function AccidentForm() {
                         placeholder="example@domain.com"
                         error={errors.PIC_Email?.message}
                         {...register("PIC_Email", {
-                          pattern: {
-                            value: validationPatterns.email,
-                            message: "Email is invalid"
-                          }
+                          validate: (value) => !value || validateEmail(value) || "Please enter a valid email address (e.g., user@example.com)"
                         })}
                       />
                     </div>
@@ -984,23 +1090,89 @@ export default function AccidentForm() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Occurrence Date <span className="text-red-500">*</span>
                       </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="date"
-                          value={occurrenceDate}
-                          onChange={(e) => setOccurrenceDate(e.target.value)}
-                          className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          max={new Date().toISOString().split('T')[0]}
-                          required
-                        />
-                        <input
-                          type="time"
-                          value={occurrenceTime}
-                          onChange={(e) => setOccurrenceTime(e.target.value)}
-                          className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          required
-                        />
-                      </div>
+                      <input
+                        type="date"
+                        value={occurrenceDate}
+                        onChange={(e) => {
+                          const selectedDateStr = e.target.value;
+                          const selectedDate = new Date(selectedDateStr + 'T00:00:00');
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          
+                          // Only block if selected date is AFTER today
+                          if (selectedDate.getTime() > today.getTime()) {
+                            setOccurrenceDateError("Occurrence date cannot be in the future");
+                            return;
+                          }
+                          
+                          setOccurrenceDate(selectedDateStr);
+                          if (selectedDateStr && selectedDateStr.trim() !== "") {
+                            setOccurrenceDateError("");
+                          }
+                        }}
+                        className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 ${
+                          occurrenceDateError 
+                            ? 'border-red-500 focus:ring-red-500' 
+                            : 'border-gray-300 focus:ring-blue-500'
+                        }`}
+                        min="1900-01-01"
+                        max={new Date().toISOString().split('T')[0]}
+                        required
+                      />
+                      {occurrenceDateError && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {occurrenceDateError}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Occurrence Time <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="time"
+                        value={occurrenceTime}
+                        onChange={(e) => {
+                          const selectedTime = e.target.value;
+                          
+                          // If today's date is selected, validate time is in the past
+                          if (occurrenceDate) {
+                            const selectedDate = new Date(occurrenceDate);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            
+                            // If occurrence date is today
+                            if (selectedDate.getTime() === today.getTime()) {
+                              const [hours, minutes] = selectedTime.split(':');
+                              const currentHours = new Date().getHours();
+                              const currentMinutes = new Date().getMinutes();
+                              
+                              if (parseInt(hours) > currentHours || 
+                                  (parseInt(hours) === currentHours && parseInt(minutes) > currentMinutes)) {
+                                setOccurrenceTimeError("Occurrence time must be in the past");
+                                return;
+                              }
+                            }
+                          }
+                          
+                          setOccurrenceTime(e.target.value);
+                          if (e.target.value && e.target.value.trim() !== "") {
+                            setOccurrenceTimeError("");
+                          }
+                        }}
+                        className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 ${
+                          occurrenceTimeError 
+                            ? 'border-red-500 focus:ring-red-500' 
+                            : 'border-gray-300 focus:ring-blue-500'
+                        }`}
+                        required
+                      />
+                      {occurrenceTimeError && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {occurrenceTimeError}
+                        </p>
+                      )}
                     </div>
 
                     <Select
@@ -1515,7 +1687,7 @@ export default function AccidentForm() {
                         onCheckedChange={(checked) => {
                           setDidInvolveNearMiss(checked);
                           // Also update the form value
-                          setValue("Involve_near_miss_with_another_aircraft", checked ? "Yes" : "No");
+                          setValue("Involve_near_miss_with_another_aircraft", checked);
                         }}
                       />
                     </div>
@@ -1527,7 +1699,7 @@ export default function AccidentForm() {
                         onCheckedChange={(checked) => {
                           setDidInvolveBirdAnimalStrike(checked);
                           // Also update the form value
-                          setValue("Bird_or_Animal_Strike", checked ? "Yes" : "No");
+                          setValue("Bird_or_Animal_Strike", checked);
                         }}
                       />
                     </div>
@@ -1891,18 +2063,14 @@ export default function AccidentForm() {
                       {...register('Personal_Locator_Beacon_carried', { required: 'PLB status is required' })}
                       error={errors.Personal_Locator_Beacon_carried?.message}
                     />
-                    
-                    <div className="md:col-span-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          {...register('PLB_Activated')}
-                          id="plbActivated"
-                        />
-                        <label htmlFor="plbActivated" className="text-sm font-medium text-gray-700">
-                          PLB Activated
-                        </label>
-                      </div>
-                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <Checkbox
+                      label="PLB Activated"
+                      id="plbActivated"
+                      {...register('PLB_Activated')}
+                    />
                   </div>
                 </div>
 

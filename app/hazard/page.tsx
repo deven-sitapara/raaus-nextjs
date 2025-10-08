@@ -100,6 +100,12 @@ export default function HazardForm() {
         return;
       }
 
+      if (!contactPhone) {
+        alert("Please provide a contact phone number");
+        setIsSubmitting(false);
+        return;
+      }
+
       // Convert date and time to ISO format
       const datetime = new Date(`${hazardDate}T${hazardTime}`);
       if (isNaN(datetime.getTime())) {
@@ -342,22 +348,70 @@ export default function HazardForm() {
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Date Hazard Identified"
-                  type="date"
-                  required
-                  value={hazardDate}
-                  onChange={(e) => setHazardDate(e.target.value)}
-                  min="1875-01-01"
-                  max={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                />
-                <Input
-                  label="Time Hazard Identified"
-                  type="time"
-                  required
-                  value={hazardTime}
-                  onChange={(e) => setHazardTime(e.target.value)}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Date Hazard Identified <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={hazardDate}
+                    onChange={(e) => {
+                      const selectedDateStr = e.target.value;
+                      const selectedDate = new Date(selectedDateStr + 'T00:00:00');
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      
+                      // Only block if selected date is AFTER today
+                      if (selectedDate.getTime() > today.getTime()) {
+                        alert("Hazard identification date cannot be in the future");
+                        return;
+                      }
+                      
+                      setHazardDate(selectedDateStr);
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min="1900-01-01"
+                    max={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Time Hazard Identified <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={hazardTime}
+                    onChange={(e) => {
+                      const selectedTime = e.target.value;
+                      
+                      // If today's date is selected, validate time is not in the future
+                      if (hazardDate) {
+                        const selectedDate = new Date(hazardDate + 'T00:00:00');
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        
+                        // If hazard date is today
+                        if (selectedDate.getTime() === today.getTime()) {
+                          const [hours, minutes] = selectedTime.split(':');
+                          const currentHours = new Date().getHours();
+                          const currentMinutes = new Date().getMinutes();
+                          
+                          if (parseInt(hours) > currentHours || 
+                              (parseInt(hours) === currentHours && parseInt(minutes) > currentMinutes)) {
+                            alert("Hazard identification time cannot be in the future");
+                            return;
+                          }
+                        }
+                      }
+                      
+                      setHazardTime(e.target.value);
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils/cn";
+import { validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
 
 export interface PhoneInputProps {
   label?: string;
@@ -10,10 +11,13 @@ export interface PhoneInputProps {
   value?: string;
   onChange?: (value: string) => void;
   onValueChange?: (value: string) => void;
+  onValidationChange?: (isValid: boolean, errorMessage: string) => void;
+  onCountryChange?: (country: "AU" | "CA" | "GB" | "US") => void;
   defaultCountry?: "AU" | "CA" | "GB" | "US";
   countries?: Array<"AU" | "CA" | "GB" | "US">;
   placeholder?: string;
   className?: string;
+  validateOnBlur?: boolean;
 }
 
 const countryData = {
@@ -32,16 +36,21 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       value = "",
       onChange,
       onValueChange,
+      onValidationChange,
+      onCountryChange,
       defaultCountry = "AU",
       countries = ["AU", "CA", "GB", "US"],
       placeholder = "0412 345 678",
       className,
+      validateOnBlur = true,
       ...props
     },
     ref
   ) => {
     const [selectedCountry, setSelectedCountry] = React.useState<keyof typeof countryData>(defaultCountry);
     const [isOpen, setIsOpen] = React.useState(false);
+    const [internalError, setInternalError] = React.useState<string>("");
+    const [touched, setTouched] = React.useState(false);
     const dropdownRef = React.useRef<HTMLDivElement>(null);
 
     // Close dropdown when clicking outside
@@ -59,7 +68,59 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const handleCountryChange = (country: keyof typeof countryData) => {
       setSelectedCountry(country);
       setIsOpen(false);
+      onCountryChange?.(country);
+      
+      // Re-validate with new country if field is touched and has value
+      if (touched && value) {
+        validatePhone(value, country);
+      }
     };
+
+    const validatePhone = (phoneValue: string, country: keyof typeof countryData) => {
+      if (!phoneValue || phoneValue.trim() === "") {
+        if (required) {
+          const errorMsg = "Phone number is required";
+          setInternalError(errorMsg);
+          onValidationChange?.(false, errorMsg);
+          return false;
+        }
+        setInternalError("");
+        onValidationChange?.(true, "");
+        return true;
+      }
+
+      const isValid = validatePhoneNumber(phoneValue, country);
+      if (!isValid) {
+        const errorMsg = getPhoneValidationMessage(country);
+        setInternalError(errorMsg);
+        onValidationChange?.(false, errorMsg);
+        return false;
+      }
+
+      setInternalError("");
+      onValidationChange?.(true, "");
+      return true;
+    };
+
+    const handleBlur = () => {
+      setTouched(true);
+      if (validateOnBlur) {
+        validatePhone(value, selectedCountry);
+      }
+    };
+
+    const handleChange = (newValue: string) => {
+      onChange?.(newValue);
+      onValueChange?.(newValue);
+      
+      // Clear error when user starts typing
+      if (touched && internalError) {
+        setInternalError("");
+      }
+    };
+
+    // Use external error if provided, otherwise use internal error
+    const displayError = error || internalError;
 
     return (
       <div className="w-full" style={{marginBottom: '10px'}}>
@@ -75,7 +136,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
             className={cn(
               "flex items-center w-full rounded-md border border-gray-300 bg-white overflow-hidden",
               "focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent",
-              error && "border-red-500 focus-within:ring-red-500",
+              displayError && "border-red-500 focus-within:ring-red-500",
               className
             )}
           >
@@ -105,11 +166,8 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
               ref={ref}
               type="tel"
               value={value}
-              onChange={(e) => {
-                const newValue = e.target.value;
-                onChange?.(newValue);
-                onValueChange?.(newValue);
-              }}
+              onChange={(e) => handleChange(e.target.value)}
+              onBlur={handleBlur}
               placeholder={placeholder}
               className="flex-1 px-3 py-2 text-sm outline-none bg-white"
               {...props}
@@ -138,7 +196,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           )}
         </div>
 
-        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+        {displayError && <p className="mt-1 text-sm text-red-600">{displayError}</p>}
       </div>
     );
   }

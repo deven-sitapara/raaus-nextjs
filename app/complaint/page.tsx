@@ -11,7 +11,7 @@ import { FileUpload } from "@/components/ui/FileUpload";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 import { ComplaintFormData } from "@/types/forms";
-import { validationPatterns } from "@/lib/validations/patterns";
+import { validationPatterns, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
 import axios from "axios";
 import Link from "next/link";
 
@@ -88,6 +88,12 @@ export default function ComplaintForm() {
       // Validate required fields
       if (!occurrenceDate || !occurrenceTime) {
         alert("Please provide both occurrence date and time");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!contactPhone) {
+        alert("Please provide a contact phone number");
         setIsSubmitting(false);
         return;
       }
@@ -301,9 +307,11 @@ export default function ComplaintForm() {
                 required
                 {...register("Reporter_Email", {
                   required: "Email is required",
-                  pattern: {
-                    value: validationPatterns.email,
-                    message: "Please enter a valid email address",
+                  validate: (value) => {
+                    if (!value || !validateEmail(value)) {
+                      return "Please enter a valid email address (e.g., user@example.com)";
+                    }
+                    return true;
                   },
                 })}
                 error={errors.Reporter_Email?.message}
@@ -312,6 +320,7 @@ export default function ComplaintForm() {
               <PhoneInput
                 label="Contact Phone"
                 placeholder="0412 345 678"
+                required
                 value={contactPhone}
                 onChange={(value) => setContactPhone(value)}
                 defaultCountry="AU"
@@ -326,22 +335,70 @@ export default function ComplaintForm() {
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Occurrence Date"
-                  type="date"
-                  required
-                  value={occurrenceDate}
-                  onChange={(e) => setOccurrenceDate(e.target.value)}
-                  min="1875-01-01"
-                  max={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                />
-                <Input
-                  label="Occurrence Time"
-                  type="time"
-                  required
-                  value={occurrenceTime}
-                  onChange={(e) => setOccurrenceTime(e.target.value)}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Occurrence Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={occurrenceDate}
+                    onChange={(e) => {
+                      const selectedDateStr = e.target.value;
+                      const selectedDate = new Date(selectedDateStr + 'T00:00:00');
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      
+                      // Only block if selected date is AFTER today
+                      if (selectedDate.getTime() > today.getTime()) {
+                        alert("Occurrence date cannot be in the future");
+                        return;
+                      }
+                      
+                      setOccurrenceDate(selectedDateStr);
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min="1900-01-01"
+                    max={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Occurrence Time <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={occurrenceTime}
+                    onChange={(e) => {
+                      const selectedTime = e.target.value;
+                      
+                      // If today's date is selected, validate time is not in the future
+                      if (occurrenceDate) {
+                        const selectedDate = new Date(occurrenceDate + 'T00:00:00');
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        
+                        // If occurrence date is today
+                        if (selectedDate.getTime() === today.getTime()) {
+                          const [hours, minutes] = selectedTime.split(':');
+                          const currentHours = new Date().getHours();
+                          const currentMinutes = new Date().getMinutes();
+                          
+                          if (parseInt(hours) > currentHours || 
+                              (parseInt(hours) === currentHours && parseInt(minutes) > currentMinutes)) {
+                            alert("Occurrence time cannot be in the future");
+                            return;
+                          }
+                        }
+                      }
+                      
+                      setOccurrenceTime(e.target.value);
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
               </div>
 
               <Textarea

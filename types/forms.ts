@@ -83,10 +83,10 @@ export interface AccidentFormData {
   Accident_or_Incident?: "Accident" | "Incident";
   Reporter_Suggestions?: string;
   Name_of_Flight_Training_School?: string;
-  Involve_IFR_or_Air_Transport_Operations?: "Yes" | "No";
-  Involve_near_miss_with_another_aircraft?: "Yes" | "No";
-  In_controlled_or_special_use_airspace?: "Yes" | "No";
-  Bird_or_Animal_Strike?: "Yes" | "No";
+  Involve_IFR_or_Air_Transport_Operations?: boolean | "Yes" | "No";
+  Involve_near_miss_with_another_aircraft?: boolean | "Yes" | "No";
+  In_controlled_or_special_use_airspace?: boolean | "Yes" | "No";
+  Bird_or_Animal_Strike?: boolean | "Yes" | "No";
 
   // Aircraft details
   Make1?: string;

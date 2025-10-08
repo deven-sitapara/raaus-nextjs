@@ -10,7 +10,7 @@ export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElemen
 const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
   ({ className, label, error, onCheckedChange, ...props }, ref) => {
     return (
-      <div className="w-full" style={{marginBottom: '10px'}}>
+      <div className="w-full">
         <div className="flex items-center">
           <input
             type="checkbox"
@@ -28,7 +28,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             {...props}
           />
           {label && (
-            <label htmlFor={props.id} className="ml-2 text-base text-black" style={{fontSize: '16px', color: '#000000'}}>
+            <label htmlFor={props.id} className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
               {label}
             </label>
           )}
