@@ -323,7 +323,7 @@ export interface HazardFormData {
   // Additional Hazard Fields
   Hazard_Description?: string;
   Please_fully_describe_the_identified_hazard?: string; // CRM field name
-  Prevention_Suggestions?: string;
+  Do_you_have_further_suggestions_on_how_to_PSO?: string;
   Potential_Consequences_of_Hazard?: string; // CRM field name
   
   // Attachments
