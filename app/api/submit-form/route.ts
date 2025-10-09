@@ -180,7 +180,19 @@ async function createCRMRecord(formType: string, data: FormData): Promise<string
           // Auto-correct failed, continue with original error
         }
 
-        throw new Error(`CRM API error: ${firstRecord.code} - ${firstRecord.message || 'Unknown error'}`);
+        // Extract detailed error information
+        const errorDetails: any = (firstRecord as any).details || {};
+        const fieldInfo = errorDetails.api_name || errorDetails.field_api_name || errorDetails.field || 'unknown_field';
+        const expectedType = errorDetails.expected_data_type || 'unknown';
+        const receivedValue = errorDetails.value !== undefined ? JSON.stringify(errorDetails.value) : 'unknown';
+        
+        throw new Error(
+          `CRM API error: ${firstRecord.code} - ${firstRecord.message || 'Unknown error'}\n` +
+          `Field: ${fieldInfo}\n` +
+          `Expected type: ${expectedType}\n` +
+          `Received value: ${receivedValue}\n` +
+          `Details: ${JSON.stringify(errorDetails)}`
+        );
       }
       
       // If we can't find the record ID in response
