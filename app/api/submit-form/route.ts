@@ -412,7 +412,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         // Operations / Environment
   Type_of_operation: sanitizePick(accidentData.Type_of_operation),
   Phase_of_flight: mapUnknown(accidentData.Phase_of_flight),
-  Effect_of_flight: sanitizePick(accidentData.Effect_of_flight),
+  Effect_of_flight: accidentData.Effect_of_flight ? [sanitizePick(accidentData.Effect_of_flight)].filter(Boolean) : undefined,
   Flight_Conditions: sanitizePick(accidentData.Flight_Conditions),
   Flight_Rules: mapUnknown(accidentData.Flight_Rules),
   Airspace_class: mapUnknown(accidentData.Airspace_class),

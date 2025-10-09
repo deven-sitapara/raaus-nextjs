@@ -1,0 +1,297 @@
+[
+  {
+    "field_label": "Accident or Incident?",
+    "api_name": "Accident_or_Incident",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Accident/Incident",
+    "api_name": "Accident",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Accounts",
+    "api_name": "Accounts",
+    "data_type": "Lookup",
+    "custom_field": true
+  },
+  {
+    "field_label": "Action taken by operator to prevent recurrence",
+    "api_name": "Action_taken_by_operator_to_prevent_recurrence",
+    "data_type": "Single Line",
+    "custom_field": true
+  },
+  {
+    "field_label": "Action taken to reduce or eliminate hazard",
+    "api_name": "Action_taken_to_reduce_or_eliminate_hazard",
+    "data_type": "Multi Line (Large)",
+    "custom_field": true
+  },
+  {
+    "field_label": "Address",
+    "api_name": "Address1",
+    "data_type": "Single Line",
+    "custom_field": true
+  },
+  {
+    "field_label": "Aerial work",
+    "api_name": "Aerial_work",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Aerodrome Operate",
+    "api_name": "Aerodrome_Operate",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Agriculture",
+    "api_name": "Agriculture",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Air Traffic Controller",
+    "api_name": "Air_Traffic_Controller",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Air transport - cargo",
+    "api_name": "Air_transport_cargo",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Air transport - passenger",
+    "api_name": "Air_transport_passenger",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Aircraft Information",
+    "api_name": "Aircraft_Information",
+    "data_type": "Lookup",
+    "custom_field": true
+  },
+  {
+    "field_label": "Aircraft Make",
+    "api_name": "Make1",
+    "data_type": "Single Line",
+    "custom_field": true
+  },
+  {
+    "field_label": "Aircraft Model",
+    "api_name": "Model",
+    "data_type": "Single Line",
+    "custom_field": true
+  },
+  {
+    "field_label": "Aircraft Registration  No",
+    "api_name": "Aircraft_Registration_No",
+    "data_type": "Lookup",
+    "custom_field": true
+  },
+  {
+    "field_label": "Aircraft Serial number",
+    "api_name": "Serial_number",
+    "data_type": "Single Line",
+    "custom_field": true
+  },
+  {
+    "field_label": "Aircraft standing",
+    "api_name": "Aircraft_standing",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Aircraft Type",
+    "api_name": "Type1",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Airspace class",
+    "api_name": "Airspace_class",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Airspace type",
+    "api_name": "Airspace_type",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Alert Received",
+    "api_name": "Alert_Received",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Altitude",
+    "api_name": "Altitude",
+    "data_type": "Number",
+    "custom_field": true
+  },
+  {
+    "field_label": "Altitude type",
+    "api_name": "Altitude_type",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Approach",
+    "api_name": "Approach",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Assigned to",
+    "api_name": "Assigned_to",
+    "data_type": "Single Line",
+    "custom_field": true
+  },
+  {
+    "field_label": "ATSB",
+    "api_name": "ATSB",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "ATSB reportable status",
+    "api_name": "ATSB_reportable_status",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Avoidance manoeuvre needed?",
+    "api_name": "Avoidance_manoeuvre_needed",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Bird or animal activity",
+    "api_name": "Bird_or_animal_activity",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Bird or Animal Strike",
+    "api_name": "Bird_or_Animal_Strike",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "CASA",
+    "api_name": "CASA",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Cause Id from Inves",
+    "api_name": "Cause_Id_from_Inves",
+    "data_type": "Single Line",
+    "custom_field": true
+  },
+  {
+    "field_label": "Charter",
+    "api_name": "Charter",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Classification level",
+    "api_name": "Classification_level",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Climb",
+    "api_name": "Climb",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Comments",
+    "api_name": "Comments",
+    "data_type": "Multi Line (Large)",
+    "custom_field": true
+  },
+  {
+    "field_label": "Complaint",
+    "api_name": "Complaint",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Complaint details",
+    "api_name": "Complaint_details",
+    "data_type": "Multi Line (Small)",
+    "custom_field": true
+  },
+  {
+    "field_label": "Connected To",
+    "api_name": "Connected_To__s",
+    "data_type": "MultiModuleLookup",
+    "custom_field": false
+  },
+  {
+    "field_label": "Contacts",
+    "api_name": "Contacts",
+    "data_type": "Lookup",
+    "custom_field": true
+  },
+  {
+    "field_label": "Contributing Factors",
+    "api_name": "Contributing_Factors1",
+    "data_type": "Multi Line (Large)",
+    "custom_field": true
+  },
+  {
+    "field_label": "Created By",
+    "api_name": "Created_By",
+    "data_type": "Single Line",
+    "custom_field": false
+  },
+  {
+    "field_label": "Crew",
+    "api_name": "Crew",
+    "data_type": "Boolean",
+    "custom_field": true
+  },
+  {
+    "field_label": "Damage",
+    "api_name": "Damage",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Damage to aircraft",
+    "api_name": "Damage_to_aircraft",
+    "data_type": "Pick List",
+    "custom_field": true
+  },
+  {
+    "field_label": "Date Defect Identified",
+    "api_name": "Date_Defect_Identified",
+    "data_type": "DateTime",
+    "custom_field": true
+  },
+  {
+    "field_label": "Date Hazard Identified",
+    "api_name": "Date_Hazard_Identified",
+    "data_type": "DateTime",
+    "custom_field": true
+  },
+  {
+    "field_label": "Date REPOR",
+    "api_name": "Date",
+    "data_type": "Date",
+    "custom_field": true
+  }
+]
+
