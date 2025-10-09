@@ -1,0 +1,894 @@
+{
+  "module": "Occurrence_Management",
+  "extracted_date": "2025-10-09",
+  "source": "Zoho CRM API Names and Fields",
+  "fields": [
+    {
+      "label": "Accident or Incident?",
+      "api_name": "Accident_or_Incident",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Accident/Incident",
+      "api_name": "Accident",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Accounts",
+      "api_name": "Accounts",
+      "data_type": "Lookup",
+      "custom_field": true
+    },
+    {
+      "label": "Action taken by operator to prevent recurrence",
+      "api_name": "Action_taken_by_operator_to_prevent_recurrence",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Action taken to reduce or eliminate hazard",
+      "api_name": "Action_taken_to_reduce_or_eliminate_hazard",
+      "data_type": "Multi Line (Large)",
+      "custom_field": true
+    },
+    {
+      "label": "Address",
+      "api_name": "Address1",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Aerial work",
+      "api_name": "Aerial_work",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Aerodrome Operate",
+      "api_name": "Aerodrome_Operate",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Air Traffic Controller",
+      "api_name": "Air_Traffic_Controller",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Air transport - cargo",
+      "api_name": "Air_transport_cargo",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Air transport - passenger",
+      "api_name": "Air_transport_passenger",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Aircraft Information",
+      "api_name": "Aircraft_Information",
+      "data_type": "Lookup",
+      "custom_field": true
+    },
+    {
+      "label": "Aircraft Make",
+      "api_name": "Make1",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Aircraft Model",
+      "api_name": "Model",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Aircraft Registration No",
+      "api_name": "Aircraft_Registration_No",
+      "data_type": "Lookup",
+      "custom_field": true
+    },
+    {
+      "label": "Aircraft Serial number",
+      "api_name": "Serial_number",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Aircraft standing",
+      "api_name": "Aircraft_standing",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Aircraft Type",
+      "api_name": "Type1",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Airspace class",
+      "api_name": "Airspace_class",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Airspace type",
+      "api_name": "Airspace_type",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Alert Received",
+      "api_name": "Alert_Received",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Altitude",
+      "api_name": "Altitude",
+      "data_type": "Number",
+      "custom_field": true
+    },
+    {
+      "label": "Altitude type",
+      "api_name": "Altitude_type",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Approach",
+      "api_name": "Approach",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Assigned to",
+      "api_name": "Assigned_to",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "ATSB",
+      "api_name": "ATSB",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "ATSB reportable status",
+      "api_name": "ATSB_reportable_status",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Avoidance manoeuvre needed?",
+      "api_name": "Avoidance_manoeuvre_needed",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Bird or animal activity",
+      "api_name": "Bird_or_animal_activity",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Bird or Animal Strike",
+      "api_name": "Bird_or_Animal_Strike",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "CASA",
+      "api_name": "CASA",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Charter",
+      "api_name": "Charter",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Classification level",
+      "api_name": "Classification_level",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Climb",
+      "api_name": "Climb",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Comments",
+      "api_name": "Comments",
+      "data_type": "Multi Line (Large)",
+      "custom_field": true
+    },
+    {
+      "label": "Complaint",
+      "api_name": "Complaint",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Complaint details",
+      "api_name": "Complaint_details",
+      "data_type": "Multi Line (Small)",
+      "custom_field": true
+    },
+    {
+      "label": "Connected To",
+      "api_name": "Connected_To__s",
+      "data_type": "MultiModuleLookup",
+      "custom_field": false
+    },
+    {
+      "label": "Contacts",
+      "api_name": "Contacts",
+      "data_type": "Lookup",
+      "custom_field": true
+    },
+    {
+      "label": "Contributing Factors",
+      "api_name": "Contributing_Factors1",
+      "data_type": "Multi Line (Large)",
+      "custom_field": true
+    },
+    {
+      "label": "Created By",
+      "api_name": "Created_By",
+      "data_type": "Single Line",
+      "custom_field": false
+    },
+    {
+      "label": "Crew",
+      "api_name": "Crew",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Damage",
+      "api_name": "Damage",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Damage to aircraft",
+      "api_name": "Damage_to_aircraft",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Date Defect Identified",
+      "api_name": "Date_Defect_Identified",
+      "data_type": "DateTime",
+      "custom_field": true
+    },
+    {
+      "label": "Date Hazard Identified",
+      "api_name": "Date_Hazard_Identified",
+      "data_type": "DateTime",
+      "custom_field": true
+    },
+    {
+      "label": "Date REPOR",
+      "api_name": "Date",
+      "data_type": "Date",
+      "custom_field": true
+    },
+    {
+      "label": "Date Reported",
+      "api_name": "Date_Reported",
+      "data_type": "DateTime",
+      "custom_field": true
+    },
+    {
+      "label": "Dawn",
+      "api_name": "Dawn",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Daylight",
+      "api_name": "Daylight",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Defect",
+      "api_name": "Defect",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Defect Causal Factors",
+      "api_name": "Causal_Factors",
+      "data_type": "Multiselect",
+      "custom_field": true
+    },
+    {
+      "label": "Defect Contributing Factors",
+      "api_name": "Contributing_factors",
+      "data_type": "Multiselect",
+      "custom_field": true
+    },
+    {
+      "label": "Defective component",
+      "api_name": "Defective_component",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Departure location",
+      "api_name": "Departure_location",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Descent",
+      "api_name": "Descent",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Description of damage to aircraft",
+      "api_name": "Description_of_damage_to_aircraft",
+      "data_type": "Multi Line (Small)",
+      "custom_field": true
+    },
+    {
+      "label": "Description of Occurrence",
+      "api_name": "Description_of_Occurrence",
+      "data_type": "Multi Line (Large)",
+      "custom_field": true
+    },
+    {
+      "label": "Destination location",
+      "api_name": "Destination_location",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Destroyed",
+      "api_name": "Destroyed",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Details of incident/accident",
+      "api_name": "Details_of_incident_accident",
+      "data_type": "Multi Line (Small)",
+      "custom_field": true
+    },
+    {
+      "label": "Disciplinary Action Taken",
+      "api_name": "Disciplinary_Action_Taken",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Display on Website",
+      "api_name": "Display_on_Website",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Do you have further suggestions on how to (PSO)",
+      "api_name": "Do_you_have_further_suggestions_on_how_to_PSO",
+      "data_type": "Multi Line (Small)",
+      "custom_field": true
+    },
+    {
+      "label": "Do you have further suggestions on how to PSO",
+      "api_name": "Do_you_have_further_suggestions_on_how_to_PSO1",
+      "data_type": "Multi Line (Large)",
+      "custom_field": true
+    },
+    {
+      "label": "Dusk",
+      "api_name": "Dusk",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Effect of flight",
+      "api_name": "Effect_of_flight",
+      "data_type": "Multiselect",
+      "custom_field": true
+    },
+    {
+      "label": "Email",
+      "api_name": "Email",
+      "data_type": "Email",
+      "custom_field": false
+    },
+    {
+      "label": "Email Opt Out",
+      "api_name": "Email_Opt_Out",
+      "data_type": "Boolean",
+      "custom_field": false
+    },
+    {
+      "label": "En-route",
+      "api_name": "En_route",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Engine make",
+      "api_name": "Engine_Details",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Engine model",
+      "api_name": "Engine_model",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Engine serial",
+      "api_name": "Engine_serial",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Engine/s Shut down",
+      "api_name": "Engine_s_Shut_down",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "File Upload 1",
+      "api_name": "File_Upload_1",
+      "data_type": "File Upload",
+      "custom_field": true
+    },
+    {
+      "label": "Flight Conditions",
+      "api_name": "Flight_Conditions",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Flight Rules",
+      "api_name": "Flight_Rules",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Flight Training School",
+      "api_name": "Lookup_5",
+      "data_type": "Lookup",
+      "custom_field": true
+    },
+    {
+      "label": "Flying training - dual",
+      "api_name": "Flying_training_dual",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Flying training - solo",
+      "api_name": "Flying_training_solo",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Formal Inquiry Commenced",
+      "api_name": "Formal_Inquiry_Commenced",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Further actions required (if applicable)",
+      "api_name": "Further_actions_required_if_applicable",
+      "data_type": "Multi Line (Large)",
+      "custom_field": true
+    },
+    {
+      "label": "Gliding",
+      "api_name": "Gliding",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Good case study for members",
+      "api_name": "Good_case_study_for_members",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Has an accident or incident report submitted us?",
+      "api_name": "Has_an_accident_or_incident_report_submitted_us",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Hazard",
+      "api_name": "Hazard",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Highest Injury",
+      "api_name": "Highest_Injury",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Horizontal Proximity",
+      "api_name": "Horizontal_Proximity",
+      "data_type": "Number",
+      "custom_field": true
+    },
+    {
+      "label": "Horizontal Proximity Unit",
+      "api_name": "Horizontal_Proximity_Unit",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "How likely is this to happen again?",
+      "api_name": "How_likely_is_this_to_happen_again1",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "IFR",
+      "api_name": "IFR",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "IMC",
+      "api_name": "IMC",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Immediately Reportable Matter",
+      "api_name": "Immediately_Reportable_Matter",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Immediately reportable matter reported to CASA?",
+      "api_name": "Immediately_reportable_matter_reported_to_CASA",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "In controlled or special use airspace",
+      "api_name": "In_controlled_or_special_use_airspace",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "In vicinity of aerodrome",
+      "api_name": "In_vicinity_of_aerodrome",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "In your opinion, likelihood event happening again?",
+      "api_name": "How_likely_is_this_to_happen_again",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Incident",
+      "api_name": "Incident",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Involve IFR or Air Transport Operations",
+      "api_name": "Involve_IFR_or_Air_Transport_Operations",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Involve near miss with another aircraft",
+      "api_name": "Involve_near_miss_with_another_aircraft",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Is the aircraft used for training purposes?",
+      "api_name": "Is_the_aircraft_used_for_training_purposes",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Is this an (IRM) or (RRM)?",
+      "api_name": "Is_this_an_IRM_or_RRM",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Is this IRM or RRM",
+      "api_name": "Is_this_IRM_or_RRM",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Is this occurrence an Accident or an Incident?",
+      "api_name": "Is_this_occurrence_an_Accident_or_an_Incident",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "LAME",
+      "api_name": "LAME",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Landing FR",
+      "api_name": "Landing_FR",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Landing Location",
+      "api_name": "Landing",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Large",
+      "api_name": "Large",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Latitude",
+      "api_name": "Latitude",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Layout",
+      "api_name": "Layout",
+      "data_type": "Single Line",
+      "custom_field": false
+    },
+    {
+      "label": "Light conditions",
+      "api_name": "Light_conditions",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Linked Aircraft",
+      "api_name": "Linked_Aircraft",
+      "data_type": "Multi-Select Lookup",
+      "custom_field": true
+    },
+    {
+      "label": "Linked FTS or Club or Account",
+      "api_name": "Linked_FTS_or_Club_or_Account",
+      "data_type": "Lookup",
+      "custom_field": true
+    },
+    {
+      "label": "Linked Members",
+      "api_name": "Linked_Members",
+      "data_type": "Multi-Select Lookup",
+      "custom_field": true
+    },
+    {
+      "label": "Location",
+      "api_name": "Location",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Location of aircraft when defect was found",
+      "api_name": "Location_of_aircraft_when_defect_was_found",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Location of hazard",
+      "api_name": "Location_of_hazard",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Location.",
+      "api_name": "Location1",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Longitude",
+      "api_name": "Longitude",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Maintainer First Name",
+      "api_name": "Maintainer_Name",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Maintainer Last Name",
+      "api_name": "Maintainer_Last_Name",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Maintainer Level",
+      "api_name": "Maintainer_Level",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Maintainer Member No",
+      "api_name": "Maintainer_Member_No",
+      "data_type": "Lookup",
+      "custom_field": true
+    },
+    {
+      "label": "Maintainer Member Number",
+      "api_name": "Maintainer_Member_Number",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Manoeuvring",
+      "api_name": "Manoeuvring",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Manufacture date",
+      "api_name": "Year_built",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Manufacturer",
+      "api_name": "Make",
+      "data_type": "Single Line",
+      "custom_field": true
+    },
+    {
+      "label": "Medium",
+      "api_name": "Medium",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Member education achieved",
+      "api_name": "Member_education_achived",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Military",
+      "api_name": "Military",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Minor",
+      "api_name": "Minor",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Modified By",
+      "api_name": "Modified_By",
+      "data_type": "Single Line",
+      "custom_field": false
+    },
+    {
+      "label": "Most serious injury to pilot",
+      "api_name": "Most_serious_injury_to_pilot1",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Name of Flight Training School",
+      "api_name": "Name_of_Flight_Training_School",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Night",
+      "api_name": "Night",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Nil",
+      "api_name": "Nil",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "No",
+      "api_name": "No",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "No. of animals",
+      "api_name": "No_of_animals",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Non-Compliance",
+      "api_name": "Non_Compliance",
+      "data_type": "Boolean",
+      "custom_field": true
+    },
+    {
+      "label": "Non-Compliance Taxonomy",
+      "api_name": "Non_Compliance_Taxonomy",
+      "data_type": "Multiselect",
+      "custom_field": true
+    },
+    {
+      "label": "Non-Compliance Type - Level 1",
+      "api_name": "Non_Compliance_Type_Level_1",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Non-Compliance Type - Level 2",
+      "api_name": "Non_Compliance_Type_Level_2",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Number (approx)",
+      "api_name": "Number_approx",
+      "data_type": "Pick List",
+      "custom_field": true
+    },
+    {
+      "label": "Number struck (approx)",
+      "api_name": "Number_struck_approx",
+      "data_type": "Pick List",
+      "custom_field": true
+    }
+  ],
+  "notes": {
+    "extraction_method": "Parsed from Zoho CRM API Names page HTML",
+    "total_fields_shown": 84,
+    "custom_fields": 81,
+    "system_fields": 3,
+    "usage": "Use these API names when submitting data to Zoho CRM Occurrence_Management module",
+    "data_type_mapping": {
+      "Boolean": "Use true/false values",
+      "Pick List": "Use exact string values from defined options",
+      "Multiselect": "Use array of string values",
+      "Single Line": "String value, max 255 chars typically",
+      "Multi Line (Small)": "String value, ~2000 chars",
+      "Multi Line (Large)": "String value, ~32000 chars",
+      "Number": "Numeric value",
+      "DateTime": "ISO format: YYYY-MM-DDTHH:mm:ss",
+      "Date": "ISO date format: YYYY-MM-DD",
+      "Email": "Valid email address",
+      "Lookup": "ID of related record",
+      "Multi-Select Lookup": "Array of IDs",
+      "File Upload": "File reference (handled separately)"
+    }
+  }
+}
+

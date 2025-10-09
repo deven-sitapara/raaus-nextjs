@@ -24,9 +24,10 @@ const querystring = require('querystring');
 require('dotenv').config();
 
 // Configuration
-const CLIENT_ID = process.env.ZOHO_WORKDRIVE_CLIENT_ID || process.env.ZOHO_CRM_CLIENT_ID;
-const CLIENT_SECRET = process.env.ZOHO_WORKDRIVE_CLIENT_SECRET || process.env.ZOHO_CRM_CLIENT_SECRET;
-const REDIRECT_URI = 'http://localhost:3000/oauth/callback';
+const CLIENT_ID = process.env.ZOHO_WORKDRIVE_CLIENT_ID || process.env.ZOHO_CLIENT_ID;
+const CLIENT_SECRET = process.env.ZOHO_WORKDRIVE_CLIENT_SECRET || process.env.ZOHO_CLIENT_SECRET;
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
+const REDIRECT_URI = process.env.ZOHO_REDIRECT_URI || `${APP_URL}/oauth/callback`;
 const REGION = 'com.au'; // Australia region
 
 // Scopes for Zoho WorkDrive
