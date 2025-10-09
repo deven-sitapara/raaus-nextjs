@@ -348,7 +348,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
 
         // PIC (Pilot in Command)
         PIC_Name: accidentData.PIC_Name || '',
-        PIC_Contact_Phone: accidentData.PIC_Contact_Phone || '',
+        PIC_Contact_Phone: accidentData.PIC_Contact_Phone || accidentData.pilotContactPhone || '',
         PIC_Email: accidentData.PIC_Email || '',
         Date_of_Birth: formatDateOnly(accidentData.Date_of_Birth),
         PIC_Member_Number: accidentData.PIC_Member_Number || '',

@@ -178,6 +178,7 @@ export interface AccidentFormData {
   role?: RoleType;
   memberNumber?: string;
   contactPhone?: string;
+  pilotContactPhone?: string;
   firstName?: string;
   lastName?: string;
   emailAddress?: string;
