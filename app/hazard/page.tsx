@@ -136,8 +136,8 @@ export default function HazardForm() {
         Hazard_Description: data.Hazard_Description,
         Please_fully_describe_the_identified_hazard: data.Hazard_Description,
         Description_of_Occurrence: data.Hazard_Description, // Map to generic description field
-        Prevention_Suggestions: data.Prevention_Suggestions,
-        Reporter_Suggestions: data.Prevention_Suggestions, // Map to generic suggestions field
+        Do_you_have_further_suggestions_on_how_to_PSO: data.Do_you_have_further_suggestions_on_how_to_PSO,
+        Reporter_Suggestions: data.Do_you_have_further_suggestions_on_how_to_PSO, // Map to generic suggestions field
       };
       
       formData.append('formData', JSON.stringify(submissionData));
@@ -443,8 +443,8 @@ export default function HazardForm() {
               <Textarea
                 label="Do You Have Further Suggestions on How to Prevent Similar Occurrences?"
                 rows={3}
-                {...register("Prevention_Suggestions")}
-                error={errors.Prevention_Suggestions?.message}
+                {...register("Do_you_have_further_suggestions_on_how_to_PSO")}
+                error={errors.Do_you_have_further_suggestions_on_how_to_PSO?.message}
               />
 
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">

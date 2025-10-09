@@ -370,7 +370,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Registration_number: accidentData.Registration_number && accidentData.Serial_number1 ? 
           `${accidentData.Registration_number}-${accidentData.Serial_number1}` : 
           (accidentData.Registration_number || null),
-  Make: accidentData.Make1 || '',
+  Make1: accidentData.Make1 || '',
   Model: accidentData.Model || '',
         Serial_number: accidentData.Serial_number || '',
   Type1: sanitizePick(accidentData.Type1) || '',
@@ -497,7 +497,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
             `${defectData.registrationNumberPrefix}-${defectData.registrationNumberSuffix}` : ''),
   Registration_status: sanitizePick(defectData.Registration_status || defectData.registrationStatus || ''),
         Serial_number: defectData.Serial_number || defectData.serialNumber || '',
-        Make: defectData.Make || defectData.make || '',
+        Make1: defectData.Make1 || defectData.make || '',
         Model: defectData.Model || defectData.model || '',
   Type1: sanitizePick(defectData.Type1 || defectData.type || ''),
         Year_Built1: defectData.Year_Built1 || defectData.yearBuilt || '',
@@ -560,7 +560,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Description_of_Occurrence: hazardData.Hazard_Description || hazardData.Please_fully_describe_the_identified_hazard || '',
         Please_fully_describe_the_identified_hazard: hazardData.Hazard_Description || hazardData.Please_fully_describe_the_identified_hazard || '',
         Potential_Consequences_of_Hazard: hazardData.Potential_Consequences_of_Hazard || '',
-        Prevention_Suggestions: hazardData.Prevention_Suggestions || '',
+        Do_you_have_further_suggestions_on_how_to_PSO: hazardData.Do_you_have_further_suggestions_on_how_to_PSO || '',
         // Add hazard-specific flag
         Hazard: true,
       });

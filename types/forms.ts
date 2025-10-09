@@ -224,7 +224,7 @@ export interface DefectFormData {
   Registration_number?: string;
   Registration_status?: RegistrationStatus;
   Serial_number?: string;
-  Make?: string;
+  Make1?: string;
   Model?: string;
   Type1?: AircraftType;
   Year_Built1?: string;
