@@ -69,6 +69,51 @@ export class ZohoCRM {
   }
 
   /**
+   * Update a record in Zoho CRM
+   */
+  static async updateRecord(module: string, recordId: string, data: any): Promise<ZohoCRMResponse> {
+    const accessToken = await ZohoAuth.getAccessToken("crm");
+
+    console.log(`Updating CRM record ${recordId} in module: ${module}`);
+    console.log("Update payload:", JSON.stringify({data: [data]}, null, 2));
+
+    try {
+      const response = await axios.put<ZohoCRMResponse>(
+        `${this.apiDomain}/crm/v2/${module}/${recordId}`,
+        {
+          data: [data],
+        },
+        {
+          headers: {
+            Authorization: `Zoho-oauthtoken ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("CRM update response:", JSON.stringify(response.data, null, 2));
+      return response.data;
+    } catch (error: any) {
+      console.error("Failed to update CRM record:", error);
+      
+      if (error.response) {
+        console.error("Response status:", error.response.status);
+        console.error("Response data:", JSON.stringify(error.response.data, null, 2));
+        
+        if (error.response.data && error.response.data.data && error.response.data.data.length > 0) {
+          const errorData = error.response.data.data[0];
+          const errorCode = errorData.code || 'UNKNOWN_ERROR';
+          const errorMessage = errorData.message || 'No error message provided';
+          
+          throw new Error(`CRM API update error: ${errorCode} - ${errorMessage}`);
+        }
+      }
+      
+      throw new Error(`Failed to update Zoho CRM record: ${error.message}`);
+    }
+  }
+
+  /**
    * Fetch OccurrenceId from a CRM record with retry logic
    * This is needed because OccurrenceId is populated server-side after record creation
    */

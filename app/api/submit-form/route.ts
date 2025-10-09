@@ -260,6 +260,18 @@ async function handleOccurrenceIdAndWorkDrive(
     // Create/ensure OccurrenceId subfolder
     workdriveFolderId = await ZohoWorkDrive.ensureSubfolder(parentFolderId, occurrenceId);
 
+    // Update CRM record with WorkDrive folder ID
+    if (workdriveFolderId) {
+      try {
+        await ZohoCRM.updateRecord("Occurrence_Management", recordId, {
+          Occurrence_Workdrive_Folder_ID: workdriveFolderId
+        });
+      } catch (updateError: any) {
+        console.error('Failed to update CRM with WorkDrive folder ID:', updateError.message);
+        // Don't fail the whole process if this update fails
+      }
+    }
+
     // Upload user attachments if any exist
     if (userAttachments.length > 0) {
       attachmentResults = await ZohoWorkDrive.uploadFilesToFolder(userAttachments, workdriveFolderId, true);
