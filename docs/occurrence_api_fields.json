@@ -99,11 +99,6 @@
     }
   },
   "occurrence_information": {
-    "Occurrence_Date1": {
-      "label": "Occurrence Date",
-      "type": "DateTime",
-      "required": true
-    },
     "Description_of_Occurrence": {
       "label": "Description of Occurrence",
       "type": "Multi Line (Large)",
@@ -203,7 +198,7 @@
       "type": "Single Line",
       "required": true
     },
-    "Make": {
+    "Make1": {
       "label": "Manufacturer",
       "type": "Single Line",
       "required": false
