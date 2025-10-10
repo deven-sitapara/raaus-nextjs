@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { AccidentFormData } from "@/types/forms";
 import { validationPatterns, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
+import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import axios from "axios";
 import Link from "next/link";
 import "./wizard.css";
@@ -331,8 +332,45 @@ export default function AccidentForm() {
     watch,
     setValue,
     trigger,
+    reset,
     formState: { errors },
   } = useForm<AccidentFormData>();
+
+  // Form persistence for current step
+  const { clearCurrentForm } = useFormPersistence(
+    { formType: 'accident', stepIndex: currentStep, maxSteps: 3 }, 
+    watch, 
+    setValue, 
+    reset
+  );
+
+  // Special state persistence for current step
+  const { clearSpecialState } = useSpecialStatePersistence(
+    'accident',
+    currentStep,
+    {
+      occurrenceDate,
+      occurrenceTime,
+      contactPhone,
+      pilotContactPhone,
+      contactPhoneCountry,
+      pilotContactPhoneCountry,
+      didInvolveBirdAnimalStrike,
+      didInvolveNearMiss
+    },
+    {
+      occurrenceDate: setOccurrenceDate,
+      occurrenceTime: setOccurrenceTime,
+      contactPhone: setContactPhone,
+      pilotContactPhone: setPilotContactPhone,
+      contactPhoneCountry: setContactPhoneCountry,
+      pilotContactPhoneCountry: setPilotContactPhoneCountry,
+      didInvolveBirdAnimalStrike: setDidInvolveBirdAnimalStrike,
+      didInvolveNearMiss: setDidInvolveNearMiss
+    }
+  );
+
+
 
   // Watch the role field to conditionally show/hide Pilot in Command section
   const selectedRole = watch("role");
@@ -673,6 +711,7 @@ export default function AccidentForm() {
       });
 
       if (response.data.success) {
+        clearFormOnSubmission('accident', 3);
         setSubmitSuccess(true);
       } else {
         throw new Error(response.data.error || "Failed to process accident report");
@@ -735,6 +774,23 @@ export default function AccidentForm() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Lodge a New Accident or Incident</h1>
           <div className="w-full h-px bg-gray-300"></div>
+        </div>
+
+        {/* Clear Form Button */}
+        <div className="mb-6 flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              clearCurrentForm();
+              clearSpecialState();
+              // Clear file attachments
+              setAttachments(null);
+            }}
+            className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+          >
+            Clear Current Step
+          </Button>
         </div>
 
         {/* Wizard Navigation */}
