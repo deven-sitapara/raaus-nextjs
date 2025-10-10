@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 import { ComplaintFormData } from "@/types/forms";
 import { validationPatterns, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
+import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import axios from "axios";
 import Link from "next/link";
 
@@ -45,8 +46,30 @@ export default function ComplaintForm() {
     register,
     handleSubmit,
     watch,
+    setValue,
+    reset,
     formState: { errors },
   } = useForm<ComplaintFormData>();
+
+  // Form persistence
+  const { clearCurrentForm } = useFormPersistence(
+    { formType: 'complaint' }, 
+    watch, 
+    setValue, 
+    reset
+  );
+
+  // Special state persistence
+  const { clearSpecialState } = useSpecialStatePersistence(
+    'complaint',
+    undefined,
+    { occurrenceDate, occurrenceTime, contactPhone },
+    {
+      occurrenceDate: setOccurrenceDate,
+      occurrenceTime: setOccurrenceTime,
+      contactPhone: setContactPhone
+    }
+  );
 
   const wishToRemainAnonymous = watch("wishToRemainAnonymous");
 
@@ -144,6 +167,7 @@ export default function ComplaintForm() {
       });
 
       if (response.data.success) {
+        clearFormOnSubmission('complaint');
         setSubmitSuccess(true);
         setSubmissionData(response.data);
       } else {
@@ -274,7 +298,21 @@ export default function ComplaintForm() {
           </Link>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Lodge a New Complaint</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Lodge a New Complaint</h1>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              clearCurrentForm();
+              clearSpecialState();
+              setAttachments(null);
+            }}
+            className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+          >
+            Clear Form
+          </Button>
+        </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Person Reporting Section */}

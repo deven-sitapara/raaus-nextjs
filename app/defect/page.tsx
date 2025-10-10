@@ -11,6 +11,7 @@ import { FileUpload } from "@/components/ui/FileUpload";
 import { Button } from "@/components/ui/Button";
 import { DefectFormData } from "@/types/forms";
 import { validationPatterns, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
+import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import axios from "axios";
 import Link from "next/link";
 
@@ -113,8 +114,29 @@ export default function DefectForm() {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<DefectFormData>();
+
+  // Form persistence
+  const { clearCurrentForm } = useFormPersistence(
+    { formType: 'defect' }, 
+    watch, 
+    setValue, 
+    reset
+  );
+
+  // Special state persistence
+  const { clearSpecialState } = useSpecialStatePersistence(
+    'defect',
+    undefined,
+    { defectDate, defectTime, contactPhone },
+    {
+      defectDate: setDefectDate,
+      defectTime: setDefectTime,
+      contactPhone: setContactPhone
+    }
+  );
 
   // Watch registration fields for aircraft lookup
   const registrationPrefix = watch("registrationNumberPrefix");
@@ -372,6 +394,7 @@ export default function DefectForm() {
 
       if (response.data.success) {
         setSubmissionData(response.data);
+        clearFormOnSubmission('defect');
         setSubmitSuccess(true);
       } else {
         throw new Error(response.data.error || "Failed to process defect report");
@@ -489,7 +512,21 @@ export default function DefectForm() {
           </Link>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Lodge a New Defect</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Lodge a New Defect</h1>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              clearCurrentForm();
+              clearSpecialState();
+              setAttachments(null);
+            }}
+            className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+          >
+            Clear Form
+          </Button>
+        </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Person Reporting Section */}
