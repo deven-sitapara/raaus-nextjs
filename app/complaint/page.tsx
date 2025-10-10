@@ -32,6 +32,8 @@ export default function ComplaintForm() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submissionData, setSubmissionData] = useState<any>(null);
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
   const [memberValidationMessage, setMemberValidationMessage] = useState("");
   const [isValidatingMember, setIsValidatingMember] = useState(false);
@@ -167,6 +169,7 @@ export default function ComplaintForm() {
       if (response.data.success) {
         clearFormOnSubmission('complaint');
         setSubmitSuccess(true);
+        setSubmissionData(response.data);
       } else {
         throw new Error(response.data.error || "Failed to process complaint");
       }
@@ -183,6 +186,42 @@ export default function ComplaintForm() {
       alert(`Submission Error: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const downloadPDF = async () => {
+    if (!submissionData) return;
+    
+    setIsDownloadingPDF(true);
+    
+    try {
+      const response = await axios.post("/api/generate-pdf", {
+        formType: submissionData.formType,
+        formData: submissionData.formData,
+        metadata: submissionData.metadata,
+      }, {
+        responseType: 'blob',
+      });
+
+      // Create blob from response
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `RAAus_Complaint_Report_${submissionData.metadata?.occurrenceId || Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      console.error('PDF download error:', error);
+      alert('Failed to download PDF. Please try again.');
+    } finally {
+      setIsDownloadingPDF(false);
     }
   };
 
@@ -203,7 +242,41 @@ export default function ComplaintForm() {
           <p className="text-gray-600 mb-6">
             Your complaint has been successfully submitted to RAAus. You will receive a confirmation email shortly.
           </p>
-          <Button onClick={() => (window.location.href = "/")}>Return to Home</Button>
+          {submissionData?.metadata?.occurrenceId && (
+            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Occurrence ID:</strong> {submissionData.metadata.occurrenceId}
+              </p>
+            </div>
+          )}
+          <div className="space-y-3">
+            <Button 
+              onClick={downloadPDF}
+              disabled={isDownloadingPDF}
+              className="w-full"
+              variant="primary"
+            >
+              {isDownloadingPDF ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Generating PDF...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Download PDF Copy
+                </>
+              )}
+            </Button>
+            <Button onClick={() => (window.location.href = "/")} variant="outline" className="w-full">
+              Return to Home
+            </Button>
+          </div>
         </div>
       </div>
     );
