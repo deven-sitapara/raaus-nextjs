@@ -41,6 +41,8 @@ const stateOptions = [
 export default function HazardForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submissionData, setSubmissionData] = useState<any>(null);
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
   const [memberValidationMessage, setMemberValidationMessage] = useState("");
   const [isValidatingMember, setIsValidatingMember] = useState(false);
@@ -157,6 +159,7 @@ export default function HazardForm() {
       });
 
       if (response.data.success) {
+        setSubmissionData(response.data);
         setSubmitSuccess(true);
       } else {
         throw new Error(response.data.error || "Failed to process hazard report");
@@ -177,6 +180,40 @@ export default function HazardForm() {
     }
   };
 
+  const downloadPDF = async () => {
+    if (!submissionData) return;
+
+    setIsDownloadingPDF(true);
+    try {
+      const response = await axios.post(
+        "/api/generate-pdf",
+        {
+          formType: "hazard",
+          formData: submissionData.formData,
+          metadata: submissionData.metadata,
+        },
+        {
+          responseType: "blob",
+        }
+      );
+
+      // Create a download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Hazard_Report_${submissionData.metadata?.occurrenceId || 'submission'}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      alert("Failed to download PDF. Please try again.");
+    } finally {
+      setIsDownloadingPDF(false);
+    }
+  };
+
   if (submitSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -191,10 +228,34 @@ export default function HazardForm() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Hazard Report Submitted</h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-4">
             Your hazard report has been successfully submitted to RAAus. You will receive a confirmation email shortly.
           </p>
-          <Button onClick={() => (window.location.href = "/")}>Return to Home</Button>
+          
+          {submissionData?.metadata?.occurrenceId && (
+            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Occurrence ID:</strong> {submissionData.metadata.occurrenceId}
+              </p>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <Button 
+              onClick={downloadPDF} 
+              disabled={isDownloadingPDF}
+              className="w-full"
+            >
+              {isDownloadingPDF ? "Generating PDF..." : "Download PDF Copy"}
+            </Button>
+            <Button 
+              onClick={() => (window.location.href = "/")}
+              variant="outline"
+              className="w-full"
+            >
+              Return to Home
+            </Button>
+          </div>
         </div>
       </div>
     );

@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     // Fetch occurrence ID and handle WorkDrive operations (including user attachments)
     const result = await handleOccurrenceIdAndWorkDrive(formType, recordId, files);
     
-    // Return success response
+    // Return success response with form data for PDF generation
     const response = {
       success: true,
       message: `${formType} form processed successfully`,
@@ -96,6 +96,15 @@ export async function POST(request: NextRequest) {
       userAttachmentsProcessed: files.length,
       userAttachmentsList: files.map(f => ({ name: f.name, size: f.size, type: f.type })),
       timestamp: new Date().toISOString(),
+      // Include form data and metadata for PDF generation
+      formData: data,
+      formType: formType,
+      metadata: {
+        occurrenceId: result.occurrenceId,
+        recordId: recordId,
+        timestamp: new Date().toISOString(),
+        attachmentCount: files.length,
+      },
     };
 
     return NextResponse.json(response);
