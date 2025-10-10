@@ -149,6 +149,7 @@ export interface AccidentFormData {
 
   // Maintainer info
   Maintainer_Name?: string;
+  Maintainer_Last_Name?: string;
   Maintainer_Level?: MaintainerLevel;
   Maintainer_Member_Number?: string;
 
