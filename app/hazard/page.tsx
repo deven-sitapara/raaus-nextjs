@@ -10,7 +10,7 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Button } from "@/components/ui/Button";
 import { HazardFormData } from "@/types/forms";
-import { validationPatterns } from "@/lib/validations/patterns";
+import { validationPatterns, validationMessages } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import axios from "axios";
 import Link from "next/link";
@@ -80,6 +80,19 @@ export default function HazardForm() {
       contactPhone: setContactPhone
     }
   );
+
+  // Helper function to convert text to Title Case
+  const toTitleCase = (str: string): string => {
+    if (!str) return str;
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map(word => {
+        if (word.length === 0) return word;
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(' ');
+  };
 
   // Validate member number with immediate feedback
   const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
@@ -338,12 +351,22 @@ export default function HazardForm() {
                   label="Member Number"
                   type="text"
                   placeholder="123456"
+                  maxLength={6}
+                  onKeyPress={(e) => {
+                    // Only allow numbers (0-9)
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   {...register("Member_Number", {
                     pattern: {
                       value: validationPatterns.memberNumber,
-                      message: "Must be 5-6 digits",
+                      message: validationMessages.memberNumber,
                     },
                     onChange: (e) => {
+                      // Remove any non-numeric characters
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                      
                       const memberNumber = e.target.value;
                       const firstName = watch("Name1");
                       const lastName = watch("Last_Name");
@@ -373,14 +396,27 @@ export default function HazardForm() {
                 type="text"
                 placeholder="John"
                 required
+                maxLength={30}
+                onKeyPress={(e) => {
+                  // Only allow letters (a-z, A-Z) and spaces
+                  if (!/[a-zA-Z ]/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
                 {...register("Name1", {
                   required: "First name is required",
                   pattern: {
                     value: validationPatterns.name,
-                    message: "Must be 3-16 characters, letters, spaces, and hyphens only",
+                    message: validationMessages.name,
                   },
                   onChange: (e) => {
-                    const firstName = e.target.value;
+                    // Remove any non-letter/space characters
+                    let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                    // Convert to Title Case
+                    value = toTitleCase(value);
+                    e.target.value = value;
+                    
+                    const firstName = value;
                     const memberNumber = watch("Member_Number");
                     const lastName = watch("Last_Name");
                     if (memberNumber && firstName && lastName) {
@@ -396,14 +432,27 @@ export default function HazardForm() {
                 type="text"
                 placeholder="Doe"
                 required
+                maxLength={30}
+                onKeyPress={(e) => {
+                  // Only allow letters (a-z, A-Z) and spaces
+                  if (!/[a-zA-Z ]/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
                 {...register("Last_Name", {
                   required: "Last name is required",
                   pattern: {
                     value: validationPatterns.name,
-                    message: "Must be 3-16 characters, letters, spaces, and hyphens only",
+                    message: validationMessages.name,
                   },
                   onChange: (e) => {
-                    const lastName = e.target.value;
+                    // Remove any non-letter/space characters
+                    let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                    // Convert to Title Case
+                    value = toTitleCase(value);
+                    e.target.value = value;
+                    
+                    const lastName = value;
                     const memberNumber = watch("Member_Number");
                     const firstName = watch("Name1");
                     if (memberNumber && firstName && lastName) {

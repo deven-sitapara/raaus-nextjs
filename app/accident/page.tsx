@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { AccidentFormData } from "@/types/forms";
-import { validationPatterns, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
+import { validationPatterns, validationMessages, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import axios from "axios";
 import Link from "next/link";
@@ -298,6 +298,19 @@ export default function AccidentForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submissionData, setSubmissionData] = useState<any>(null);
+
+  // Helper function to convert text to Title Case (First Letter Capital)
+  const toTitleCase = (str: string): string => {
+    if (!str) return str;
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map(word => {
+        if (word.length === 0) return word;
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(' ');
+  };
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
 
   // Person Reporting validation states
@@ -314,6 +327,7 @@ export default function AccidentForm() {
   const [contactPhoneError, setContactPhoneError] = useState("");
   const [contactPhoneCountry, setContactPhoneCountry] = useState<"AU" | "CA" | "GB" | "US">("AU");
   const [pilotContactPhone, setPilotContactPhone] = useState("");
+  const [pilotContactPhoneError, setPilotContactPhoneError] = useState("");
   const [pilotContactPhoneCountry, setPilotContactPhoneCountry] = useState<"AU" | "CA" | "GB" | "US">("AU");
   const [occurrenceDate, setOccurrenceDate] = useState("");
   const [occurrenceDateError, setOccurrenceDateError] = useState("");
@@ -568,6 +582,7 @@ export default function AccidentForm() {
   const nextStep = async () => {
     // Clear previous errors
     setContactPhoneError("");
+    setPilotContactPhoneError("");
     setOccurrenceDateError("");
     setOccurrenceTimeError("");
     
@@ -591,6 +606,16 @@ export default function AccidentForm() {
       } else if (!validatePhoneNumber(contactPhone, contactPhoneCountry)) {
         setContactPhoneError(getPhoneValidationMessage(contactPhoneCountry));
         hasError = true;
+      }
+
+      // Validate Pilot in Command contact phone (if section is visible)
+      if (selectedRole !== "Pilot in Command") {
+        if (pilotContactPhone && pilotContactPhone.trim() !== "") {
+          if (!validatePhoneNumber(pilotContactPhone, pilotContactPhoneCountry)) {
+            setPilotContactPhoneError(getPhoneValidationMessage(pilotContactPhoneCountry));
+            hasError = true;
+          }
+        }
       }
     } else if (currentStep === 2) {
       // Step 2: Occurrence Information validation
@@ -913,13 +938,26 @@ export default function AccidentForm() {
                         label="Member Number"
                         type="text"
                         placeholder="123456"
+                        maxLength={6}
                         error={errors.memberNumber?.message}
+                        onKeyPress={(e) => {
+                          // Only allow numbers (0-9)
+                          if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
                         {...register("memberNumber", {
                           pattern: {
                             value: validationPatterns.memberNumber,
-                            message: "Must be 5-6 digits",
+                            message: validationMessages.memberNumber,
+                          },
+                          minLength: {
+                            value: 6,
+                            message: validationMessages.memberNumber,
                           },
                           onChange: (e) => {
+                            // Remove any non-numeric characters
+                            e.target.value = e.target.value.replace(/[^0-9]/g, '');
                             const memberNumber = e.target.value;
                             const firstName = watch("firstName");
                             const lastName = watch("lastName");
@@ -949,15 +987,36 @@ export default function AccidentForm() {
                       label="First Name"
                       required
                       placeholder="John"
+                      maxLength={30}
                       error={errors.firstName?.message}
+                      onKeyPress={(e) => {
+                        // Only allow letters (a-z, A-Z) and spaces
+                        if (!/[a-zA-Z ]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       {...register("firstName", {
                         required: "This field cannot be blank.",
                         pattern: {
                           value: validationPatterns.name,
-                          message: "Must be 3-16 characters, letters, spaces, and hyphens only"
+                          message: validationMessages.name
+                        },
+                        minLength: {
+                          value: 3,
+                          message: validationMessages.name
+                        },
+                        maxLength: {
+                          value: 30,
+                          message: validationMessages.name
                         },
                         onChange: (e) => {
-                          const firstName = e.target.value;
+                          // Remove any non-letter/space characters
+                          let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                          // Convert to Title Case
+                          value = toTitleCase(value);
+                          e.target.value = value;
+                          
+                          const firstName = value;
                           const memberNumber = watch("memberNumber");
                           const lastName = watch("lastName");
                           if (memberNumber && firstName && lastName) {
@@ -971,15 +1030,36 @@ export default function AccidentForm() {
                       label="Last Name"
                       required
                       placeholder="Doe"
+                      maxLength={30}
                       error={errors.lastName?.message}
+                      onKeyPress={(e) => {
+                        // Only allow letters (a-z, A-Z) and spaces
+                        if (!/[a-zA-Z ]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       {...register("lastName", {
                         required: "This field cannot be blank.",
                         pattern: {
                           value: validationPatterns.name,
-                          message: "Must be 3-16 characters, letters, spaces, and hyphens only"
+                          message: validationMessages.name
+                        },
+                        minLength: {
+                          value: 3,
+                          message: validationMessages.name
+                        },
+                        maxLength: {
+                          value: 30,
+                          message: validationMessages.name
                         },
                         onChange: (e) => {
-                          const lastName = e.target.value;
+                          // Remove any non-letter/space characters
+                          let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                          // Convert to Title Case
+                          value = toTitleCase(value);
+                          e.target.value = value;
+                          
+                          const lastName = value;
                           const memberNumber = watch("memberNumber");
                           const firstName = watch("firstName");
                           if (memberNumber && firstName && lastName) {
@@ -1034,14 +1114,27 @@ export default function AccidentForm() {
                           label="Member Number"
                           type="text"
                           placeholder="123456"
-                          helpText="Must be 5-6 digits. If the pilot was not a member, leave blank."
+                          maxLength={6}
+                          helpText="Must be exactly 6 digits. If the pilot was not a member, leave blank."
                           error={errors.PIC_Member_Number?.message}
+                          onKeyPress={(e) => {
+                            // Only allow numbers (0-9)
+                            if (!/[0-9]/.test(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
                           {...register("PIC_Member_Number", {
                             pattern: {
                               value: validationPatterns.memberNumber,
-                              message: "Must be 5-6 digits",
+                              message: validationMessages.memberNumber,
+                            },
+                            minLength: {
+                              value: 6,
+                              message: validationMessages.memberNumber,
                             },
                             onChange: (e) => {
+                              // Remove any non-numeric characters
+                              e.target.value = e.target.value.replace(/[^0-9]/g, '');
                               const memberNumber = e.target.value;
                               const firstName = watch("PIC_Name");
                               const lastName = watch("PIC_Last_Name");
@@ -1069,8 +1162,37 @@ export default function AccidentForm() {
                         label="Date of Birth"
                         type="date"
                         min="1900-01-01"
-                        max={new Date().toISOString().split('T')[0]}
-                        {...register("Date_of_Birth")}
+                        max={(() => {
+                          const today = new Date();
+                          const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+                          return maxDate.toISOString().split('T')[0];
+                        })()}
+                        {...register("Date_of_Birth", {
+                          validate: (value) => {
+                            if (!value) return true; // Optional field
+                            
+                            // Parse the date string (format: YYYY-MM-DD)
+                            const birthDate = new Date(value + 'T00:00:00');
+                            const today = new Date();
+                            
+                            // Calculate age in years
+                            let age = today.getFullYear() - birthDate.getFullYear();
+                            const monthDiff = today.getMonth() - birthDate.getMonth();
+                            const dayDiff = today.getDate() - birthDate.getDate();
+                            
+                            // Adjust age if birthday hasn't occurred this year yet
+                            if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+                              age--;
+                            }
+                            
+                            // Must be at least 18 years old
+                            if (age < 18) {
+                              return "Pilot must be at least 18 years old";
+                            }
+                            
+                            return true;
+                          }
+                        })}
                         error={errors.Date_of_Birth?.message}
                       />
                     </div>
@@ -1079,14 +1201,35 @@ export default function AccidentForm() {
                       <Input
                         label="First Name"
                         placeholder="John"
+                        maxLength={30}
                         error={errors.PIC_Name?.message}
+                        onKeyPress={(e) => {
+                          // Only allow letters (a-z, A-Z) and spaces
+                          if (!/[a-zA-Z ]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
                         {...register("PIC_Name", {
                           pattern: {
                             value: validationPatterns.name,
-                            message: "Must be 3-16 characters, letters, spaces, and hyphens only",
+                            message: validationMessages.name,
+                          },
+                          minLength: {
+                            value: 3,
+                            message: validationMessages.name,
+                          },
+                          maxLength: {
+                            value: 30,
+                            message: validationMessages.name,
                           },
                           onChange: (e) => {
-                            const firstName = e.target.value;
+                            // Remove any non-letter/space characters
+                            let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                            // Convert to Title Case
+                            value = toTitleCase(value);
+                            e.target.value = value;
+                            
+                            const firstName = value;
                             const memberNumber = watch("PIC_Member_Number");
                             const lastName = watch("PIC_Last_Name");
                             if (memberNumber && firstName && lastName) {
@@ -1098,15 +1241,36 @@ export default function AccidentForm() {
 
                       <Input
                         label="Last Name"
-                        placeholder="Smith"
+                        placeholder="Doe"
+                        maxLength={30}
                         error={errors.PIC_Last_Name?.message}
+                        onKeyPress={(e) => {
+                          // Only allow letters (a-z, A-Z) and spaces
+                          if (!/[a-zA-Z ]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
                         {...register("PIC_Last_Name", {
                           pattern: {
                             value: validationPatterns.name,
-                            message: "Must be 3-16 characters, letters, spaces, and hyphens only",
+                            message: validationMessages.name,
+                          },
+                          minLength: {
+                            value: 3,
+                            message: validationMessages.name,
+                          },
+                          maxLength: {
+                            value: 30,
+                            message: validationMessages.name,
                           },
                           onChange: (e) => {
-                            const lastName = e.target.value;
+                            // Remove any non-letter/space characters
+                            let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                            // Convert to Title Case
+                            value = toTitleCase(value);
+                            e.target.value = value;
+                            
+                            const lastName = value;
                             const memberNumber = watch("PIC_Member_Number");
                             const firstName = watch("PIC_Name");
                             if (memberNumber && firstName && lastName) {
@@ -1122,11 +1286,17 @@ export default function AccidentForm() {
                         label="Contact Phone"
                         placeholder="0412 345 678"
                         value={pilotContactPhone}
-                        onValueChange={setPilotContactPhone}
+                        onValueChange={(value) => {
+                          setPilotContactPhone(value);
+                          // Clear error when user starts typing
+                          if (pilotContactPhoneError) {
+                            setPilotContactPhoneError("");
+                          }
+                        }}
                         onCountryChange={(country) => setPilotContactPhoneCountry(country)}
                         defaultCountry="AU"
                         countries={["AU", "CA", "GB"]}
-                        error={errors.PIC_Contact_Phone?.message}
+                        error={pilotContactPhoneError || errors.PIC_Contact_Phone?.message}
                         validateOnBlur={true}
                       />
 
@@ -1150,34 +1320,124 @@ export default function AccidentForm() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
                       label="Hours Last 90 Days"
-                      type="number"
+                      type="text"
                       placeholder="45.2"
-                      step="0.1"
+                      maxLength={10}
                       error={errors.Hours_last_90_days?.message}
-                      {...register("Hours_last_90_days")}
+                      onKeyPress={(e) => {
+                        // Only allow numbers (0-9) and decimal point
+                        if (!/[0-9.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register("Hours_last_90_days", {
+                        pattern: {
+                          value: validationPatterns.decimalNumber,
+                          message: validationMessages.decimalNumber,
+                        },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters except decimal point
+                          // Allow only one decimal point
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          e.target.value = value;
+                        }
+                      })}
                     />
 
                     <Input
                       label="Total Flying Hours"
+                      type="text"
                       placeholder="5280.7"
+                      maxLength={10}
                       error={errors.Total_flying_hours?.message}
-                      {...register("Total_flying_hours")}
+                      onKeyPress={(e) => {
+                        // Only allow numbers (0-9) and decimal point
+                        if (!/[0-9.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register("Total_flying_hours", {
+                        pattern: {
+                          value: validationPatterns.decimalNumber,
+                          message: validationMessages.decimalNumber,
+                        },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters except decimal point
+                          // Allow only one decimal point
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          e.target.value = value;
+                        }
+                      })}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <Input
                       label="Hours on Type"
+                      type="text"
                       placeholder="850.3"
+                      maxLength={10}
                       error={errors.Hours_on_type?.message}
-                      {...register("Hours_on_type")}
+                      onKeyPress={(e) => {
+                        // Only allow numbers (0-9) and decimal point
+                        if (!/[0-9.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register("Hours_on_type", {
+                        pattern: {
+                          value: validationPatterns.decimalNumber,
+                          message: validationMessages.decimalNumber,
+                        },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters except decimal point
+                          // Allow only one decimal point
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          e.target.value = value;
+                        }
+                      })}
                     />
 
                     <Input
                       label="Hours on Type Last 90 Days"
+                      type="text"
                       placeholder="25.5"
+                      maxLength={10}
                       error={errors.Hours_on_type_last_90_days?.message}
-                      {...register("Hours_on_type_last_90_days")}
+                      onKeyPress={(e) => {
+                        // Only allow numbers (0-9) and decimal point
+                        if (!/[0-9.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register("Hours_on_type_last_90_days", {
+                        pattern: {
+                          value: validationPatterns.decimalNumber,
+                          message: validationMessages.decimalNumber,
+                        },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters except decimal point
+                          // Allow only one decimal point
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          e.target.value = value;
+                        }
+                      })}
                     />
                   </div>
                 </div>
@@ -1309,17 +1569,17 @@ export default function AccidentForm() {
                       required
                       placeholder="Enter location details"
                       rows={3}
-                      maxLength={255}
+                      maxLength={250}
                       error={errors.location?.message}
                       {...register("location", {
                         required: "This field cannot be blank.",
                         minLength: {
                           value: 4,
-                          message: "Invalid minimum characters length"
+                          message: validationMessages.minLength
                         },
                         maxLength: {
-                          value: 255,
-                          message: "Invalid maximum characters length"
+                          value: 250,
+                          message: validationMessages.minLength
                         }
                       })}
                     />
@@ -1336,11 +1596,11 @@ export default function AccidentForm() {
                         required: "This field cannot be blank.",
                         minLength: {
                           value: 4,
-                          message: "Invalid minimum characters length"
+                          message: validationMessages.minLength
                         },
                         maxLength: {
                           value: 255,
-                          message: "Invalid maximum characters length"
+                          message: validationMessages.minLength
                         }
                       })}
                     />
@@ -1389,12 +1649,13 @@ export default function AccidentForm() {
                   <div className="mt-6">
                     <Input
                       label="Passenger Details"
-                      placeholder="Please supply names of other passenger if applicable"
+                      placeholder="Please supply names of other passengers if applicable"
+                      maxLength={100}
                       error={errors.Passenger_details?.message}
                       {...register("Passenger_details", {
                         pattern: {
-                          value: /^[a-zA-Z\s]*$/,
-                          message: "Entered value is invalid"
+                          value: validationPatterns.alphanumericWithSpaces,
+                          message: validationMessages.alphanumeric
                         }
                       })}
                     />
@@ -1427,11 +1688,11 @@ export default function AccidentForm() {
                         required: "This field cannot be blank.",
                         minLength: {
                           value: 4,
-                          message: "Invalid minimum characters length"
+                          message: validationMessages.minLength
                         },
                         maxLength: {
                           value: 255,
-                          message: "Invalid maximum characters length"
+                          message: validationMessages.minLength
                         }
                       })}
                     />
@@ -1440,24 +1701,52 @@ export default function AccidentForm() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <Input
                       label="Maintainer First Name"
-                      placeholder="Robert Johnson"
+                      placeholder="Robert"
+                      maxLength={30}
                       error={errors.Maintainer_Name?.message}
+                      onKeyPress={(e) => {
+                        // Only allow letters (a-z, A-Z) and spaces
+                        if (!/[a-zA-Z ]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       {...register("Maintainer_Name", {
                         pattern: {
-                          value: /^[a-z A-Z -]{3,16}$/,
-                          message: "Entered value is invalid"
+                          value: validationPatterns.name,
+                          message: validationMessages.name
+                        },
+                        minLength: {
+                          value: 3,
+                          message: validationMessages.name
+                        },
+                        maxLength: {
+                          value: 30,
+                          message: validationMessages.name
+                        },
+                        onChange: (e) => {
+                          // Remove any non-letter/space characters
+                          let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                          // Convert to Title Case
+                          value = toTitleCase(value);
+                          e.target.value = value;
                         }
                       })}
                     />
 
                     <Input
                       label="Maintainer Member Number"
-                      placeholder="e.g. 6789"
+                      placeholder="e.g. 123456"
                       error={errors.Maintainer_Member_Number?.message}
+                      onKeyPress={(e) => {
+                        // Only allow numbers (0-9)
+                        if (!/[0-9]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       {...register("Maintainer_Member_Number", {
-                        pattern: {
-                          value: /^[0-9]*$/,
-                          message: "Entered value is invalid"
+                        onChange: (e) => {
+                          // Remove any non-numeric characters
+                          e.target.value = e.target.value.replace(/[^0-9]/g, '');
                         }
                       })}
                     />
@@ -1467,11 +1756,33 @@ export default function AccidentForm() {
                     <Input
                       label="Maintainer Last Name"
                       placeholder="Johnson"
-                      error={errors.Maintainer_Level?.message}
-                      {...register("Maintainer_Level", {
+                      maxLength={30}
+                      error={errors.Maintainer_Last_Name?.message}
+                      onKeyPress={(e) => {
+                        // Only allow letters (a-z, A-Z) and spaces
+                        if (!/[a-zA-Z ]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register("Maintainer_Last_Name", {
                         pattern: {
-                          value: /^[a-z A-Z -]{3,16}$/,
-                          message: "Entered value is invalid"
+                          value: validationPatterns.name,
+                          message: validationMessages.name
+                        },
+                        minLength: {
+                          value: 3,
+                          message: validationMessages.name
+                        },
+                        maxLength: {
+                          value: 30,
+                          message: validationMessages.name
+                        },
+                        onChange: (e) => {
+                          // Remove any non-letter/space characters
+                          let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                          // Convert to Title Case
+                          value = toTitleCase(value);
+                          e.target.value = value;
                         }
                       })}
                     />
@@ -1586,11 +1897,12 @@ export default function AccidentForm() {
                     <Input
                       label="Departure Location"
                       placeholder="Enter departure location"
+                      maxLength={50}
                       error={errors.Departure_location?.message}
                       {...register("Departure_location", {
                         pattern: {
-                          value: /^[a-zA-Z0-9\s]*$/,
-                          message: "Entered value is invalid"
+                          value: validationPatterns.alphanumericWithSpaces,
+                          message: validationMessages.invalidValue
                         }
                       })}
                     />
@@ -1598,11 +1910,12 @@ export default function AccidentForm() {
                     <Input
                       label="Destination Location"
                       placeholder="Enter destination location"
+                      maxLength={50}
                       error={errors.Destination_location?.message}
                       {...register("Destination_location", {
                         pattern: {
-                          value: /^[a-zA-Z0-9\s]*$/,
-                          message: "Entered value is invalid"
+                          value: validationPatterns.alphanumericWithSpaces,
+                          message: validationMessages.invalidValue
                         }
                       })}
                     />
@@ -1612,12 +1925,13 @@ export default function AccidentForm() {
                     <Input
                       label="Landing"
                       placeholder="Enter landing location"
+                      maxLength={50}
                       helpText="(if different to destination)"
                       error={errors.Landing?.message}
                       {...register("Landing", {
                         pattern: {
-                          value: /^[a-zA-Z0-9\s]*$/,
-                          message: "Entered value is invalid"
+                          value: validationPatterns.alphanumericWithSpaces,
+                          message: validationMessages.minLength
                         }
                       })}
                     />
@@ -1695,10 +2009,32 @@ export default function AccidentForm() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <Input
                       label="Altitude"
-                      type="number"
+                      type="text"
                       placeholder="200"
+                      maxLength={10}
                       error={errors.Altitude?.message}
-                      {...register("Altitude")}
+                      onKeyPress={(e) => {
+                        // Only allow numbers and decimal point
+                        if (!/[0-9.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register("Altitude", {
+                        pattern: {
+                          value: validationPatterns.decimalNumber,
+                          message: validationMessages.minLength
+                        },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters except decimal point
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          // Prevent multiple decimal points
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          e.target.value = value;
+                        }
+                      })}
                     />
 
                     <Select
@@ -1724,24 +2060,66 @@ export default function AccidentForm() {
 
                     <Input
                       label="Visibility"
-                      type="number"
-                      step="0.1"
+                      type="text"
                       placeholder="30.0"
+                      maxLength={10}
                       suffix="NM"
                       error={errors.Visibility?.message}
-                      {...register("Visibility")}
+                      onKeyPress={(e) => {
+                        // Only allow numbers and decimal point
+                        if (!/[0-9.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register("Visibility", {
+                        pattern: {
+                          value: validationPatterns.decimalNumber,
+                          message: validationMessages.minLength
+                        },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters except decimal point
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          // Prevent multiple decimal points
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          e.target.value = value;
+                        }
+                      })}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <Input
                       label="Wind Speed"
-                      type="number"
-                      step="0.1"
+                      type="text"
                       placeholder="10.0"
+                      maxLength={10}
                       suffix="knots"
                       error={errors.Wind_speed?.message}
-                      {...register("Wind_speed")}
+                      onKeyPress={(e) => {
+                        // Only allow numbers and decimal point
+                        if (!/[0-9.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register("Wind_speed", {
+                        pattern: {
+                          value: validationPatterns.decimalNumber,
+                          message: validationMessages.minLength
+                        },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters except decimal point
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          // Prevent multiple decimal points
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          e.target.value = value;
+                        }
+                      })}
                     />
 
                     <Select
@@ -1762,12 +2140,37 @@ export default function AccidentForm() {
 
                     <Input
                       label="Temperature"
-                      type="number"
-                      step="0.1"
+                      type="text"
                       placeholder="20.0"
+                      maxLength={10}
                       suffix="°C"
                       error={errors.Temperature?.message}
-                      {...register("Temperature")}
+                      onKeyPress={(e) => {
+                        // Only allow numbers, decimal point, and minus sign
+                        if (!/[0-9.-]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register("Temperature", {
+                        pattern: {
+                          value: validationPatterns.decimalNumber,
+                          message: validationMessages.minLength
+                        },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters except decimal point and minus
+                          let value = e.target.value.replace(/[^0-9.-]/g, '');
+                          // Prevent multiple decimal points
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          // Ensure minus sign is only at the beginning
+                          if (value.indexOf('-') > 0) {
+                            value = value.replace(/-/g, '');
+                          }
+                          e.target.value = value;
+                        }
+                      })}
                     />
                   </div>
 
@@ -1848,8 +2251,11 @@ export default function AccidentForm() {
                       <Input
                         label="Species"
                         placeholder="Enter species name"
+                        maxLength={50}
                         error={errors.Species?.message}
-                        {...register("Species")}
+                        {...register("Species", {
+                          minLength: { value: 2, message: validationMessages.minLength }
+                        })}
                       />
                     </div>
 
@@ -1880,11 +2286,30 @@ export default function AccidentForm() {
                       <Input
                         label="Second Aircraft Registration"
                         placeholder="10-1122 or E13-1199"
+                        maxLength={8}
                         error={errors.Second_aircraft_registration?.message}
+                        onKeyPress={(e) => {
+                          // Only allow alphanumeric and hyphen
+                          if (!/[a-zA-Z0-9-]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
                         {...register("Second_aircraft_registration", {
                           pattern: {
-                            value: /[a-z0-9_-]{3,16}/,
-                            message: "Entered value is invalid"
+                            value: validationPatterns.aircraftRegistration,
+                            message: validationMessages.aircraftRegistration
+                          },
+                          onChange: (e) => {
+                            // Remove any non-alphanumeric characters except hyphen
+                            let value = e.target.value.replace(/[^a-zA-Z0-9-]/g, '');
+                            // Convert to uppercase
+                            value = value.toUpperCase();
+                            // Ensure only one hyphen
+                            const parts = value.split('-');
+                            if (parts.length > 2) {
+                              value = parts[0] + '-' + parts.slice(1).join('');
+                            }
+                            e.target.value = value;
                           }
                         })}
                       />
@@ -1892,11 +2317,16 @@ export default function AccidentForm() {
                       <Input
                         label="Second Aircraft Manufacturer"
                         placeholder="abc-123"
+                        maxLength={16}
                         error={errors.Second_Aircraft_Manufacturer?.message}
                         {...register("Second_Aircraft_Manufacturer", {
                           pattern: {
-                            value: /^[a-z0-9_ /-]{3,16}$/,
-                            message: "Entered value is invalid"
+                            value: validationPatterns.alphanumericDashSpace,
+                            message: validationMessages.minLength
+                          },
+                          minLength: {
+                            value: 3,
+                            message: validationMessages.minLength
                           }
                         })}
                       />
@@ -1906,21 +2336,48 @@ export default function AccidentForm() {
                       <Input
                         label="Second Aircraft Model"
                         placeholder="abc-123"
+                        maxLength={16}
                         error={errors.Second_Aircraft_Model?.message}
                         {...register("Second_Aircraft_Model", {
                           pattern: {
-                            value: /^[a-z0-9_ /-]{3,16}$/,
-                            message: "Entered value is invalid"
+                            value: validationPatterns.alphanumericDashSpace,
+                            message: validationMessages.minLength
+                          },
+                          minLength: {
+                            value: 3,
+                            message: validationMessages.minLength
                           }
                         })}
                       />
 
                       <Input
                         label="Horizontal Proximity"
-                        type="number"
+                        type="text"
                         placeholder="e.g., 150"
+                        maxLength={10}
                         error={errors.Horizontal_Proximity?.message}
-                        {...register("Horizontal_Proximity")}
+                        onKeyPress={(e) => {
+                          // Only allow numbers and decimal point
+                          if (!/[0-9.]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                        {...register("Horizontal_Proximity", {
+                          pattern: {
+                            value: validationPatterns.decimalNumber,
+                            message: validationMessages.minLength
+                          },
+                          onChange: (e) => {
+                            // Remove any non-numeric characters except decimal point
+                            let value = e.target.value.replace(/[^0-9.]/g, '');
+                            // Prevent multiple decimal points
+                            const parts = value.split('.');
+                            if (parts.length > 2) {
+                              value = parts[0] + '.' + parts.slice(1).join('');
+                            }
+                            e.target.value = value;
+                          }
+                        })}
                       />
                     </div>
 
@@ -1934,11 +2391,32 @@ export default function AccidentForm() {
 
                       <Input
                         label="Vertical Proximity"
-                        type="number"
-                        step="0.1"
+                        type="text"
                         placeholder="e.g., 0.5"
+                        maxLength={10}
                         error={errors.Vertical_Proximity?.message}
-                        {...register("Vertical_Proximity")}
+                        onKeyPress={(e) => {
+                          // Only allow numbers and decimal point
+                          if (!/[0-9.]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                        {...register("Vertical_Proximity", {
+                          pattern: {
+                            value: validationPatterns.decimalNumber,
+                            message: validationMessages.minLength
+                          },
+                          onChange: (e) => {
+                            // Remove any non-numeric characters except decimal point
+                            let value = e.target.value.replace(/[^0-9.]/g, '');
+                            // Prevent multiple decimal points
+                            const parts = value.split('.');
+                            if (parts.length > 2) {
+                              value = parts[0] + '.' + parts.slice(1).join('');
+                            }
+                            e.target.value = value;
+                          }
+                        })}
                       />
                     </div>
 
@@ -2040,35 +2518,69 @@ export default function AccidentForm() {
                       placeholder="1234"
                       required
                       maxLength={4}
-                      minLength={4}
+                      onKeyPress={(e) => {
+                        // Only allow numbers (0-9)
+                        if (!/[0-9]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       {...register('Serial_number1', { 
                         required: 'Serial number is required',
                         minLength: { value: 4, message: 'Minimum 4 characters required' },
-                        pattern: { value: /^\d{4}$/, message: 'Must be exactly 4 digits' }
+                        maxLength: { value: 4, message: 'Minimum 4 characters required' },
+                        pattern: { value: validationPatterns.registrationSuffix, message: 'Must be exactly 4 digits' },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters
+                          e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                        }
                       })}
                       error={errors.Serial_number1?.message}
                     />
 
-
-                    
                     <Input
                       label="Serial Number"
                       required
-                      {...register('Serial_number', { required: 'Serial number is required' })}
+                      maxLength={50}
+                      onKeyPress={(e) => {
+                        // Only allow numbers and decimal point
+                        if (!/[0-9.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register('Serial_number', { 
+                        required: 'Serial number is required',
+                        minLength: { value: 3, message: validationMessages.minLength },
+                        pattern: {
+                          value: /^[0-9.]+$/,
+                          message: "Serial number must contain only numbers and periods (e.g., 08.08.51.743)"
+                        },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters except decimal point
+                          e.target.value = e.target.value.replace(/[^0-9.]/g, '');
+                        }
+                      })}
                       error={errors.Serial_number?.message}
                     />
                     
                     <Input
                       label="Make"
                       required
-                      {...register('Make1', { required: 'Aircraft make is required' })}
+                      maxLength={50}
+                      {...register('Make1', { 
+                        required: 'Aircraft make is required',
+                        minLength: { value: 2, message: validationMessages.minLength }
+                      })}
                       error={errors.Make1?.message}
                     />
                     
                     <Input
                       label="Model"
                       required
-                      {...register('Model', { required: 'Aircraft model is required' })}
+                      maxLength={50}
+                      {...register('Model', { 
+                        required: 'Aircraft model is required',
+                        minLength: { value: 2, message: validationMessages.minLength }
+                      })}
                       error={errors.Model?.message}
                     />
                     
@@ -2098,9 +2610,31 @@ export default function AccidentForm() {
                     
                     <Input
                       label="Total Airframe Hours"
-                      type="number"
+                      type="text"
                       placeholder="200"
-                      {...register('Total_airframe_hours')}
+                      maxLength={10}
+                      onKeyPress={(e) => {
+                        // Only allow numbers and decimal point
+                        if (!/[0-9.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register('Total_airframe_hours', {
+                        pattern: {
+                          value: validationPatterns.decimalNumber,
+                          message: validationMessages.minLength
+                        },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters except decimal point
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          // Prevent multiple decimal points
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          e.target.value = value;
+                        }
+                      })}
                       error={errors.Total_airframe_hours?.message}
                     />
                   </div>
@@ -2114,36 +2648,118 @@ export default function AccidentForm() {
                     <Input
                       label="Engine Make"
                       required
-                      {...register('Engine_Details', { required: 'Engine make is required' })}
+                      maxLength={50}
+                      onKeyPress={(e) => {
+                        // Only allow alphanumeric, spaces, and hyphens
+                        if (!/[a-zA-Z0-9 -]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register('Engine_Details', { 
+                        required: 'Engine make is required',
+                        minLength: { value: 2, message: validationMessages.minLength },
+                        pattern: {
+                          value: /^[a-zA-Z0-9 -]+$/,
+                          message: "Engine make can only contain letters, numbers, spaces, and hyphens"
+                        },
+                        onChange: (e) => {
+                          // Remove any characters except alphanumeric, spaces, and hyphens
+                          e.target.value = e.target.value.replace(/[^a-zA-Z0-9 -]/g, '');
+                        }
+                      })}
                       error={errors.Engine_Details?.message}
                     />
                     
                     <Input
                       label="Engine Model"
-                      {...register('Engine_model')}
+                      maxLength={50}
+                      onKeyPress={(e) => {
+                        // Only allow alphanumeric, spaces, and hyphens
+                        if (!/[a-zA-Z0-9 -]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register('Engine_model', {
+                        minLength: { value: 2, message: validationMessages.minLength },
+                        pattern: {
+                          value: /^[a-zA-Z0-9 -]+$/,
+                          message: "Engine model can only contain letters, numbers, spaces, and hyphens"
+                        },
+                        onChange: (e) => {
+                          // Remove any characters except alphanumeric, spaces, and hyphens
+                          e.target.value = e.target.value.replace(/[^a-zA-Z0-9 -]/g, '');
+                        }
+                      })}
                       error={errors.Engine_model?.message}
                     />
                     
                     <Input
                       label="Engine Serial"
-                      {...register('Engine_serial')}
+                      maxLength={50}
+                      {...register('Engine_serial', {
+                        minLength: { value: 2, message: validationMessages.minLength }
+                      })}
                       error={errors.Engine_serial?.message}
                     />
                     
                     <Input
                       label="Total Engine Hours"
-                      type="number"
+                      type="text"
                       placeholder="200"
-                      {...register('Total_engine_hours')}
+                      maxLength={10}
+                      onKeyPress={(e) => {
+                        // Only allow numbers and decimal point
+                        if (!/[0-9.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register('Total_engine_hours', {
+                        pattern: {
+                          value: validationPatterns.decimalNumber,
+                          message: validationMessages.minLength
+                        },
+                        onChange: (e) => {
+                          // Remove any non-numeric characters except decimal point
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          // Prevent multiple decimal points
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          e.target.value = value;
+                        }
+                      })}
                       error={errors.Total_engine_hours?.message}
                     />
                     
                     <div className="md:col-start-2">
                       <Input
                         label="Total Hours Since Service"
-                        type="number"
+                        type="text"
                         placeholder="103"
-                        {...register('Total_hours_since_service')}
+                        maxLength={10}
+                        onKeyPress={(e) => {
+                          // Only allow numbers and decimal point
+                          if (!/[0-9.]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                        {...register('Total_hours_since_service', {
+                          pattern: {
+                            value: validationPatterns.decimalNumber,
+                            message: validationMessages.minLength
+                          },
+                          onChange: (e) => {
+                            // Remove any non-numeric characters except decimal point
+                            let value = e.target.value.replace(/[^0-9.]/g, '');
+                            // Prevent multiple decimal points
+                            const parts = value.split('.');
+                            if (parts.length > 2) {
+                              value = parts[0] + '.' + parts.slice(1).join('');
+                            }
+                            e.target.value = value;
+                          }
+                        })}
                         error={errors.Total_hours_since_service?.message}
                       />
                     </div>
@@ -2157,19 +2773,28 @@ export default function AccidentForm() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
                       label="Propeller Make"
-                      {...register('Propeller_make')}
+                      maxLength={50}
+                      {...register('Propeller_make', {
+                        minLength: { value: 2, message: validationMessages.minLength }
+                      })}
                       error={errors.Propeller_make?.message}
                     />
                     
                     <Input
                       label="Propeller Model"
-                      {...register('Propeller_model')}
+                      maxLength={50}
+                      {...register('Propeller_model', {
+                        minLength: { value: 2, message: validationMessages.minLength }
+                      })}
                       error={errors.Propeller_model?.message}
                     />
                     
                     <Input
                       label="Propeller Serial"
-                      {...register('Propeller_serial')}
+                      maxLength={50}
+                      {...register('Propeller_serial', {
+                        minLength: { value: 2, message: validationMessages.minLength }
+                      })}
                       error={errors.Propeller_serial?.message}
                     />
                     
