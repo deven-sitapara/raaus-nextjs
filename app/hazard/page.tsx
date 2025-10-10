@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -11,6 +11,7 @@ import { FileUpload } from "@/components/ui/FileUpload";
 import { Button } from "@/components/ui/Button";
 import { HazardFormData } from "@/types/forms";
 import { validationPatterns } from "@/lib/validations/patterns";
+import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import axios from "axios";
 import Link from "next/link";
 
@@ -53,8 +54,30 @@ export default function HazardForm() {
     register,
     handleSubmit,
     watch,
+    setValue,
+    reset,
     formState: { errors },
   } = useForm<HazardFormData>();
+
+  // Form persistence
+  const { clearCurrentForm } = useFormPersistence(
+    { formType: 'hazard' }, 
+    watch, 
+    setValue, 
+    reset
+  );
+
+  // Special state persistence
+  const { clearSpecialState } = useSpecialStatePersistence(
+    'hazard',
+    undefined,
+    { hazardDate, hazardTime, contactPhone },
+    {
+      hazardDate: setHazardDate,
+      hazardTime: setHazardTime,
+      contactPhone: setContactPhone
+    }
+  );
 
   // Validate member number with immediate feedback
   const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
@@ -157,6 +180,7 @@ export default function HazardForm() {
       });
 
       if (response.data.success) {
+        clearFormOnSubmission('hazard');
         setSubmitSuccess(true);
       } else {
         throw new Error(response.data.error || "Failed to process hazard report");
@@ -216,7 +240,21 @@ export default function HazardForm() {
           </Link>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Lodge a New Hazard</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Lodge a New Hazard</h1>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              clearCurrentForm();
+              clearSpecialState();
+              setAttachments(null);
+            }}
+            className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+          >
+            Clear Form
+          </Button>
+        </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Person Reporting Section */}
