@@ -1,0 +1,10 @@
+
+.defect-form, .defect-form > div{
+  background: white;
+  background-color: white !important;
+}
+
+.defect-form{
+    max-width: 100%;
+    width: 900px !important;
+}

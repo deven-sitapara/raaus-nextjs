@@ -4,7 +4,7 @@
   --background: #ffffff;
   --foreground: #171717;
   --color-gray-50: #f6f7fb;
-  --color-white: #f6f7fb;
+  --color-white: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -75,11 +75,11 @@ textarea {
 }
 
 /* Custom form background color */
-.bg-gray-50 {
+/* Override bg-white for form elements */
+/* .bg-gray-50 {
   background-color: var(--color-gray-50) !important;
 }
 
-/* Override bg-white for form elements */
 .bg-white {
   background-color: var(--color-white) !important;
-}
+} */

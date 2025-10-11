@@ -14,6 +14,7 @@ import { validationPatterns, validateEmail, validatePhoneNumber, getPhoneValidat
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import axios from "axios";
 import Link from "next/link";
+import "./defect-style.css";
 
 const roleOptions = [
   { value: "", label: "- Please Select -" },
@@ -452,7 +453,7 @@ export default function DefectForm() {
   if (submitSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -497,45 +498,56 @@ export default function DefectForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        {/* Home Button */}
-        <div className="mb-6">
-          <Link 
-            href="/" 
-            className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            Home
-          </Link>
+    <div className="min-h-screen bg-gray-200 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+
+        {/* Breadcrumb Style */}
+        <div className="mb-6 lg:mb-0 relative lg:-left-10 xl:-left-32 -mt-2">
+          <nav className="flex items-center text-md text-gray-600" aria-label="Breadcrumb">
+            <ol className="inline-flex items-center space-x-1 md:space-x-3">
+              <li className="inline-flex items-center">
+                <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800">
+                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                  </svg>
+                  Home
+                </Link>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  /<span className="text-slate-900 ml-2">Accident Form</span>
+                </div>
+              </li>
+            </ol>
+          </nav>
         </div>
 
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Lodge a New Defect</h1>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              clearCurrentForm();
-              clearSpecialState();
-              setAttachments(null);
-            }}
-            className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-          >
-            Clear Form
-          </Button>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 text-center w-full mb-6">Lodge a New Defect</h1>
+          <div className="w-[80%] mx-auto h-px bg-gray-300"></div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white defect-form">
           {/* Person Reporting Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="rounded-lg p-8 pt-10">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 border-b-2 border-gray-300 pb-4">
               Person Reporting
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  clearCurrentForm();
+                  clearSpecialState();
+                  setAttachments(null);
+                }}
+                className="bg-red-50 float-right inline -top-6 relative text-red-600 border-red-200 hover:bg-red-100"
+              >
+                Clear Form
+              </Button>
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
               <Select
                 label="Role"
                 required
@@ -651,8 +663,8 @@ export default function DefectForm() {
           </div>
 
           {/* Defect Information Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
               Defect Information
             </h2>
 
@@ -811,8 +823,8 @@ export default function DefectForm() {
           </div>
 
           {/* Aircraft Information Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
               Aircraft Information
             </h2>
 
@@ -913,8 +925,8 @@ export default function DefectForm() {
           </div>
 
           {/* Engine Details Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
               Engine Details (As applicable to defect report)
             </h2>
 
@@ -962,8 +974,8 @@ export default function DefectForm() {
           </div>
 
           {/* Propeller Details Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
               Propeller Details (As applicable to defect report)
             </h2>
 
@@ -991,8 +1003,8 @@ export default function DefectForm() {
           </div>
 
           {/* Attachments Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
               Attachments
             </h2>
 
@@ -1007,7 +1019,7 @@ export default function DefectForm() {
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end space-x-4">
+          <div className="flex justify-end space-x-4 px-6 pb-8">
             <Button type="button" variant="outline" onClick={() => (window.location.href = "/")}>
               Cancel
             </Button>

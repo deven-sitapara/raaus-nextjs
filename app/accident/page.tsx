@@ -817,45 +817,38 @@ export default function AccidentForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-slate-200 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Home Button */}
-        <div className="mb-6">
-          <Link
-            href="/"
-            className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            Home
-          </Link>
+
+        {/* Breadcrumb Style */}
+        <div className="mb-6 lg:mb-0 relative lg:-left-10 xl:-left-32 -mt-2">
+          <nav className="flex items-center text-md text-gray-600" aria-label="Breadcrumb">
+            <ol className="inline-flex items-center space-x-1 md:space-x-3">
+              <li className="inline-flex items-center">
+                <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800">
+                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                  </svg>
+                  Home
+                </Link>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  /<span className="text-slate-900 ml-2">Accident Form</span>
+                </div>
+              </li>
+            </ol>
+          </nav>
         </div>
 
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Lodge a New Accident or Incident</h1>
-          <div className="w-full h-px bg-gray-300"></div>
-        </div>
-
-        {/* Clear Form Button */}
-        <div className="mb-6 flex justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              clearCurrentForm();
-              clearSpecialState();
-              // Clear file attachments
-              setAttachments(null);
-            }}
-            className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-          >
-            Clear Current Step
-          </Button>
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Lodge a New Accident or Incident</h1>
+          <div className="w-[80%] mx-auto h-px bg-gray-300"></div>
         </div>
 
         {/* Wizard Navigation */}
-        <div className="bg-white rounded-lg shadow-lg mb-8 overflow-hidden">
+        {/* <div className="bg-white shadow-lg rounded-lg mb-8 overflow-hidden"> */}
+        <div className="bg-transparent rounded-lg mb-3 overflow-hidden block w-full">
           <div className="wizard-container">
             <div className="wizard-upper-tab">
               <div 
@@ -889,15 +882,30 @@ export default function AccidentForm() {
         </div>
 
         {/* Form Content */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-lg shadow-lg p-8 relative border-gray-400">
           <form onSubmit={handleSubmit(onSubmit)}>
             {currentStep === 1 && (
               <div className="space-y-8">
                 {/* Person Reporting Section */}
                 <div className="border-b border-gray-200 pb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Person Reporting</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Person Reporting
+                  {/* Clear Form Button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        clearCurrentForm();
+                        clearSpecialState();
+                        // Clear file attachments
+                        setAttachments(null);
+                      }}
+                      className="bg-red-50 !absolute right-4 top-3 text-red-600 border-red-200 hover:bg-red-100 mb-2 inline float-right"
+                    >
+                      Clear Form
+                    </Button>
+                  </h2>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
                     <Select
                       label="Role"
                       required
@@ -1982,7 +1990,7 @@ export default function AccidentForm() {
                     type="button"
                     onClick={prevStep}
                     variant="outline"
-                    className="px-8 py-2"
+                    className="px-8 py-2 bg-gray-200 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-300 hover:border-gray-500 hover:text-gray-900 focus:ring-2 focus:ring-gray-400 transition-all"
                   >
                     Previous: Pilot Information
                   </Button>
@@ -2219,7 +2227,7 @@ export default function AccidentForm() {
                     type="button"
                     onClick={prevStep}
                     variant="outline"
-                    className="px-8 py-2"
+                    className="px-8 py-2 bg-gray-200 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-300 hover:border-gray-500 hover:text-gray-900 focus:ring-2 focus:ring-gray-400 transition-all"
                   >
                     Previous: Occurrence Information
                   </Button>
