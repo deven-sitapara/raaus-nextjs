@@ -52,6 +52,7 @@ export interface AccidentFormData {
   // Reporter / Person submitting
   Name1?: string; // First name
   Role?: RoleType;
+  customRole?: string; // Custom role when "Other" is selected
   Member_Number?: string;
   Reporter?: string;
   Reporter_Email?: string;

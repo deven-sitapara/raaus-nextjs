@@ -70,12 +70,25 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const getValidationCriteria = (phoneValue: string, country: CountryCode) => {
       const cleanNumber = phoneValue.replace(/[\s\-\(\)\.\+]/g, '');
       const countryInfo = countryData[country];
+      const isEmpty = !phoneValue || phoneValue.trim() === "" || cleanNumber.length === 0;
+      
+      // For Australian numbers, check if it follows 04XX pattern (starts with 04)
+      const followsFormat = isEmpty ? false : (
+        country === 'AU' 
+          ? cleanNumber.startsWith('04')
+          : country === 'GB'
+          ? cleanNumber.startsWith('0')
+          : !cleanNumber.startsWith('0')
+      );
       
       return {
-        noLetters: !/[a-zA-Z]/.test(phoneValue),
-        startsCorrectly: countryInfo.startsWithZero ? cleanNumber.startsWith('0') : !cleanNumber.startsWith('0'),
-        correctLength: cleanNumber.length >= countryInfo.minLength && cleanNumber.length <= countryInfo.maxLength,
-        validFormat: cleanNumber.length > 0 && /^\d+$/.test(cleanNumber),
+        startsCorrectly: isEmpty ? false : (
+          countryInfo.startsWithZero 
+            ? cleanNumber.startsWith('0')
+            : !cleanNumber.startsWith('0')
+        ),
+        followsFormat: followsFormat,
+        correctLength: isEmpty ? false : (cleanNumber.length >= countryInfo.minLength && cleanNumber.length <= countryInfo.maxLength),
         notEmpty: phoneValue && phoneValue.trim() !== ""
       };
     };
@@ -109,6 +122,14 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       
       if (!countryInfo.startsWithZero && cleanNumber.startsWith('0')) {
         const errorMsg = `${countryInfo.name} phone numbers should not start with 0`;
+        setInternalError(errorMsg);
+        onValidationChange?.(false, errorMsg);
+        return false;
+      }
+      
+      // Check for specific format (e.g., Australian mobile must start with 04)
+      if (country === 'AU' && !cleanNumber.startsWith('04')) {
+        const errorMsg = "Australian mobile numbers must start with 04";
         setInternalError(errorMsg);
         onValidationChange?.(false, errorMsg);
         return false;
@@ -273,7 +294,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           <p className="mt-1 text-sm text-red-600">{displayError}</p>
         )}
         
-        {/* Always show 5 validation criteria when enabled */}
+        {/* Show 4 validation criteria when enabled */}
         {showValidationCriteria && focused && (
           <div className="mt-2 p-3">
             <p className="text-sm font-medium text-gray-700 mb-3">
@@ -281,22 +302,22 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
             </p>
             <div className="space-y-2">
               <div className={`flex items-center text-sm ${
-                validationCriteria.noLetters ? "text-green-600" : "text-red-500"
-              }`}>
-                <span className="mr-3 text-base">{validationCriteria.noLetters ? "✓" : "✗"}</span>
-                <span>Must contain only numbers (no letters or special characters)</span>
-              </div>
-              
-              <div className={`flex items-center text-sm ${
                 validationCriteria.startsCorrectly ? "text-green-600" : "text-red-500"
               }`}>
                 <span className="mr-3 text-base">{validationCriteria.startsCorrectly ? "✓" : "✗"}</span>
                 <span>
                   {countryData[selectedCountry].startsWithZero 
-                    ? "Must start with 0 (e.g., 0412...)" 
-                    : "Must NOT start with 0 (e.g., 555...)"
+                    ? "Must start with 0" 
+                    : "Must NOT start with 0"
                   }
                 </span>
+              </div>
+              
+              <div className={`flex items-center text-sm ${
+                validationCriteria.followsFormat ? "text-green-600" : "text-red-500"
+              }`}>
+                <span className="mr-3 text-base">{validationCriteria.followsFormat ? "✓" : "✗"}</span>
+                <span>Must follow the format: {countryData[selectedCountry].format}</span>
               </div>
               
               <div className={`flex items-center text-sm ${
@@ -309,13 +330,6 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
                     : `between ${countryData[selectedCountry].minLength} and ${countryData[selectedCountry].maxLength} digits`
                   } long
                 </span>
-              </div>
-              
-              <div className={`flex items-center text-sm ${
-                validationCriteria.validFormat ? "text-green-600" : "text-red-500"
-              }`}>
-                <span className="mr-3 text-base">{validationCriteria.validFormat ? "✓" : "✗"}</span>
-                <span>Must follow the format: {countryData[selectedCountry].format}</span>
               </div>
               
               <div className={`flex items-center text-sm ${

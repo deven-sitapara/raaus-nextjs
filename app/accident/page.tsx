@@ -1024,7 +1024,7 @@ export default function AccidentForm() {
                                 const value = e.target.value;
                                 if (value) {
                                   const words = value.split(' ');
-                                  const capitalizedWords = words.map(word => 
+                                  const capitalizedWords = words.map((word: string) => 
                                     word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
                                   );
                                   e.target.value = capitalizedWords.join(' ');
@@ -1201,7 +1201,6 @@ export default function AccidentForm() {
                       defaultCountry="AU"
                       countries={["AU", "CA", "GB"]}
                       error={contactPhoneError}
-                      validateOnBlur={true}
                     />
                   </div>
                 </div>
@@ -1400,7 +1399,6 @@ export default function AccidentForm() {
                         defaultCountry="AU"
                         countries={["AU", "CA", "GB"]}
                         error={pilotContactPhoneError || errors.PIC_Contact_Phone?.message}
-                        validateOnBlur={true}
                       />
 
                       <Input
