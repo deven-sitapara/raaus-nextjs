@@ -100,6 +100,11 @@ export default function DefectForm() {
   const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
   const [memberValidationMessage, setMemberValidationMessage] = useState("");
   const [isValidatingMember, setIsValidatingMember] = useState(false);
+  
+  // Maintainer validation states
+  const [maintainerValidationStatus, setMaintainerValidationStatus] = useState<"valid" | "invalid" | "">("");
+  const [maintainerValidationMessage, setMaintainerValidationMessage] = useState("");
+  const [isValidatingMaintainer, setIsValidatingMaintainer] = useState(false);
   const [defectDate, setDefectDate] = useState("");
   const [defectTime, setDefectTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -202,6 +207,39 @@ export default function DefectForm() {
       setMemberValidationMessage("Unable to validate Member Number");
     } finally {
       setIsValidatingMember(false);
+    }
+  };
+
+  // Validate maintainer member number with immediate feedback
+  const validateMaintainer = async (memberNumber: string, firstName: string, lastName: string) => {
+    // Reset validation if any field is empty
+    if (!memberNumber || !firstName || !lastName) {
+      setMaintainerValidationStatus("");
+      setMaintainerValidationMessage("");
+      return;
+    }
+
+    setIsValidatingMaintainer(true);
+
+    try {
+      const response = await axios.post("/api/validate-member", {
+        memberNumber,
+        firstName,
+        lastName,
+      });
+
+      if (response.data.valid) {
+        setMaintainerValidationStatus("valid");
+        setMaintainerValidationMessage("✓ Member Number exists in system");
+      } else {
+        setMaintainerValidationStatus("invalid");
+        setMaintainerValidationMessage(response.data.warning || "Member Number not found");
+      }
+    } catch (error) {
+      setMaintainerValidationStatus("invalid");
+      setMaintainerValidationMessage("Unable to validate Member Number");
+    } finally {
+      setIsValidatingMaintainer(false);
     }
   };
 
@@ -832,27 +870,88 @@ export default function DefectForm() {
                   label="Maintainer Name"
                   type="text"
                   placeholder="Robert Johnson"
+                  maxLength={60}
                   {...register("maintainerName", {
                     pattern: {
                       value: /^[a-zA-Z\s]*$/,
                       message: "Letters and spaces only",
                     },
+                    onChange: (e) => {
+                      // Convert to Title Case
+                      e.target.value = toTitleCase(e.target.value);
+                      
+                      // Trigger member validation if all fields are present
+                      const fullName = e.target.value;
+                      const memberNumber = watch("maintainerMemberNumber");
+                      if (memberNumber && fullName) {
+                        // Split full name into first and last name for validation
+                        const nameParts = fullName.trim().split(' ');
+                        const firstName = nameParts[0] || '';
+                        const lastName = nameParts.slice(1).join(' ') || '';
+                        if (firstName && lastName) {
+                          validateMaintainer(memberNumber, firstName, lastName);
+                        }
+                      }
+                    }
                   })}
                   error={errors.maintainerName?.message}
                 />
 
-                <Input
-                  label="Maintainer Member Number"
-                  type="text"
-                  placeholder="e.g. 6789"
-                  {...register("maintainerMemberNumber", {
-                    pattern: {
-                      value: validationPatterns.memberNumber,
-                      message: "Must be 5-6 digits",
-                    },
-                  })}
-                  error={errors.maintainerMemberNumber?.message}
-                />
+                <div>
+                  <Input
+                    label="Maintainer Member Number"
+                    type="text"
+                    placeholder="e.g. 123456"
+                    maxLength={6}
+                    helpText="Must be exactly 6 digits. If the maintainer was not a member, leave blank."
+                    onKeyPress={(e) => {
+                      // Only allow numbers (0-9)
+                      if (!/[0-9]/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    {...register("maintainerMemberNumber", {
+                      pattern: {
+                        value: validationPatterns.memberNumber,
+                        message: validationMessages.memberNumber,
+                      },
+                      minLength: {
+                        value: 6,
+                        message: validationMessages.memberNumber,
+                      },
+                      maxLength: {
+                        value: 6,
+                        message: validationMessages.memberNumber,
+                      },
+                      onChange: (e) => {
+                        // Remove any non-numeric characters
+                        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                        const memberNumber = e.target.value;
+                        const fullName = watch("maintainerName");
+                        if (memberNumber && fullName) {
+                          // Split full name into first and last name for validation
+                          const nameParts = fullName.trim().split(' ');
+                          const firstName = nameParts[0] || '';
+                          const lastName = nameParts.slice(1).join(' ') || '';
+                          if (firstName && lastName) {
+                            validateMaintainer(memberNumber, firstName, lastName);
+                          }
+                        }
+                      }
+                    })}
+                    error={errors.maintainerMemberNumber?.message}
+                  />
+                  {isValidatingMaintainer && (
+                    <p className="mt-1 text-sm text-blue-600">Validating member number...</p>
+                  )}
+                  {maintainerValidationMessage && (
+                    <p className={`mt-1 text-sm ${
+                      maintainerValidationStatus === "valid" ? "text-green-600" : "text-red-600"
+                    }`}>
+                      {maintainerValidationMessage}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <Select
@@ -915,11 +1014,22 @@ export default function DefectForm() {
                   type="text"
                   placeholder="1234"
                   required
+                  maxLength={4}
+                  onKeyPress={(e) => {
+                    // Only allow numbers (0-9)
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   {...register("registrationNumberSuffix", {
                     required: "Registration suffix is required",
                     minLength: { value: 4, message: "Must be exactly 4 digits" },
                     maxLength: { value: 4, message: "Must be exactly 4 digits" },
                     pattern: { value: /^\d{4}$/, message: "Must be 4 digits" },
+                    onChange: (e) => {
+                      // Remove any non-numeric characters
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    }
                   })}
                   error={errors.registrationNumberSuffix?.message}
                 />
@@ -1001,20 +1111,64 @@ export default function DefectForm() {
 
                 <Input
                   label="Total Engine Hours"
-                  type="text"
+                  type="number"
                   placeholder="200"
+                  maxLength={10}
+                  step="0.1"
+                  min="0"
+                  onKeyPress={(e) => {
+                    // Only allow numbers and decimal point
+                    if (!/[0-9.]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   {...register("totalEngineHours", {
-                    pattern: { value: /^\d+$/, message: "Numbers only" },
+                    pattern: {
+                      value: /^\d+(\.\d+)?$/,
+                      message: "Must be a valid number (decimals allowed)"
+                    },
+                    onChange: (e) => {
+                      // Remove any non-numeric characters except decimal point
+                      let value = e.target.value.replace(/[^0-9.]/g, '');
+                      // Prevent multiple decimal points
+                      const parts = value.split('.');
+                      if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                      }
+                      e.target.value = value;
+                    }
                   })}
                   error={errors.totalEngineHours?.message}
                 />
 
                 <Input
                   label="Total Hours Since Service"
-                  type="text"
+                  type="number"
                   placeholder="102"
+                  maxLength={10}
+                  step="0.1"
+                  min="0"
+                  onKeyPress={(e) => {
+                    // Only allow numbers and decimal point
+                    if (!/[0-9.]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   {...register("totalHoursSinceService", {
-                    pattern: { value: /^\d+$/, message: "Numbers only" },
+                    pattern: {
+                      value: /^\d+(\.\d+)?$/,
+                      message: "Must be a valid number (decimals allowed)"
+                    },
+                    onChange: (e) => {
+                      // Remove any non-numeric characters except decimal point
+                      let value = e.target.value.replace(/[^0-9.]/g, '');
+                      // Prevent multiple decimal points
+                      const parts = value.split('.');
+                      if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                      }
+                      e.target.value = value;
+                    }
                   })}
                   error={errors.totalHoursSinceService?.message}
                 />

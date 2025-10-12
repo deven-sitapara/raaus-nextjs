@@ -323,6 +323,12 @@ export default function AccidentForm() {
   const [pilotValidationMessage, setPilotValidationMessage] = useState("");
   const [isValidatingPilot, setIsValidatingPilot] = useState(false);
 
+  // Maintainer validation states
+  const [maintainerValidationStatus, setMaintainerValidationStatus] = useState<"valid" | "invalid" | "">("");
+  const [maintainerValidationMessage, setMaintainerValidationMessage] = useState("");
+  const [isValidatingMaintainer, setIsValidatingMaintainer] = useState(false);
+
+
   const [contactPhone, setContactPhone] = useState("");
   const [contactPhoneError, setContactPhoneError] = useState("");
   const [contactPhoneCountry, setContactPhoneCountry] = useState<"AU" | "CA" | "GB" | "US">("AU");
@@ -390,6 +396,7 @@ export default function AccidentForm() {
 
   // Watch the role field to conditionally show/hide Pilot in Command section
   const selectedRole = watch("role");
+  const customRole = watch("customRole"); // Watch custom role input
   
   // Watch the type of operation field to conditionally show flight training school
   const selectedTypeOfOperation = watch("Type_of_operation");
@@ -419,6 +426,13 @@ export default function AccidentForm() {
       setAircraftLookupMessage("");
     }
   }, [registrationPrefix, registrationSuffix]);
+
+  // Clear custom role field when role changes away from "Other"
+  useEffect(() => {
+    if (selectedRole !== "Other" && customRole) {
+      setValue("customRole", "");
+    }
+  }, [selectedRole, setValue, customRole]);
 
   // Validate member number (Person Reporting) with immediate feedback
   const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
@@ -483,6 +497,39 @@ export default function AccidentForm() {
       setPilotValidationMessage("Unable to validate Member Number");
     } finally {
       setIsValidatingPilot(false);
+    }
+  };
+
+  // Validate maintainer member number with immediate feedback
+  const validateMaintainer = async (memberNumber: string, firstName: string, lastName: string) => {
+    // Reset validation if any field is empty
+    if (!memberNumber || !firstName || !lastName) {
+      setMaintainerValidationStatus("");
+      setMaintainerValidationMessage("");
+      return;
+    }
+
+    setIsValidatingMaintainer(true);
+
+    try {
+      const response = await axios.post("/api/validate-member", {
+        memberNumber,
+        firstName,
+        lastName,
+      });
+
+      if (response.data.valid) {
+        setMaintainerValidationStatus("valid");
+        setMaintainerValidationMessage("✓ Member Number exists in system");
+      } else {
+        setMaintainerValidationStatus("invalid");
+        setMaintainerValidationMessage(response.data.warning || "Member Number not found");
+      }
+    } catch (error) {
+      setMaintainerValidationStatus("invalid");
+      setMaintainerValidationMessage("Unable to validate Member Number");
+    } finally {
+      setIsValidatingMaintainer(false);
     }
   };
 
@@ -594,6 +641,7 @@ export default function AccidentForm() {
       // Step 1: Pilot Information validation
       fieldsToValidate = [
         "role",
+        "customRole", // Add custom role to the clearing list
         "firstName", 
         "lastName",
         "emailAddress"
@@ -711,6 +759,8 @@ export default function AccidentForm() {
       // Convert "Yes"/"No" strings to boolean for Zoho CRM compatibility
       const submissionData = {
         ...data,
+        // Use custom role if provided, otherwise use "Other" when role is "Other"
+        role: data.role === "Other" && data.customRole && data.customRole.trim() ? data.customRole.trim() : data.role,
         contactPhone: contactPhone,
         pilotContactPhone: pilotContactPhone,
         occurrenceDate: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
@@ -931,15 +981,60 @@ export default function AccidentForm() {
                   </h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
-                    <Select
-                      label="Role"
-                      required
-                      options={roleOptions}
-                      error={errors.role?.message}
-                      {...register("role", { 
-                        required: "This field cannot be blank." 
-                      })}
-                    />
+                    <div>
+                      <Select
+                        label="Role"
+                        required
+                        options={roleOptions}
+                        error={errors.role?.message}
+                        {...register("role", { 
+                          required: "This field cannot be blank." 
+                        })}
+                      />
+                      
+                      {/* Custom Role Input - Shows when 'Other' is selected */}
+                      {selectedRole === "Other" && (
+                        <div className="mt-3">
+                          <Input
+                            label="Please specify your role"
+                            placeholder="e.g., Flight Instructor, Engineer, Manager"
+                            maxLength={100}
+                            error={errors.customRole?.message}
+                            onKeyPress={(e) => {
+                              // Allow letters, spaces, hyphens, periods, apostrophes
+                              if (!/[a-zA-Z\s\-.']/i.test(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            {...register("customRole", {
+                              minLength: {
+                                value: 2,
+                                message: "Role must be at least 2 characters"
+                              },
+                              maxLength: {
+                                value: 100,
+                                message: "Role cannot exceed 100 characters"
+                              },
+                              pattern: {
+                                value: /^[a-zA-Z\s\-.']+$/,
+                                message: "Only letters, spaces, hyphens, periods and apostrophes are allowed"
+                              },
+                              onChange: (e) => {
+                                // Auto-capitalize first letter of each word
+                                const value = e.target.value;
+                                if (value) {
+                                  const words = value.split(' ');
+                                  const capitalizedWords = words.map(word => 
+                                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                                  );
+                                  e.target.value = capitalizedWords.join(' ');
+                                }
+                              }
+                            })}
+                          />
+                        </div>
+                      )}
+                    </div>
 
                     <div>
                       <Input
@@ -1737,27 +1832,67 @@ export default function AccidentForm() {
                           // Convert to Title Case
                           value = toTitleCase(value);
                           e.target.value = value;
+                          
+                          // Trigger member validation if all fields are present
+                          const firstName = value;
+                          const memberNumber = watch("Maintainer_Member_Number");
+                          const lastName = watch("Maintainer_Last_Name");
+                          if (memberNumber && firstName && lastName) {
+                            validateMaintainer(memberNumber, firstName, lastName);
+                          }
                         }
                       })}
                     />
 
-                    <Input
-                      label="Maintainer Member Number"
-                      placeholder="e.g. 123456"
-                      error={errors.Maintainer_Member_Number?.message}
-                      onKeyPress={(e) => {
-                        // Only allow numbers (0-9)
-                        if (!/[0-9]/.test(e.key)) {
-                          e.preventDefault();
-                        }
-                      }}
-                      {...register("Maintainer_Member_Number", {
-                        onChange: (e) => {
-                          // Remove any non-numeric characters
-                          e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                        }
-                      })}
-                    />
+                    <div>
+                      <Input
+                        label="Maintainer Member Number"
+                        placeholder="e.g. 123456"
+                        maxLength={6}
+                        helpText="Must be exactly 6 digits. If the maintainer was not a member, leave blank."
+                        error={errors.Maintainer_Member_Number?.message}
+                        onKeyPress={(e) => {
+                          // Only allow numbers (0-9)
+                          if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                        {...register("Maintainer_Member_Number", {
+                          pattern: {
+                            value: validationPatterns.memberNumber,
+                            message: validationMessages.memberNumber,
+                          },
+                          minLength: {
+                            value: 6,
+                            message: validationMessages.memberNumber,
+                          },
+                          maxLength: {
+                            value: 6,
+                            message: validationMessages.memberNumber,
+                          },
+                          onChange: (e) => {
+                            // Remove any non-numeric characters
+                            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                            const memberNumber = e.target.value;
+                            const firstName = watch("Maintainer_Name");
+                            const lastName = watch("Maintainer_Last_Name");
+                            if (memberNumber && firstName && lastName) {
+                              validateMaintainer(memberNumber, firstName, lastName);
+                            }
+                          }
+                        })}
+                      />
+                      {isValidatingMaintainer && (
+                        <p className="mt-1 text-sm text-blue-600">Validating member number...</p>
+                      )}
+                      {maintainerValidationMessage && (
+                        <p className={`mt-1 text-sm ${
+                          maintainerValidationStatus === "valid" ? "text-green-600" : "text-red-600"
+                        }`}>
+                          {maintainerValidationMessage}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -1791,6 +1926,14 @@ export default function AccidentForm() {
                           // Convert to Title Case
                           value = toTitleCase(value);
                           e.target.value = value;
+                          
+                          // Trigger member validation if all fields are present
+                          const lastName = value;
+                          const memberNumber = watch("Maintainer_Member_Number");
+                          const firstName = watch("Maintainer_Name");
+                          if (memberNumber && firstName && lastName) {
+                            validateMaintainer(memberNumber, firstName, lastName);
+                          }
                         }
                       })}
                     />
@@ -1907,10 +2050,21 @@ export default function AccidentForm() {
                       placeholder="Enter departure location"
                       maxLength={50}
                       error={errors.Departure_location?.message}
+                      onKeyPress={(e) => {
+                        // Only allow letters (a-z, A-Z) and spaces
+                        if (!/[a-zA-Z ]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       {...register("Departure_location", {
                         pattern: {
-                          value: validationPatterns.alphanumericWithSpaces,
-                          message: validationMessages.invalidValue
+                          value: validationPatterns.name,
+                          message: "Only letters and spaces are allowed"
+                        },
+                        onChange: (e) => {
+                          // Remove any non-letter/space characters and convert to title case
+                          let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                          e.target.value = toTitleCase(value);
                         }
                       })}
                     />
@@ -1920,10 +2074,21 @@ export default function AccidentForm() {
                       placeholder="Enter destination location"
                       maxLength={50}
                       error={errors.Destination_location?.message}
+                      onKeyPress={(e) => {
+                        // Only allow letters (a-z, A-Z) and spaces
+                        if (!/[a-zA-Z ]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       {...register("Destination_location", {
                         pattern: {
-                          value: validationPatterns.alphanumericWithSpaces,
-                          message: validationMessages.invalidValue
+                          value: validationPatterns.name,
+                          message: "Only letters and spaces are allowed"
+                        },
+                        onChange: (e) => {
+                          // Remove any non-letter/space characters and convert to title case
+                          let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                          e.target.value = toTitleCase(value);
                         }
                       })}
                     />
@@ -1936,10 +2101,21 @@ export default function AccidentForm() {
                       maxLength={50}
                       helpText="(if different to destination)"
                       error={errors.Landing?.message}
+                      onKeyPress={(e) => {
+                        // Only allow letters (a-z, A-Z) and spaces
+                        if (!/[a-zA-Z ]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       {...register("Landing", {
                         pattern: {
-                          value: validationPatterns.alphanumericWithSpaces,
-                          message: validationMessages.minLength
+                          value: validationPatterns.name,
+                          message: "Only letters and spaces are allowed"
+                        },
+                        onChange: (e) => {
+                          // Remove any non-letter/space characters and convert to title case
+                          let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                          e.target.value = toTitleCase(value);
                         }
                       })}
                     />
@@ -2261,8 +2437,23 @@ export default function AccidentForm() {
                         placeholder="Enter species name"
                         maxLength={50}
                         error={errors.Species?.message}
+                        onKeyPress={(e) => {
+                          // Only allow letters (a-z, A-Z) and spaces
+                          if (!/[a-zA-Z ]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
                         {...register("Species", {
-                          minLength: { value: 2, message: validationMessages.minLength }
+                          pattern: {
+                            value: validationPatterns.name,
+                            message: "Only letters and spaces are allowed"
+                          },
+                          minLength: { value: 2, message: validationMessages.minLength },
+                          onChange: (e) => {
+                            // Remove any non-letter/space characters and convert to title case
+                            let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                            e.target.value = toTitleCase(value);
+                          }
                         })}
                       />
                     </div>
@@ -2712,9 +2903,11 @@ export default function AccidentForm() {
                     
                     <Input
                       label="Total Engine Hours"
-                      type="text"
+                      type="number"
                       placeholder="200"
                       maxLength={10}
+                      step="0.1"
+                      min="0"
                       onKeyPress={(e) => {
                         // Only allow numbers and decimal point
                         if (!/[0-9.]/.test(e.key)) {
@@ -2743,9 +2936,11 @@ export default function AccidentForm() {
                     <div className="md:col-start-2">
                       <Input
                         label="Total Hours Since Service"
-                        type="text"
+                        type="number"
                         placeholder="103"
                         maxLength={10}
+                        step="0.1"
+                        min="0"
                         onKeyPress={(e) => {
                           // Only allow numbers and decimal point
                           if (!/[0-9.]/.test(e.key)) {
