@@ -744,7 +744,6 @@ export default function DefectForm() {
                 onChange={(value) => setContactPhone(value)}
                 defaultCountry="AU"
                 countries={["AU", "CA", "GB"]}
-                validateOnBlur={true}
               />
             </div>
           </div>
