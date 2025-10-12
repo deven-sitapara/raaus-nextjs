@@ -1,0 +1,289 @@
+"use client";
+
+import * as React from "react";
+import { cn } from "@/lib/utils/cn";
+
+export interface TableColumn<T = any> {
+  key: string;
+  header: string;
+  accessor?: (row: T) => React.ReactNode;
+  sortable?: boolean;
+  width?: string;
+  align?: "left" | "center" | "right";
+}
+
+export interface TableProps<T = any> {
+  columns: TableColumn<T>[];
+  data: T[];
+  loading?: boolean;
+  emptyMessage?: string;
+  className?: string;
+  onRowClick?: (row: T) => void;
+  striped?: boolean;
+  hoverable?: boolean;
+  bordered?: boolean;
+  compact?: boolean;
+}
+
+type SortDirection = "asc" | "desc" | null;
+
+export function Table<T = any>({
+  columns,
+  data,
+  loading = false,
+  emptyMessage = "No data available",
+  className,
+  onRowClick,
+  striped = false,
+  hoverable = true,
+  bordered = true,
+  compact = false,
+}: TableProps<T>) {
+  const [sortKey, setSortKey] = React.useState<string | null>(null);
+  const [sortDirection, setSortDirection] = React.useState<SortDirection>(null);
+
+  // Handle column sorting
+  const handleSort = (columnKey: string) => {
+    const column = columns.find((col) => col.key === columnKey);
+    if (!column?.sortable) return;
+
+    if (sortKey === columnKey) {
+      // Cycle through: asc -> desc -> null
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else if (sortDirection === "desc") {
+        setSortKey(null);
+        setSortDirection(null);
+      }
+    } else {
+      setSortKey(columnKey);
+      setSortDirection("asc");
+    }
+  };
+
+  // Sort data
+  const sortedData = React.useMemo(() => {
+    if (!sortKey || !sortDirection) return data;
+
+    const column = columns.find((col) => col.key === sortKey);
+    if (!column) return data;
+
+    return [...data].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      if (column.accessor) {
+        aValue = column.accessor(a);
+        bValue = column.accessor(b);
+      } else {
+        aValue = (a as any)[sortKey];
+        bValue = (b as any)[sortKey];
+      }
+
+      // Handle different types
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortDirection === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+      }
+
+      // Default string comparison
+      const aStr = String(aValue || "");
+      const bStr = String(bValue || "");
+      return sortDirection === "asc"
+        ? aStr.localeCompare(bStr)
+        : bStr.localeCompare(aStr);
+    });
+  }, [data, sortKey, sortDirection, columns]);
+
+  // Get cell content
+  const getCellContent = (row: T, column: TableColumn<T>) => {
+    if (column.accessor) {
+      return column.accessor(row);
+    }
+    return (row as any)[column.key] ?? "-";
+  };
+
+  // Truncate text and show tooltip on hover
+  const TruncatedCell = ({ content }: { content: React.ReactNode }) => {
+    const [showTooltip, setShowTooltip] = React.useState(false);
+    const cellRef = React.useRef<HTMLDivElement>(null);
+
+    // Check if content is React element (like badges, buttons)
+    if (React.isValidElement(content)) {
+      return <>{content}</>;
+    }
+
+    const textContent = String(content || "-");
+    
+    // Don't truncate very short text
+    if (textContent.length <= 50) {
+      return <span>{textContent}</span>;
+    }
+
+    return (
+      <div
+        ref={cellRef}
+        className="relative"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        <div className="truncate max-w-full cursor-help" title={textContent}>
+          {textContent}
+        </div>
+        {showTooltip && (
+          <div className="absolute z-50 bg-slate-900 text-white text-xs rounded-lg shadow-xl px-3 py-2 max-w-md whitespace-normal break-words left-0 top-full mt-1 pointer-events-none">
+            {textContent}
+            <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 transform rotate-45"></div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <table
+      className={cn(
+        "w-full border-collapse bg-white",
+        bordered && "border border-slate-200",
+        className
+      )}
+    >
+      <thead className="bg-gradient-to-r from-slate-100 to-slate-50 sticky top-0 z-10">
+          <tr>
+            {columns.map((column) => (
+              <th
+                key={column.key}
+                onClick={() => column.sortable && handleSort(column.key)}
+                className={cn(
+                  "px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider bg-slate-50",
+                  bordered && "border-b-2 border-slate-300",
+                  compact && "px-4 py-2",
+                  column.sortable && "cursor-pointer select-none hover:bg-slate-200 transition-colors",
+                  column.align === "center" && "text-center",
+                  column.align === "right" && "text-right"
+                )}
+                style={{ width: column.width }}
+              >
+                <div className="flex items-center gap-2">
+                  <span>{column.header}</span>
+                  {column.sortable && (
+                    <span className="text-gray-400">
+                      {sortKey === column.key ? (
+                        sortDirection === "asc" ? (
+                          <svg
+                            className="w-4 h-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M5 10l5-5 5 5H5z" />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-4 h-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M15 10l-5 5-5-5h10z" />
+                          </svg>
+                        )
+                      ) : (
+                        <svg
+                          className="w-4 h-4"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M5 8l5-5 5 5H5zm0 4l5 5 5-5h-10z" />
+                        </svg>
+                      )}
+                    </span>
+                  )}
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="px-6 py-12 text-center"
+              >
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <svg
+                    className="animate-spin h-8 w-8 text-blue-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <span className="text-slate-600 font-medium">Loading data...</span>
+                </div>
+              </td>
+            </tr>
+          ) : sortedData.length === 0 ? (
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="px-6 py-12 text-center"
+              >
+                <div className="flex flex-col items-center gap-3">
+                  <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="text-slate-500 font-medium">{emptyMessage}</span>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            sortedData.map((row, rowIndex) => (
+              <tr
+                key={rowIndex}
+                onClick={() => onRowClick?.(row)}
+                className={cn(
+                  bordered && "border-b border-slate-200",
+                  striped && rowIndex % 2 === 1 && "bg-slate-50/50",
+                  hoverable && "hover:bg-blue-50/50 transition-all duration-150",
+                  onRowClick && "cursor-pointer hover:shadow-sm"
+                )}
+              >
+                {columns.map((column) => (
+                  <td
+                    key={column.key}
+                    className={cn(
+                      "px-6 py-4 text-sm text-slate-800 max-w-xs",
+                      compact && "px-4 py-2",
+                      column.align === "center" && "text-center",
+                      column.align === "right" && "text-right"
+                    )}
+                  >
+                    <TruncatedCell content={getCellContent(row, column)} />
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+  );
+}
+
+Table.displayName = "Table";
