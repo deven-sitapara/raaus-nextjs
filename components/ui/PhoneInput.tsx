@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils/cn";
-import { validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
+
+type CountryCode = "AU" | "CA" | "GB" | "US";
 
 export interface PhoneInputProps {
   label?: string;
@@ -12,19 +13,19 @@ export interface PhoneInputProps {
   onChange?: (value: string) => void;
   onValueChange?: (value: string) => void;
   onValidationChange?: (isValid: boolean, errorMessage: string) => void;
-  onCountryChange?: (country: "AU" | "CA" | "GB" | "US") => void;
-  defaultCountry?: "AU" | "CA" | "GB" | "US";
-  countries?: Array<"AU" | "CA" | "GB" | "US">;
+  onCountryChange?: (country: CountryCode) => void;
+  defaultCountry?: CountryCode;
+  countries?: Array<CountryCode>;
   placeholder?: string;
   className?: string;
-  validateOnBlur?: boolean;
+  showValidationCriteria?: boolean;
 }
 
-const countryData = {
-  AU: { name: "Australia", code: "+61", flag: "🇦🇺" },
-  CA: { name: "Canada", code: "+1", flag: "🇨🇦" },
-  GB: { name: "United Kingdom", code: "+44", flag: "🇬🇧" },
-  US: { name: "United States", code: "+1", flag: "🇺🇸" },
+const countryData: Record<CountryCode, { name: string; code: string; flag: string; minLength: number; maxLength: number; format: string; startsWithZero: boolean }> = {
+  AU: { name: "Australia", code: "+61", flag: "🇦🇺", minLength: 10, maxLength: 10, format: "04XX XXX XXX", startsWithZero: true },
+  CA: { name: "Canada", code: "+1", flag: "🇨🇦", minLength: 10, maxLength: 10, format: "XXX XXX XXXX", startsWithZero: false },
+  GB: { name: "United Kingdom", code: "+44", flag: "🇬🇧", minLength: 11, maxLength: 11, format: "0XXXX XXXXXX", startsWithZero: true },
+  US: { name: "United States", code: "+1", flag: "🇺🇸", minLength: 10, maxLength: 10, format: "XXX XXX XXXX", startsWithZero: false },
 };
 
 const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
@@ -42,15 +43,15 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       countries = ["AU", "CA", "GB", "US"],
       placeholder = "0412 345 678",
       className,
-      validateOnBlur = true,
+      showValidationCriteria = true,
       ...props
     },
     ref
   ) => {
-    const [selectedCountry, setSelectedCountry] = React.useState<keyof typeof countryData>(defaultCountry);
+    const [selectedCountry, setSelectedCountry] = React.useState<CountryCode>(defaultCountry);
     const [isOpen, setIsOpen] = React.useState(false);
     const [internalError, setInternalError] = React.useState<string>("");
-    const [touched, setTouched] = React.useState(false);
+    const [focused, setFocused] = React.useState(false);
     const dropdownRef = React.useRef<HTMLDivElement>(null);
 
     // Close dropdown when clicking outside
@@ -65,67 +66,128 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const handleCountryChange = (country: keyof typeof countryData) => {
-      setSelectedCountry(country);
-      setIsOpen(false);
-      onCountryChange?.(country);
+    // Get validation criteria for current input
+    const getValidationCriteria = (phoneValue: string, country: CountryCode) => {
+      const cleanNumber = phoneValue.replace(/[\s\-\(\)\.\+]/g, '');
+      const countryInfo = countryData[country];
       
-      // Re-validate with new country if field is touched and has value
-      if (touched && value) {
-        validatePhone(value, country);
-      }
+      return {
+        noLetters: !/[a-zA-Z]/.test(phoneValue),
+        startsCorrectly: countryInfo.startsWithZero ? cleanNumber.startsWith('0') : !cleanNumber.startsWith('0'),
+        correctLength: cleanNumber.length >= countryInfo.minLength && cleanNumber.length <= countryInfo.maxLength,
+        validFormat: cleanNumber.length > 0 && /^\d+$/.test(cleanNumber),
+        notEmpty: phoneValue && phoneValue.trim() !== ""
+      };
     };
 
-    const validatePhone = (phoneValue: string, country: keyof typeof countryData) => {
+    const validatePhone = (phoneValue: string, country: CountryCode) => {
       if (!phoneValue || phoneValue.trim() === "") {
-        if (required) {
-          const errorMsg = "Phone number is required";
-          setInternalError(errorMsg);
-          onValidationChange?.(false, errorMsg);
-          return false;
-        }
-        setInternalError("");
-        onValidationChange?.(true, "");
-        return true;
-      }
-
-      const isValid = validatePhoneNumber(phoneValue, country);
-      if (!isValid) {
-        const errorMsg = getPhoneValidationMessage(country);
+        const errorMsg = required ? "Phone number is required" : "";
         setInternalError(errorMsg);
         onValidationChange?.(false, errorMsg);
         return false;
       }
 
+      const cleanNumber = phoneValue.replace(/[\s\-\(\)\.\+]/g, '');
+      const countryInfo = countryData[country];
+      
+      // Check for letters
+      if (/[a-zA-Z]/.test(phoneValue)) {
+        const errorMsg = "Phone number cannot contain letters";
+        setInternalError(errorMsg);
+        onValidationChange?.(false, errorMsg);
+        return false;
+      }
+      
+      // Check if starts correctly
+      if (countryInfo.startsWithZero && !cleanNumber.startsWith('0')) {
+        const errorMsg = `${countryInfo.name} phone numbers must start with 0`;
+        setInternalError(errorMsg);
+        onValidationChange?.(false, errorMsg);
+        return false;
+      }
+      
+      if (!countryInfo.startsWithZero && cleanNumber.startsWith('0')) {
+        const errorMsg = `${countryInfo.name} phone numbers should not start with 0`;
+        setInternalError(errorMsg);
+        onValidationChange?.(false, errorMsg);
+        return false;
+      }
+      
+      // Check length
+      if (cleanNumber.length < countryInfo.minLength) {
+        const errorMsg = `Phone number too short. Need ${countryInfo.minLength === countryInfo.maxLength ? countryInfo.minLength : `${countryInfo.minLength}-${countryInfo.maxLength}`} digits`;
+        setInternalError(errorMsg);
+        onValidationChange?.(false, errorMsg);
+        return false;
+      }
+      
+      if (cleanNumber.length > countryInfo.maxLength) {
+        const errorMsg = `Phone number too long. Need ${countryInfo.minLength === countryInfo.maxLength ? countryInfo.minLength : `${countryInfo.minLength}-${countryInfo.maxLength}`} digits`;
+        setInternalError(errorMsg);
+        onValidationChange?.(false, errorMsg);
+        return false;
+      }
+      
+      // Valid
       setInternalError("");
       onValidationChange?.(true, "");
       return true;
     };
 
+    const handleCountryChange = (country: CountryCode) => {
+      setSelectedCountry(country);
+      setIsOpen(false);
+      onCountryChange?.(country);
+      
+      // Re-validate with new country
+      if (value) {
+        validatePhone(value, country);
+      }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      let newValue = e.target.value;
+      
+      // Block letters immediately
+      if (/[a-zA-Z]/.test(newValue)) {
+        setInternalError("Letters are not allowed in phone numbers");
+        return;
+      }
+      
+      // Clear letter error if input is now valid
+      if (internalError === "Letters are not allowed in phone numbers") {
+        setInternalError("");
+      }
+      
+      onChange?.(newValue);
+      onValueChange?.(newValue);
+      
+      // Validate on change
+      if (newValue) {
+        validatePhone(newValue, selectedCountry);
+      }
+    };
+
     const handleBlur = () => {
-      setTouched(true);
-      if (validateOnBlur) {
+      setFocused(false);
+      if (value) {
         validatePhone(value, selectedCountry);
       }
     };
 
-    const handleChange = (newValue: string) => {
-      onChange?.(newValue);
-      onValueChange?.(newValue);
-      
-      // Clear error when user starts typing
-      if (touched && internalError) {
-        setInternalError("");
-      }
+    const handleFocus = () => {
+      setFocused(true);
     };
 
-    // Use external error if provided, otherwise use internal error
+    // Get current validation criteria
+    const validationCriteria = getValidationCriteria(value, selectedCountry);
     const displayError = error || internalError;
 
     return (
-      <div className="w-full" style={{marginBottom: '10px'}}>
+      <div className="w-full mb-2">
         {label && (
-          <label className="block text-base font-medium text-black mb-1" style={{fontSize: '16px', color: '#000000', marginBottom: '10px'}}>
+          <label className="block text-base font-medium text-black mb-2">
             {label}
             {required && <span className="text-red-600 ml-1">*</span>}
           </label>
@@ -166,10 +228,13 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
               ref={ref}
               type="tel"
               value={value}
-              onChange={(e) => handleChange(e.target.value)}
+              onChange={handleChange}
               onBlur={handleBlur}
+              onFocus={handleFocus}
               placeholder={placeholder}
-              className="flex-1 px-3 py-2 text-sm outline-none bg-white"
+              className="flex-1 px-3 py-2 text-sm outline-none bg-white !mb-0"
+              autoComplete="tel"
+              inputMode="numeric"
               {...props}
             />
           </div>
@@ -177,7 +242,9 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           {/* Dropdown */}
           {isOpen && (
             <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-              {countries.map((country) => (
+              {countries
+                .sort((a, b) => countryData[a].name.localeCompare(countryData[b].name))
+                .map((country) => (
                 <button
                   key={country}
                   type="button"
@@ -196,7 +263,70 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           )}
         </div>
 
-        {displayError && <p className="mt-1 text-sm text-red-600">{displayError}</p>}
+        {/* Show error message when validation criteria is not shown */}
+        {!showValidationCriteria && displayError && (
+          <p className="mt-1 text-sm text-red-600">{displayError}</p>
+        )}
+        
+        {/* Show error message when not focused but has error */}
+        {showValidationCriteria && !focused && displayError && (
+          <p className="mt-1 text-sm text-red-600">{displayError}</p>
+        )}
+        
+        {/* Always show 5 validation criteria when enabled */}
+        {showValidationCriteria && focused && (
+          <div className="mt-2 p-3">
+            <p className="text-sm font-medium text-gray-700 mb-3">
+              Phone number requirements for {countryData[selectedCountry].name}:
+            </p>
+            <div className="space-y-2">
+              <div className={`flex items-center text-sm ${
+                validationCriteria.noLetters ? "text-green-600" : "text-red-500"
+              }`}>
+                <span className="mr-3 text-base">{validationCriteria.noLetters ? "✓" : "✗"}</span>
+                <span>Must contain only numbers (no letters or special characters)</span>
+              </div>
+              
+              <div className={`flex items-center text-sm ${
+                validationCriteria.startsCorrectly ? "text-green-600" : "text-red-500"
+              }`}>
+                <span className="mr-3 text-base">{validationCriteria.startsCorrectly ? "✓" : "✗"}</span>
+                <span>
+                  {countryData[selectedCountry].startsWithZero 
+                    ? "Must start with 0 (e.g., 0412...)" 
+                    : "Must NOT start with 0 (e.g., 555...)"
+                  }
+                </span>
+              </div>
+              
+              <div className={`flex items-center text-sm ${
+                validationCriteria.correctLength ? "text-green-600" : "text-red-500"
+              }`}>
+                <span className="mr-3 text-base">{validationCriteria.correctLength ? "✓" : "✗"}</span>
+                <span>
+                  Must be {countryData[selectedCountry].minLength === countryData[selectedCountry].maxLength 
+                    ? `exactly ${countryData[selectedCountry].minLength} digits`
+                    : `between ${countryData[selectedCountry].minLength} and ${countryData[selectedCountry].maxLength} digits`
+                  } long
+                </span>
+              </div>
+              
+              <div className={`flex items-center text-sm ${
+                validationCriteria.validFormat ? "text-green-600" : "text-red-500"
+              }`}>
+                <span className="mr-3 text-base">{validationCriteria.validFormat ? "✓" : "✗"}</span>
+                <span>Must follow the format: {countryData[selectedCountry].format}</span>
+              </div>
+              
+              <div className={`flex items-center text-sm ${
+                validationCriteria.notEmpty ? "text-green-600" : "text-red-500"
+              }`}>
+                <span className="mr-3 text-base">{validationCriteria.notEmpty ? "✓" : "✗"}</span>
+                <span>Field must not be empty{required ? " (required)" : ""}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

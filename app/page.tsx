@@ -118,7 +118,7 @@ export default function Home() {
         </div>
 
         {/* Bottom Section */}
-        <div className="mt-12 pt-8 border-t border-gray-300">
+        <div className="mt-12 pt-8 border-t border-gray-300 hidden">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Report a recreational aviation related occurrence with Recreational Aviation Australia
           </h2>

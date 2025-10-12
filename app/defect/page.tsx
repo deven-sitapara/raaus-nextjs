@@ -14,6 +14,7 @@ import { validationPatterns, validationMessages, validateEmail, validatePhoneNum
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import axios from "axios";
 import Link from "next/link";
+import "./defect-style.css";
 
 const roleOptions = [
   { value: "", label: "- Please Select -" },
@@ -99,6 +100,11 @@ export default function DefectForm() {
   const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
   const [memberValidationMessage, setMemberValidationMessage] = useState("");
   const [isValidatingMember, setIsValidatingMember] = useState(false);
+  
+  // Maintainer validation states
+  const [maintainerValidationStatus, setMaintainerValidationStatus] = useState<"valid" | "invalid" | "">("");
+  const [maintainerValidationMessage, setMaintainerValidationMessage] = useState("");
+  const [isValidatingMaintainer, setIsValidatingMaintainer] = useState(false);
   const [defectDate, setDefectDate] = useState("");
   const [defectTime, setDefectTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -201,6 +207,39 @@ export default function DefectForm() {
       setMemberValidationMessage("Unable to validate Member Number");
     } finally {
       setIsValidatingMember(false);
+    }
+  };
+
+  // Validate maintainer member number with immediate feedback
+  const validateMaintainer = async (memberNumber: string, firstName: string, lastName: string) => {
+    // Reset validation if any field is empty
+    if (!memberNumber || !firstName || !lastName) {
+      setMaintainerValidationStatus("");
+      setMaintainerValidationMessage("");
+      return;
+    }
+
+    setIsValidatingMaintainer(true);
+
+    try {
+      const response = await axios.post("/api/validate-member", {
+        memberNumber,
+        firstName,
+        lastName,
+      });
+
+      if (response.data.valid) {
+        setMaintainerValidationStatus("valid");
+        setMaintainerValidationMessage("✓ Member Number exists in system");
+      } else {
+        setMaintainerValidationStatus("invalid");
+        setMaintainerValidationMessage(response.data.warning || "Member Number not found");
+      }
+    } catch (error) {
+      setMaintainerValidationStatus("invalid");
+      setMaintainerValidationMessage("Unable to validate Member Number");
+    } finally {
+      setIsValidatingMaintainer(false);
     }
   };
 
@@ -465,7 +504,7 @@ export default function DefectForm() {
   if (submitSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -510,45 +549,56 @@ export default function DefectForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        {/* Home Button */}
-        <div className="mb-6">
-          <Link 
-            href="/" 
-            className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            Home
-          </Link>
+    <div className="min-h-screen bg-gray-200 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+
+        {/* Breadcrumb Style */}
+        <div className="mb-6 lg:mb-0 relative lg:-left-10 xl:-left-32 -mt-2">
+          <nav className="flex items-center text-md text-gray-600" aria-label="Breadcrumb">
+            <ol className="inline-flex items-center space-x-1 md:space-x-3">
+              <li className="inline-flex items-center">
+                <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800">
+                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                  </svg>
+                  Home
+                </Link>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  /<span className="text-slate-900 ml-2">Accident Form</span>
+                </div>
+              </li>
+            </ol>
+          </nav>
         </div>
 
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Lodge a New Defect</h1>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              clearCurrentForm();
-              clearSpecialState();
-              setAttachments(null);
-            }}
-            className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-          >
-            Clear Form
-          </Button>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 text-center w-full mb-6">Lodge a New Defect</h1>
+          <div className="w-[80%] mx-auto h-px bg-gray-300"></div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white defect-form">
           {/* Person Reporting Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="rounded-lg p-8 pt-10">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 border-b-2 border-gray-300 pb-4">
               Person Reporting
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  clearCurrentForm();
+                  clearSpecialState();
+                  setAttachments(null);
+                }}
+                className="bg-red-50 float-right inline -top-6 relative text-red-600 border-red-200 hover:bg-red-100"
+              >
+                Clear Form
+              </Button>
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
               <Select
                 label="Role"
                 required
@@ -700,8 +750,8 @@ export default function DefectForm() {
           </div>
 
           {/* Defect Information Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
               Defect Information
             </h2>
 
@@ -820,27 +870,88 @@ export default function DefectForm() {
                   label="Maintainer Name"
                   type="text"
                   placeholder="Robert Johnson"
+                  maxLength={60}
                   {...register("maintainerName", {
                     pattern: {
                       value: /^[a-zA-Z\s]*$/,
                       message: "Letters and spaces only",
                     },
+                    onChange: (e) => {
+                      // Convert to Title Case
+                      e.target.value = toTitleCase(e.target.value);
+                      
+                      // Trigger member validation if all fields are present
+                      const fullName = e.target.value;
+                      const memberNumber = watch("maintainerMemberNumber");
+                      if (memberNumber && fullName) {
+                        // Split full name into first and last name for validation
+                        const nameParts = fullName.trim().split(' ');
+                        const firstName = nameParts[0] || '';
+                        const lastName = nameParts.slice(1).join(' ') || '';
+                        if (firstName && lastName) {
+                          validateMaintainer(memberNumber, firstName, lastName);
+                        }
+                      }
+                    }
                   })}
                   error={errors.maintainerName?.message}
                 />
 
-                <Input
-                  label="Maintainer Member Number"
-                  type="text"
-                  placeholder="e.g. 6789"
-                  {...register("maintainerMemberNumber", {
-                    pattern: {
-                      value: validationPatterns.memberNumber,
-                      message: "Must be 5-6 digits",
-                    },
-                  })}
-                  error={errors.maintainerMemberNumber?.message}
-                />
+                <div>
+                  <Input
+                    label="Maintainer Member Number"
+                    type="text"
+                    placeholder="e.g. 123456"
+                    maxLength={6}
+                    helpText="Must be exactly 6 digits. If the maintainer was not a member, leave blank."
+                    onKeyPress={(e) => {
+                      // Only allow numbers (0-9)
+                      if (!/[0-9]/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    {...register("maintainerMemberNumber", {
+                      pattern: {
+                        value: validationPatterns.memberNumber,
+                        message: validationMessages.memberNumber,
+                      },
+                      minLength: {
+                        value: 6,
+                        message: validationMessages.memberNumber,
+                      },
+                      maxLength: {
+                        value: 6,
+                        message: validationMessages.memberNumber,
+                      },
+                      onChange: (e) => {
+                        // Remove any non-numeric characters
+                        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                        const memberNumber = e.target.value;
+                        const fullName = watch("maintainerName");
+                        if (memberNumber && fullName) {
+                          // Split full name into first and last name for validation
+                          const nameParts = fullName.trim().split(' ');
+                          const firstName = nameParts[0] || '';
+                          const lastName = nameParts.slice(1).join(' ') || '';
+                          if (firstName && lastName) {
+                            validateMaintainer(memberNumber, firstName, lastName);
+                          }
+                        }
+                      }
+                    })}
+                    error={errors.maintainerMemberNumber?.message}
+                  />
+                  {isValidatingMaintainer && (
+                    <p className="mt-1 text-sm text-blue-600">Validating member number...</p>
+                  )}
+                  {maintainerValidationMessage && (
+                    <p className={`mt-1 text-sm ${
+                      maintainerValidationStatus === "valid" ? "text-green-600" : "text-red-600"
+                    }`}>
+                      {maintainerValidationMessage}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <Select
@@ -860,8 +971,8 @@ export default function DefectForm() {
           </div>
 
           {/* Aircraft Information Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
               Aircraft Information
             </h2>
 
@@ -903,11 +1014,22 @@ export default function DefectForm() {
                   type="text"
                   placeholder="1234"
                   required
+                  maxLength={4}
+                  onKeyPress={(e) => {
+                    // Only allow numbers (0-9)
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   {...register("registrationNumberSuffix", {
                     required: "Registration suffix is required",
                     minLength: { value: 4, message: "Must be exactly 4 digits" },
                     maxLength: { value: 4, message: "Must be exactly 4 digits" },
                     pattern: { value: /^\d{4}$/, message: "Must be 4 digits" },
+                    onChange: (e) => {
+                      // Remove any non-numeric characters
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    }
                   })}
                   error={errors.registrationNumberSuffix?.message}
                 />
@@ -962,8 +1084,8 @@ export default function DefectForm() {
           </div>
 
           {/* Engine Details Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
               Engine Details (As applicable to defect report)
             </h2>
 
@@ -989,20 +1111,64 @@ export default function DefectForm() {
 
                 <Input
                   label="Total Engine Hours"
-                  type="text"
+                  type="number"
                   placeholder="200"
+                  maxLength={10}
+                  step="0.1"
+                  min="0"
+                  onKeyPress={(e) => {
+                    // Only allow numbers and decimal point
+                    if (!/[0-9.]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   {...register("totalEngineHours", {
-                    pattern: { value: /^\d+$/, message: "Numbers only" },
+                    pattern: {
+                      value: /^\d+(\.\d+)?$/,
+                      message: "Must be a valid number (decimals allowed)"
+                    },
+                    onChange: (e) => {
+                      // Remove any non-numeric characters except decimal point
+                      let value = e.target.value.replace(/[^0-9.]/g, '');
+                      // Prevent multiple decimal points
+                      const parts = value.split('.');
+                      if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                      }
+                      e.target.value = value;
+                    }
                   })}
                   error={errors.totalEngineHours?.message}
                 />
 
                 <Input
                   label="Total Hours Since Service"
-                  type="text"
+                  type="number"
                   placeholder="102"
+                  maxLength={10}
+                  step="0.1"
+                  min="0"
+                  onKeyPress={(e) => {
+                    // Only allow numbers and decimal point
+                    if (!/[0-9.]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   {...register("totalHoursSinceService", {
-                    pattern: { value: /^\d+$/, message: "Numbers only" },
+                    pattern: {
+                      value: /^\d+(\.\d+)?$/,
+                      message: "Must be a valid number (decimals allowed)"
+                    },
+                    onChange: (e) => {
+                      // Remove any non-numeric characters except decimal point
+                      let value = e.target.value.replace(/[^0-9.]/g, '');
+                      // Prevent multiple decimal points
+                      const parts = value.split('.');
+                      if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                      }
+                      e.target.value = value;
+                    }
                   })}
                   error={errors.totalHoursSinceService?.message}
                 />
@@ -1011,8 +1177,8 @@ export default function DefectForm() {
           </div>
 
           {/* Propeller Details Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
               Propeller Details (As applicable to defect report)
             </h2>
 
@@ -1040,8 +1206,8 @@ export default function DefectForm() {
           </div>
 
           {/* Attachments Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 border-b-2 border-gray-300 pb-2">
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
               Attachments
             </h2>
 
@@ -1056,7 +1222,7 @@ export default function DefectForm() {
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end space-x-4">
+          <div className="flex justify-end space-x-4 px-6 pb-8">
             <Button type="button" variant="outline" onClick={() => (window.location.href = "/")}>
               Cancel
             </Button>
