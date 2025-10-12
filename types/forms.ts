@@ -219,6 +219,7 @@ export interface DefectFormData {
 
   // Maintainer Information
   Maintainer_Name?: string;
+  Maintainer_Last_Name?: string;
   Maintainer_Member_Number?: string;
   Maintainer_Level?: MaintainerLevel;
   Do_you_have_further_suggestions_on_how_to_PSO?: string; // Prevention suggestions

@@ -395,8 +395,9 @@ export default function DefectForm() {
         Defective_component: data.defectiveComponent,
         Provide_description_of_defect: data.defectDescription,
         
-        // Maintainer Information
-        Maintainer_Name: data.maintainerName,
+        // Maintainer Information - split name into first and last
+        Maintainer_Name: data.maintainerName ? data.maintainerName.trim().split(/\s+/).filter((word: string) => word.length > 0)[0] : '',
+        Maintainer_Last_Name: data.maintainerName ? data.maintainerName.trim().split(/\s+/).filter((word: string) => word.length > 0).slice(1).join(' ') : '',
         Maintainer_Member_Number: data.maintainerMemberNumber,
         Maintainer_Level: data.maintainerLevel,
         Do_you_have_further_suggestions_on_how_to_PSO: data.preventionSuggestions,
@@ -870,24 +871,40 @@ export default function DefectForm() {
                   type="text"
                   placeholder="Robert Johnson"
                   maxLength={60}
+                  helpText="Enter first and last name (minimum 2 words required)"
+                  onKeyPress={(e) => {
+                    // Only allow letters (a-z, A-Z) and spaces
+                    if (!/[a-zA-Z ]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   {...register("maintainerName", {
                     pattern: {
                       value: /^[a-zA-Z\s]*$/,
                       message: "Letters and spaces only",
+                    },
+                    validate: (value) => {
+                      if (!value) return true; // Allow empty if not required
+                      const trimmed = value.trim();
+                      const words = trimmed.split(/\s+/).filter((word: string) => word.length > 0);
+                      if (words.length < 2) {
+                        return "Please enter both first and last name (minimum 2 words)";
+                      }
+                      return true;
                     },
                     onChange: (e) => {
                       // Convert to Title Case
                       e.target.value = toTitleCase(e.target.value);
                       
                       // Trigger member validation if all fields are present
-                      const fullName = e.target.value;
+                      const fullName = e.target.value.trim();
                       const memberNumber = watch("maintainerMemberNumber");
                       if (memberNumber && fullName) {
                         // Split full name into first and last name for validation
-                        const nameParts = fullName.trim().split(' ');
+                        const nameParts = fullName.split(/\s+/).filter((word: string) => word.length > 0);
                         const firstName = nameParts[0] || '';
                         const lastName = nameParts.slice(1).join(' ') || '';
-                        if (firstName && lastName) {
+                        if (firstName && lastName && nameParts.length >= 2) {
                           validateMaintainer(memberNumber, firstName, lastName);
                         }
                       }
@@ -929,10 +946,10 @@ export default function DefectForm() {
                         const fullName = watch("maintainerName");
                         if (memberNumber && fullName) {
                           // Split full name into first and last name for validation
-                          const nameParts = fullName.trim().split(' ');
+                          const nameParts = fullName.trim().split(/\s+/).filter((word: string) => word.length > 0);
                           const firstName = nameParts[0] || '';
                           const lastName = nameParts.slice(1).join(' ') || '';
-                          if (firstName && lastName) {
+                          if (firstName && lastName && nameParts.length >= 2) {
                             validateMaintainer(memberNumber, firstName, lastName);
                           }
                         }
