@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { AccidentFormData } from "@/types/forms";
 
@@ -106,12 +107,12 @@ export default function AccidentPreview({
           <nav className="flex items-center text-md text-gray-600" aria-label="Breadcrumb">
             <ol className="inline-flex items-center space-x-1 md:space-x-3">
               <li className="inline-flex items-center">
-                <a href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800">
+                <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800">
                   <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
                   </svg>
                   Home
-                </a>
+                </Link>
               </li>
               <li>
                 <div className="flex items-center">
