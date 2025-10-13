@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { ComplaintFormData } from "@/types/forms";
 import { validationPatterns, validationMessages, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
+import ComplaintPreview from "@/components/forms/ComplaintPreview";
 import axios from "axios";
 import Link from "next/link";
 
@@ -41,6 +42,8 @@ export default function ComplaintForm() {
   const [occurrenceTime, setOccurrenceTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<ComplaintFormData | null>(null);
 
   const {
     register,
@@ -119,22 +122,34 @@ export default function ComplaintForm() {
     }
   };
 
-  const onSubmit = async (data: ComplaintFormData) => {
+  const handlePreview = (data: ComplaintFormData) => {
+    // Validate required fields before showing preview
+    if (!occurrenceDate || !occurrenceTime) {
+      alert("Please provide both occurrence date and time");
+      return;
+    }
+
+    if (!contactPhone) {
+      alert("Please provide a contact phone number");
+      return;
+    }
+
+    // Store form data and show preview
+    setPreviewData(data);
+    setShowPreview(true);
+  };
+
+  const handleBackToEdit = () => {
+    setShowPreview(false);
+  };
+
+  const onSubmit = async () => {
+    if (!previewData) return;
+    
     setIsSubmitting(true);
 
     try {
-      // Validate required fields
-      if (!occurrenceDate || !occurrenceTime) {
-        alert("Please provide both occurrence date and time");
-        setIsSubmitting(false);
-        return;
-      }
-
-      if (!contactPhone) {
-        alert("Please provide a contact phone number");
-        setIsSubmitting(false);
-        return;
-      }
+      const data = previewData;
 
       // Convert date and time to ISO format
       const datetime = new Date(`${occurrenceDate}T${occurrenceTime}`);
@@ -181,8 +196,10 @@ export default function ComplaintForm() {
 
       if (response.data.success) {
         clearFormOnSubmission('complaint');
+        setShowPreview(false);
         setSubmitSuccess(true);
         setSubmissionData(response.data);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         throw new Error(response.data.error || "Failed to process complaint");
       }
@@ -237,6 +254,22 @@ export default function ComplaintForm() {
       setIsDownloadingPDF(false);
     }
   };
+
+  // Show preview screen
+  if (showPreview && previewData) {
+    return (
+      <ComplaintPreview
+        data={previewData}
+        occurrenceDate={occurrenceDate}
+        occurrenceTime={occurrenceTime}
+        contactPhone={contactPhone}
+        attachments={attachments}
+        onBack={handleBackToEdit}
+        onConfirm={onSubmit}
+        isSubmitting={isSubmitting}
+      />
+    );
+  }
 
   if (submitSuccess) {
     return (
@@ -313,7 +346,7 @@ export default function ComplaintForm() {
               </li>
               <li>
                 <div className="flex items-center">
-                  /<span className="text-slate-900 ml-2">Accident Form</span>
+                  /<span className="text-slate-900 ml-2">Complaint Form</span>
                 </div>
               </li>
             </ol>
@@ -324,7 +357,7 @@ export default function ComplaintForm() {
           <h1 className="text-3xl font-bold text-gray-900 text-center w-full mb-6">Lodge a New Complaint</h1>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white ">
+        <form onSubmit={handleSubmit(handlePreview)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white ">
           {/* Person Reporting Section */}
           <div className="rounded-lg p-8 pt-10">
             <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
@@ -618,8 +651,8 @@ export default function ComplaintForm() {
             <Button type="button" variant="outline" onClick={() => (window.location.href = "/")}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit"}
+            <Button type="submit">
+              Review & Submit
             </Button>
           </div>
         </form>

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { DefectFormData } from "@/types/forms";
 import { validationPatterns, validationMessages, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
+import DefectPreview from "@/components/forms/DefectPreview";
 import axios from "axios";
 import Link from "next/link";
 import "./defect-style.css";
@@ -109,6 +110,8 @@ export default function DefectForm() {
   const [defectTime, setDefectTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<DefectFormData | null>(null);
 
   // Aircraft lookup states
   const [isLookingUpAircraft, setIsLookingUpAircraft] = useState(false);
@@ -347,10 +350,35 @@ export default function DefectForm() {
     }
   };
 
-  const onSubmit = async (data: DefectFormData) => {
+  const handlePreview = (data: DefectFormData) => {
+    // Validate required fields before showing preview
+    if (!defectDate || !defectTime) {
+      alert("Please provide both defect date and time");
+      return;
+    }
+
+    if (!contactPhone) {
+      alert("Please provide a contact phone number");
+      return;
+    }
+
+    // Store form data and show preview
+    setPreviewData(data);
+    setShowPreview(true);
+  };
+
+  const handleBackToEdit = () => {
+    setShowPreview(false);
+  };
+
+  const onSubmit = async () => {
+    if (!previewData) return;
+    
     setIsSubmitting(true);
 
     try {
+      const data = previewData;
+      
       // Validate required fields
       if (!defectDate || !defectTime) {
         alert("Please provide both defect date and time");
@@ -448,7 +476,9 @@ export default function DefectForm() {
       if (response.data.success) {
         setSubmissionData(response.data);
         clearFormOnSubmission('defect');
+        setShowPreview(false);
         setSubmitSuccess(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         throw new Error(response.data.error || "Failed to process defect report");
       }
@@ -501,6 +531,22 @@ export default function DefectForm() {
       setIsDownloadingPDF(false);
     }
   };
+
+  // Show preview screen
+  if (showPreview && previewData) {
+    return (
+      <DefectPreview
+        data={previewData}
+        defectDate={defectDate}
+        defectTime={defectTime}
+        contactPhone={contactPhone}
+        attachments={attachments}
+        onBack={handleBackToEdit}
+        onConfirm={onSubmit}
+        isSubmitting={isSubmitting}
+      />
+    );
+  }
 
   if (submitSuccess) {
     return (
@@ -567,7 +613,7 @@ export default function DefectForm() {
               </li>
               <li>
                 <div className="flex items-center">
-                  /<span className="text-slate-900 ml-2">Accident Form</span>
+                  /<span className="text-slate-900 ml-2">Defect Form</span>
                 </div>
               </li>
             </ol>
@@ -579,7 +625,7 @@ export default function DefectForm() {
           <div className="w-[80%] mx-auto h-px bg-gray-300"></div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white defect-form">
+        <form onSubmit={handleSubmit(handlePreview)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white defect-form">
           {/* Person Reporting Section */}
           <div className="rounded-lg p-8 pt-10">
             <h2 className="text-xl font-semibold text-gray-900 mb-6 border-b-2 border-gray-300 pb-4">
@@ -1242,8 +1288,8 @@ export default function DefectForm() {
             <Button type="button" variant="outline" onClick={() => (window.location.href = "/")}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit"}
+            <Button type="submit">
+              Review & Submit
             </Button>
           </div>
         </form>
