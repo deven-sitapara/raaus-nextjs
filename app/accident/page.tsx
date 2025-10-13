@@ -13,6 +13,7 @@ import { FileUpload } from "@/components/ui/FileUpload";
 import { AccidentFormData } from "@/types/forms";
 import { validationPatterns, validationMessages, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
+import AccidentPreview from "@/components/forms/AccidentPreview";
 import axios from "axios";
 import Link from "next/link";
 import "./wizard.css";
@@ -342,6 +343,8 @@ export default function AccidentForm() {
   const [didInvolveBirdAnimalStrike, setDidInvolveBirdAnimalStrike] = useState(false);
   const [didInvolveNearMiss, setDidInvolveNearMiss] = useState(false);
   const [attachments, setAttachments] = useState<FileList | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<AccidentFormData | null>(null);
 
   // Aircraft lookup states
   const [isLookingUpAircraft, setIsLookingUpAircraft] = useState(false);
@@ -725,22 +728,34 @@ export default function AccidentForm() {
     }
   };
 
-  const onSubmit = async (data: AccidentFormData) => {
+  const handlePreview = (data: AccidentFormData) => {
+    // Validate required fields before showing preview
+    if (!occurrenceDate || !occurrenceTime) {
+      alert("Please provide both occurrence date and time");
+      return;
+    }
+
+    if (!contactPhone) {
+      alert("Please provide a contact phone number");
+      return;
+    }
+
+    // Store form data and show preview
+    setPreviewData(data);
+    setShowPreview(true);
+  };
+
+  const handleBackToEdit = () => {
+    setShowPreview(false);
+  };
+
+  const onSubmit = async () => {
+    if (!previewData) return;
+    
     setIsSubmitting(true);
 
     try {
-      // Validate required fields
-      if (!occurrenceDate || !occurrenceTime) {
-        alert("Please provide both occurrence date and time");
-        setIsSubmitting(false);
-        return;
-      }
-
-      if (!contactPhone) {
-        alert("Please provide a contact phone number");
-        setIsSubmitting(false);
-        return;
-      }
+      const data = previewData;
 
       // Convert date and time to ISO format
       const datetime = new Date(`${occurrenceDate}T${occurrenceTime}`);
@@ -790,7 +805,9 @@ export default function AccidentForm() {
       if (response.data.success) {
         setSubmissionData(response.data);
         clearFormOnSubmission('accident', 3);
+        setShowPreview(false);
         setSubmitSuccess(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         throw new Error(response.data.error || "Failed to process accident report");
       }
@@ -843,6 +860,22 @@ export default function AccidentForm() {
       setIsDownloadingPDF(false);
     }
   };
+
+  if (showPreview && previewData) {
+    return (
+      <AccidentPreview
+        data={previewData}
+        occurrenceDate={occurrenceDate}
+        occurrenceTime={occurrenceTime}
+        contactPhone={contactPhone}
+        pilotContactPhone={pilotContactPhone}
+        attachments={attachments}
+        onBack={handleBackToEdit}
+        onConfirm={onSubmit}
+        isSubmitting={isSubmitting}
+      />
+    );
+  }
 
   if (submitSuccess) {
     return (
@@ -958,7 +991,7 @@ export default function AccidentForm() {
 
         {/* Form Content */}
         <div className="bg-white rounded-lg shadow-lg p-8 relative border-gray-400">
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmit(handlePreview)}>
             {currentStep === 1 && (
               <div className="space-y-8">
                 {/* Person Reporting Section */}
@@ -3054,7 +3087,7 @@ export default function AccidentForm() {
                     disabled={isSubmitting}
                     className="bg-green-500 hover:bg-green-600 text-white px-8 py-2"
                   >
-                    {isSubmitting ? "Submitting..." : "Submit"}
+                    Review & Submit
                   </Button>
                 </div>
               </div>
