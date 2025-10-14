@@ -211,6 +211,7 @@ export interface DefectFormData {
   Reporter_Email?: string;
   Contact_Phone?: string;
   Last_Name: string;
+  Date_of_Birth?: string; // Date of birth for Pilot in Command validation
   Postcode?: string;
 
   // Defect Information
@@ -345,6 +346,8 @@ export interface HazardFormData {
   Please_fully_describe_the_identified_hazard?: string; // CRM field name
   Do_you_have_further_suggestions_on_how_to_PSO?: string;
   Potential_Consequences_of_Hazard?: string; // CRM field name
+  hazardRelatesToSpecificAerodrome?: "Yes" | "No";
+  hazardAerodrome?: string;
   
   // Attachments
   attachments?: File[];
