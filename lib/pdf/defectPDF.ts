@@ -12,7 +12,7 @@ export class DefectPDFGenerator extends PDFGenerator {
 
     // Person Reporting Section
     this.addSection('Person Reporting');
-    this.addFieldPair('Role', data.Role || data.role, 'Member Number', data.Member_Number || data.memberNumber);
+    this.addFieldPair('Role', data.role, 'Member Number', data.Member_Number || data.memberNumber);
     this.addFieldPair('First Name', data.Name1 || data.firstName, 'Last Name', data.Last_Name || data.lastName);
     this.addFieldPair('Email', data.Reporter_Email || data.email, 'Contact Phone', data.Contact_Phone || data.contactPhone);
 

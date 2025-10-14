@@ -360,7 +360,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         // Reporter / Person submitting
         Name: lastName.trim(), // Standard CRM Name field (mandatory)
         Name1: firstName.trim(),
-        Role: sanitizePick(accidentData.Role || accidentData.role || 'Other'),
+        Role: sanitizePick(accidentData.role || 'Other'),
         Member_Number: accidentData.Member_Number || accidentData.memberNumber || null,
         Reporter: `${firstName} ${lastName}`.trim(),
         Reporter_Email: reporterEmail.trim(),
@@ -499,7 +499,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         ...baseRecord,
         // Person Reporting
         Name: defectData.Last_Name || defectData.lastName || '', // Standard CRM Name field (mandatory)
-        Role: sanitizePick(defectData.Role || defectData.role || ''),
+        Role: sanitizePick(defectData.role || ''),
         Name1: defectData.Name1 || defectData.firstName || '',
         Member_Number: defectData.Member_Number || defectData.memberNumber || '',
         Reporter_First_Name: defectData.Reporter_First_Name || defectData.Name1 || defectData.firstName || '',
@@ -588,7 +588,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
       return cleanupCRMRecord({
         ...baseRecord,
         Name: hazardData.Last_Name || '', // Standard CRM Name field (mandatory)
-        Role: sanitizePick(hazardData.Role || ''),
+        Role: sanitizePick(hazardData.role || ''),
         Member_Number: hazardData.Member_Number || '',
         Reporter_First_Name: hazardData.Name1 || '', // Map Name1 to Reporter_First_Name
         Contact_Phone: hazardData.Contact_Phone || '',

@@ -51,7 +51,7 @@ export type MaintainerLevel = "Level 1 Maintainer (L1)" | "Level 2 Maintainer (L
 export interface AccidentFormData {
   // Reporter / Person submitting
   Name1?: string; // First name
-  Role?: RoleType;
+  role?: RoleType;
   customRole?: string; // Custom role when "Other" is selected
   Member_Number?: string;
   Reporter?: string;
@@ -188,7 +188,6 @@ export interface AccidentFormData {
   attachments?: File[];
 
   // Legacy field names for backward compatibility
-  role?: RoleType;
   memberNumber?: string;
   contactPhone?: string;
   pilotContactPhone?: string;
