@@ -83,3 +83,8 @@ textarea {
 .bg-white {
   background-color: var(--color-white) !important;
 } */
+
+/* styles.css */
+.no-underline {
+  display: none;
+}

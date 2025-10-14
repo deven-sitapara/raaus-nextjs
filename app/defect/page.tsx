@@ -626,7 +626,6 @@ export default function DefectForm() {
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 text-center w-full mb-6">Lodge a New Defect</h1>
-          <div className="w-[80%] mx-auto h-px bg-gray-300"></div>
         </div>
 
         <form onSubmit={handleSubmit(handlePreview)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white defect-form">
@@ -841,6 +840,49 @@ export default function DefectForm() {
                 defaultCountry="AU"
                 countries={["AU", "CA", "GB"]}
               />
+
+              {/* Date of Birth - Shows when 'Pilot in Command' is selected */}
+              {selectedRole === "Pilot in Command" && (
+                <div className="md:col-start-2">
+                  <Input
+                    label="Date of Birth"
+                    type="date"
+                    min="1900-01-01"
+                    max={(() => {
+                      const today = new Date();
+                      const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+                      return maxDate.toISOString().split('T')[0];
+                    })()}
+                    {...register("Date_of_Birth", {
+                      validate: (value) => {
+                        if (!value) return true; // Optional field
+                        
+                        // Parse the date string (format: YYYY-MM-DD)
+                        const birthDate = new Date(value + 'T00:00:00');
+                        const today = new Date();
+                        
+                        // Calculate age in years
+                        let age = today.getFullYear() - birthDate.getFullYear();
+                        const monthDiff = today.getMonth() - birthDate.getMonth();
+                        const dayDiff = today.getDate() - birthDate.getDate();
+                        
+                        // Adjust age if birthday hasn't occurred this year yet
+                        if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+                          age--;
+                        }
+                        
+                        // Must be at least 18 years old
+                        if (age < 18) {
+                          return "Pilot must be at least 18 years old";
+                        }
+                        
+                        return true;
+                      }
+                    })}
+                    error={errors.Date_of_Birth?.message}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -1095,10 +1137,10 @@ export default function DefectForm() {
 
           {/* Aircraft Information Section */}
           <div className="bg-white rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
+            <h2 className="text-xl font-semibold text-gray-900 border-b-2 border-gray-300 pb-4">
               Aircraft Information
             </h2>
-
+            <div className="mb-8"></div>
             {/* Aircraft Lookup Status */}
             {(isLookingUpAircraft || aircraftLookupMessage) && (
               <div className={`mb-4 p-3 rounded-md ${

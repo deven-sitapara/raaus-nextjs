@@ -67,6 +67,7 @@ export default function HazardForm() {
 
   // Watch for "Other" option selections
   const selectedRole = watch("role");
+  const hazardRelatesToAerodrome = watch("hazardRelatesToSpecificAerodrome");
 
   // Form persistence
   const { clearCurrentForm } = useFormPersistence(
@@ -363,7 +364,6 @@ export default function HazardForm() {
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 text-center w-full mb-6">Lodge a New Hazard</h1>
-          <div className="w-[80%] mx-auto h-px bg-gray-300"></div>
         </div>
 
         <form onSubmit={handleSubmit(handlePreview)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white ">
@@ -633,6 +633,34 @@ export default function HazardForm() {
                 />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select
+                  label="Does the hazard relate to operations at a specific aerodrome?"
+                  options={[
+                    { value: "", label: "- Please Select -" },
+                    { value: "Yes", label: "Yes" },
+                    { value: "No", label: "No" },
+                  ]}
+                  {...register("hazardRelatesToSpecificAerodrome")}
+                  error={errors.hazardRelatesToSpecificAerodrome?.message}
+                />
+              </div>
+
+              {hazardRelatesToAerodrome === "Yes" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Select
+                    label="Hazard aerodrome"
+                    options={[
+                      { value: "", label: "- Please Select -" },
+                      { value: "Option1", label: "Option 1" },
+                      { value: "Option2", label: "Option 2" },
+                    ]}
+                    {...register("hazardAerodrome")}
+                    error={errors.hazardAerodrome?.message}
+                  />
+                </div>
+              )}
+
               <Textarea
                 label="Location of Hazard"
                 required
@@ -658,7 +686,7 @@ export default function HazardForm() {
 
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
                 <p className="text-sm text-blue-800">
-                  Immediately reportable matters are required to be notified to RAAus via phone as soon as practicable. 
+                  Hazards that may pose an immediate safety risk to others should be reported to RAAus via phone as soon as practicable.
                   RAAus can be contacted on 02 6280 4700.
                 </p>
               </div>
