@@ -7,8 +7,9 @@ export class HazardPDFGenerator extends PDFGenerator {
   }
 
   async generate(data: HazardFormData, metadata?: any): Promise<Buffer> {
-    // Add header
-    this.addHeader('Hazard Report');
+    // Add header with submission date
+    const submissionDate = metadata?.timestamp ? formatDate(metadata.timestamp) : undefined;
+    this.addHeader('Hazard Report', submissionDate);
 
     // Person Reporting Section
     this.addSection('Person Reporting');
@@ -35,12 +36,6 @@ export class HazardPDFGenerator extends PDFGenerator {
       this.addSection('Submission Information');
       if (metadata.occurrenceId) {
         this.addField('Occurrence ID', metadata.occurrenceId);
-      }
-      if (metadata.recordId) {
-        this.addField('CRM Record ID', metadata.recordId);
-      }
-      if (metadata.timestamp) {
-        this.addField('Submitted On', formatDate(metadata.timestamp));
       }
       if (metadata.attachmentCount) {
         this.addField('Attachments', `${metadata.attachmentCount} file(s) uploaded`);

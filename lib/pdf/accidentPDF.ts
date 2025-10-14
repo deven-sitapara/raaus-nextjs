@@ -7,9 +7,10 @@ export class AccidentPDFGenerator extends PDFGenerator {
   }
 
   async generate(data: AccidentFormData, metadata?: any): Promise<Buffer> {
-    // Add header
+    // Add header with submission date
     const reportType = data.Accident_or_Incident || data.Is_this_occurrence_an_Accident_or_an_Incident || 'Accident/Incident';
-    this.addHeader(`${reportType} Report`);
+    const submissionDate = metadata?.timestamp ? formatDate(metadata.timestamp) : undefined;
+    this.addHeader(`${reportType} Report`, submissionDate);
 
     // Person Reporting Section
     this.addSection('Person Reporting');
@@ -148,12 +149,6 @@ export class AccidentPDFGenerator extends PDFGenerator {
       this.addSection('Submission Information');
       if (metadata.occurrenceId) {
         this.addField('Occurrence ID', metadata.occurrenceId);
-      }
-      if (metadata.recordId) {
-        this.addField('CRM Record ID', metadata.recordId);
-      }
-      if (metadata.timestamp) {
-        this.addField('Submitted On', formatDate(metadata.timestamp));
       }
       if (metadata.attachmentCount) {
         this.addField('Attachments', `${metadata.attachmentCount} file(s) uploaded`);

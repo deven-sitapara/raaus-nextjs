@@ -10,6 +10,7 @@ interface HazardPreviewProps {
   hazardDate: string;
   hazardTime: string;
   contactPhone: string;
+  selectedAerodrome?: string;
   attachments: FileList | null;
   onBack: () => void;
   onConfirm: () => void;
@@ -21,6 +22,7 @@ export default function HazardPreview({
   hazardDate,
   hazardTime,
   contactPhone,
+  selectedAerodrome,
   attachments,
   onBack,
   onConfirm,
@@ -133,6 +135,19 @@ export default function HazardPreview({
                 value={formatDateTime(hazardDate, hazardTime)}
               />
               <PreviewField label="State" value={data.State} />
+              {data.hazardRelatesToSpecificAerodrome && (
+                <PreviewField 
+                  label="Relates to Specific Aerodrome" 
+                  value={data.hazardRelatesToSpecificAerodrome}
+                />
+              )}
+              {selectedAerodrome && (
+                <PreviewField 
+                  label="Hazard Aerodrome" 
+                  value={selectedAerodrome}
+                  fullWidth
+                />
+              )}
               <PreviewField 
                 label="Location of Hazard" 
                 value={data.Location_of_Hazard}

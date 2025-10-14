@@ -9,6 +9,7 @@ import { PhoneInput } from "@/components/ui/PhoneInput";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Button } from "@/components/ui/Button";
+import SearchableDropdown from "@/components/ui/SearchableDropdown";
 import { HazardFormData } from "@/types/forms";
 import { validationPatterns, validationMessages } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
@@ -60,6 +61,9 @@ export default function HazardForm() {
   const [attachments, setAttachments] = useState<FileList | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<HazardFormData | null>(null);
+  const [aerodromes, setAerodromes] = useState<string[]>([]);
+  const [selectedAerodrome, setSelectedAerodrome] = useState("");
+  const [loadingAerodromes, setLoadingAerodromes] = useState(true);
 
   const {
     register,
@@ -82,17 +86,32 @@ export default function HazardForm() {
     reset
   );
 
-  // Special state persistence
+  // Special state persistence (includes aerodrome selection)
   const { clearSpecialState } = useSpecialStatePersistence(
     'hazard',
     undefined,
-    { hazardDate, hazardTime, contactPhone },
+    { hazardDate, hazardTime, contactPhone, selectedAerodrome },
     {
       hazardDate: setHazardDate,
       hazardTime: setHazardTime,
-      contactPhone: setContactPhone
+      contactPhone: setContactPhone,
+      selectedAerodrome: setSelectedAerodrome
     }
   );
+
+  // Load aerodrome data
+  useEffect(() => {
+    fetch("/data/aerodrome-codes.json")
+      .then((res) => res.json())
+      .then((data) => {
+        setAerodromes(data.aerodromes || []);
+        setLoadingAerodromes(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load aerodrome data:", err);
+        setLoadingAerodromes(false);
+      });
+  }, []);
 
   // Helper function to convert text to Title Case
   const toTitleCase = (str: string): string => {
@@ -195,6 +214,8 @@ export default function HazardForm() {
         Location_of_Hazard: data.Location_of_Hazard,
         Location: data.Location_of_Hazard, // Map to generic location field
         State: data.State,
+        Hazard_Relates_To_Specific_Aerodrome: data.hazardRelatesToSpecificAerodrome,
+        Hazard_Aerodrome: selectedAerodrome || data.hazardAerodrome,
         Hazard_Description: data.Hazard_Description,
         Please_fully_describe_the_identified_hazard: data.Hazard_Description,
         Description_of_Occurrence: data.Hazard_Description, // Map to generic description field
@@ -285,6 +306,7 @@ export default function HazardForm() {
         hazardDate={hazardDate}
         hazardTime={hazardTime}
         contactPhone={contactPhone}
+        selectedAerodrome={selectedAerodrome}
         attachments={attachments}
         onBack={handleBackToEdit}
         onConfirm={onSubmit}
@@ -383,6 +405,7 @@ export default function HazardForm() {
                   clearCurrentForm();
                   clearSpecialState();
                   setAttachments(null);
+                  setSelectedAerodrome("");
                 }}
                 className="bg-red-50 float-right inline -top-6 relative text-red-600 border-red-200 hover:bg-red-100"
               >
@@ -651,15 +674,17 @@ export default function HazardForm() {
               </div>
 
               {hazardRelatesToAerodrome === "Yes" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Select
-                    label="Hazard aerodrome"
-                    options={[
-                      { value: "", label: "- Please Select -" },
-                      { value: "Option1", label: "Option 1" },
-                      { value: "Option2", label: "Option 2" },
-                    ]}
-                    {...register("hazardAerodrome")}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+                  <SearchableDropdown
+                    options={aerodromes}
+                    value={selectedAerodrome}
+                    onChange={(value) => {
+                      setSelectedAerodrome(value);
+                      setValue("hazardAerodrome", value);
+                    }}
+                    label="Hazard Aerodrome"
+                    placeholder={loadingAerodromes ? "Loading aerodromes..." : "Search for an aerodrome..."}
+                    disabled={loadingAerodromes}
                     error={errors.hazardAerodrome?.message}
                   />
                 </div>
