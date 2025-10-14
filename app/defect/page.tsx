@@ -1206,8 +1206,8 @@ export default function DefectForm() {
                   {...register("serialNumber", { 
                     required: "Serial number is required",
                     pattern: {
-                      value: /^[a-zA-Z0-9.-]+$/,
-                      message: "Serial number must be alphanumeric"
+                      value: /^[a-zA-Z0-9 .\-]+$/,
+                      message: "Serial number can only contain letters, numbers, spaces, dots, and hyphens"
                     }
                   })}
                   error={errors.serialNumber?.message}

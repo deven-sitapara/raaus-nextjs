@@ -187,7 +187,6 @@ export default function HazardForm() {
         Reporter_Email: data.Reporter_Email,
         Contact_Phone: contactPhone,
         Date_Hazard_Identified: datetime.toISOString().slice(0, 19),
-        Occurrence_Date1: datetime.toISOString().slice(0, 19), // Also map to generic occurrence date
         Location_of_Hazard: data.Location_of_Hazard,
         Location: data.Location_of_Hazard, // Map to generic location field
         State: data.State,

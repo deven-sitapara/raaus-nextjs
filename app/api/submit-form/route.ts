@@ -385,7 +385,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
 
         // Occurrence details
         Occurrence_Date1: accidentData.occurrenceDate || formatDateForCRM(accidentData.Occurrence_Date1),
-        Occurrence_Date2: accidentData.Occurrence_Date2 ? formatDateForCRM(accidentData.Occurrence_Date2) : (accidentData.occurrenceDate || formatDateForCRM(accidentData.Occurrence_Date1)),
+        Occurrence_Date2: accidentData.Occurrence_Date2 ? formatDateOnlyForCRM(accidentData.Occurrence_Date2) : (accidentData.occurrenceDate ? formatDateOnlyForCRM(accidentData.occurrenceDate) : (accidentData.Occurrence_Date1 ? formatDateOnlyForCRM(accidentData.Occurrence_Date1) : null)),
         Description_of_Occurrence: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
         Details_of_incident_accident: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
         Location: accidentData.Location || accidentData.location || '',
@@ -511,7 +511,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         // Defect Information
         Occurrence_Date1: (defectData.Occurrence_Date1 || defectData.dateDefectIdentified) ? 
           formatDateForCRM(defectData.Occurrence_Date1 || defectData.dateDefectIdentified!) : '',
-        Occurrence_Date2: defectData.Occurrence_Date2 ? formatDateForCRM(defectData.Occurrence_Date2) : ((defectData.Occurrence_Date1 || defectData.dateDefectIdentified) ? formatDateForCRM(defectData.Occurrence_Date1 || defectData.dateDefectIdentified!) : ''),
+        Occurrence_Date2: defectData.Occurrence_Date2 ? formatDateOnlyForCRM(defectData.Occurrence_Date2) : ((defectData.Occurrence_Date1 || defectData.dateDefectIdentified) ? formatDateOnlyForCRM(defectData.Occurrence_Date1 || defectData.dateDefectIdentified!) : null),
         Reporter_Suggestions: defectData.Reporter_Suggestions || defectData.preventionSuggestions || '',
         Location_of_aircraft_when_defect_was_found: defectData.Location_of_aircraft_when_defect_was_found || defectData.locationOfAircraft || '',
         Location: defectData.Location || defectData.locationOfAircraft || '',
@@ -576,7 +576,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Contact_Phone: complaintData.Contact_Phone || '',
         Reporter_Email: complaintData.Reporter_Email || '',
         Occurrence_Date1: complaintData.Occurrence_Date1 ? formatDateForCRM(complaintData.Occurrence_Date1) : '',
-        Occurrence_Date2: complaintData.Occurrence_Date2 ? formatDateForCRM(complaintData.Occurrence_Date2) : (complaintData.Occurrence_Date1 ? formatDateForCRM(complaintData.Occurrence_Date1) : ''),
+        Occurrence_Date2: complaintData.Occurrence_Date2 ? formatDateOnlyForCRM(complaintData.Occurrence_Date2) : (complaintData.Occurrence_Date1 ? formatDateOnlyForCRM(complaintData.Occurrence_Date1) : null),
         Description_of_Occurrence: complaintData.Description_of_Occurrence || '',
         // Add complaint-specific flag
         Complaint: true,
@@ -596,8 +596,6 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Last_Name: hazardData.Last_Name || '',
         Name1: hazardData.Name1 || '',
         Date_Hazard_Identified: hazardData.Date_Hazard_Identified ? formatDateForCRM(hazardData.Date_Hazard_Identified) : '',
-        Occurrence_Date1: hazardData.Date_Hazard_Identified ? formatDateForCRM(hazardData.Date_Hazard_Identified) : '',
-        Occurrence_Date2: hazardData.Occurrence_Date2 ? formatDateForCRM(hazardData.Occurrence_Date2) : (hazardData.Date_Hazard_Identified ? formatDateForCRM(hazardData.Date_Hazard_Identified) : ''),
         Reporter_Suggestions: hazardData.Reporter_Suggestions || '',
         Location_of_hazard: hazardData.Location_of_Hazard || hazardData.Location_of_hazard || '',
         Location: hazardData.Location_of_Hazard || hazardData.Location_of_hazard || '',
@@ -676,6 +674,28 @@ function formatDateOnly(dateString: string | undefined | null): string | null {
     
     // Return in datetime format (YYYY-MM-DDTHH:mm:ss) as expected by Zoho CRM
     return date.toISOString().slice(0, 19);
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Format date-only field for CRM as date (YYYY-MM-DD format)
+ * Zoho CRM expects Date fields as YYYY-MM-DD
+ */
+function formatDateOnlyForCRM(dateString: string | undefined | null): string | null {
+  if (!dateString) {
+    return null;
+  }
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    
+    // Return in date format (YYYY-MM-DD) as expected by Zoho CRM Date fields
+    return date.toISOString().split('T')[0];
   } catch (error) {
     return null;
   }

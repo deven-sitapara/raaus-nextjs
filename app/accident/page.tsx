@@ -2916,8 +2916,8 @@ export default function AccidentForm() {
                         required: 'Serial number is required',
                         minLength: { value: 3, message: validationMessages.minLength },
                         pattern: {
-                          value: /^[a-zA-Z0-9.-]+$/,
-                          message: "Enter Serial number"
+                          value: /^[a-zA-Z0-9 .\-]+$/,
+                          message: "Serial number can only contain letters, numbers, spaces, dots, and hyphens"
                         }
                       })}
                       error={errors.Serial_number?.message}
