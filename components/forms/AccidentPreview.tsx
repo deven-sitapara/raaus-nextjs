@@ -366,8 +366,6 @@ export default function AccidentPreview({
                     <PreviewField label="Species" value={data.Species} />
                     <PreviewField label="Number (approx)" value={data.Number_approx} />
                     <PreviewField label="Number Struck (approx)" value={data.Number_struck_approx} />
-                    <PreviewField label="Bird/Animal Activity" value={data.Bird_or_animal_activity} />
-                    <PreviewField label="Was Pilot Warned of Birds/Animals?" value={data.Was_the_pilot_warned_of_birds_or_animals} />
                   </dl>
                 </PreviewSection>
               )}
