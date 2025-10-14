@@ -129,7 +129,8 @@ export default function ComplaintForm() {
       return;
     }
 
-    if (!contactPhone) {
+    // Only validate contact phone if not anonymous
+    if (!wishToRemainAnonymous && !contactPhone) {
       alert("Please provide a contact phone number");
       return;
     }
@@ -172,7 +173,7 @@ export default function ComplaintForm() {
         Last_Name: data.Last_Name,
         Member_Number: data.Member_Number,
         Reporter_Email: data.Reporter_Email,
-        Contact_Phone: contactPhone,
+        Contact_Phone: wishToRemainAnonymous ? '' : contactPhone,
         Occurrence_Date1: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
         Description_of_Occurrence: data.Description_of_Occurrence,
         wishToRemainAnonymous: data.wishToRemainAnonymous,
@@ -358,31 +359,57 @@ export default function ComplaintForm() {
         </div>
 
         <form onSubmit={handleSubmit(handlePreview)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white ">
-          {/* Person Reporting Section */}
+          {/* Anonymous Checkbox and Person Reporting Section */}
           <div className="rounded-lg p-8 pt-10">
-            <h2 className="text-xl font-semibold text-gray-900 mb-8 border-b-2 border-gray-300 pb-4">
-              Person Reporting
+            {/* Anonymous Checkbox */}
+            <div className="mb-8">
+              <Checkbox
+                label="Do you wish to remain anonymous?"
+                {...register("wishToRemainAnonymous")}
+              />
+              {wishToRemainAnonymous && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-800">
+                    Reporter details will remain confidential from the complainant unless otherwise
+                    authorised. Reporters are encouraged to provide their details so that RAAus may
+                    make contact to obtain further information and ascertain validity of the
+                    complaint. Where information is provided anonymously, however, it may not be
+                    possible for us to obtain further important details about the matter reported.
+                    This may result in the inability for RAAus to progress any review of the
+                    complaint provided.
+                  </p>
+                </div>
+              )}
+            </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  clearCurrentForm();
-                  clearSpecialState();
-                  setAttachments(null);
-                }}
-                className="bg-red-50 float-right inline -top-6 relative text-red-600 border-red-200 hover:bg-red-100"
-              >
-                Clear Form
-              </Button>
-            </h2>
+            {/* Person Reporting Section */}
+            <div className="mt-8">
+              <div className="flex justify-between items-center mb-8 border-b-2 border-gray-300 pb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Person Reporting
+                </h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    clearCurrentForm();
+                    clearSpecialState();
+                    setAttachments(null);
+                  }}
+                  className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                >
+                  Clear Form
+                </Button>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Select
                 label="Role"
-                required
+                required={!wishToRemainAnonymous}
                 options={roleOptions}
-                {...register("Role", { required: true })}
+                {...register("Role", { 
+                  required: wishToRemainAnonymous ? false : "Role is required"
+                })}
                 error={errors.Role?.message}
               />
 
@@ -399,7 +426,8 @@ export default function ComplaintForm() {
                     }
                   }}
                   {...register("Member_Number", {
-                    pattern: {
+                    required: wishToRemainAnonymous ? false : "Member Number is required",
+                    pattern: wishToRemainAnonymous ? undefined : {
                       value: validationPatterns.memberNumber,
                       message: validationMessages.memberNumber,
                     },
@@ -435,7 +463,7 @@ export default function ComplaintForm() {
                 label="First Name"
                 type="text"
                 placeholder="John"
-                required
+                required={!wishToRemainAnonymous}
                 maxLength={30}
                 onKeyPress={(e) => {
                   // Only allow letters (a-z, A-Z) and spaces
@@ -444,8 +472,8 @@ export default function ComplaintForm() {
                   }
                 }}
                 {...register("Name1", {
-                  required: "First name is required",
-                  pattern: {
+                  required: wishToRemainAnonymous ? false : "First name is required",
+                  pattern: wishToRemainAnonymous ? undefined : {
                     value: validationPatterns.name,
                     message: validationMessages.name,
                   },
@@ -471,7 +499,7 @@ export default function ComplaintForm() {
                 label="Last Name"
                 type="text"
                 placeholder="Doe"
-                required
+                required={!wishToRemainAnonymous}
                 maxLength={30}
                 onKeyPress={(e) => {
                   // Only allow letters (a-z, A-Z) and spaces
@@ -480,8 +508,8 @@ export default function ComplaintForm() {
                   }
                 }}
                 {...register("Last_Name", {
-                  required: "Last name is required",
-                  pattern: {
+                  required: wishToRemainAnonymous ? false : "Last name is required",
+                  pattern: wishToRemainAnonymous ? undefined : {
                     value: validationPatterns.name,
                     message: validationMessages.name,
                   },
@@ -507,10 +535,10 @@ export default function ComplaintForm() {
                 label="Email"
                 type="email"
                 placeholder="example@domain.com"
-                required
+                required={!wishToRemainAnonymous}
                 {...register("Reporter_Email", {
-                  required: "Email is required",
-                  validate: (value) => {
+                  required: wishToRemainAnonymous ? false : "Email is required",
+                  validate: wishToRemainAnonymous ? undefined : (value) => {
                     if (!value || !validateEmail(value)) {
                       return "Please enter a valid email address (e.g., user@example.com)";
                     }
@@ -523,16 +551,18 @@ export default function ComplaintForm() {
               <PhoneInput
                 label="Contact Phone"
                 placeholder="0412 345 678"
-                required
+                required={!wishToRemainAnonymous}
                 value={contactPhone}
                 onChange={(value) => setContactPhone(value)}
                 defaultCountry="AU"
                 countries={["AU", "CA", "GB"]}
               />
             </div>
+            </div>
           </div>
 
           {/* Complaint Information Section */}
+
           <div className="bg-white rounded-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Complaint Information</h2>
 
@@ -622,27 +652,6 @@ export default function ComplaintForm() {
                 maxFiles={5}
                 maxSize={256}
               />
-
-              <div className="divider-h-4 p-4 w-full">
-                <Checkbox
-                  label="Do you wish to remain anonymous?"
-                  {...register("wishToRemainAnonymous")}
-                />                
-              </div>
-
-              {wishToRemainAnonymous && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-sm text-blue-800">
-                    Reporter details will remain confidential from the complainant unless otherwise
-                    authorised. Reporters are encouraged to provide their details so that RAAus may
-                    make contact to obtain further information and ascertain validity of the
-                    complaint. Where information is provided anonymously, however, it may not be
-                    possible for us to obtain further important details about the matter reported.
-                    This may result in the inability for RAAus to progress any review of the
-                    complaint provided.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
@@ -655,8 +664,9 @@ export default function ComplaintForm() {
               Review & Submit
             </Button>
           </div>
-        </form>
+
+          </form>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
