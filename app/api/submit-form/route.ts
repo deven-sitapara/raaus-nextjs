@@ -372,6 +372,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         PIC_Contact_Phone: accidentData.PIC_Contact_Phone || accidentData.pilotContactPhone || '',
         PIC_Email: accidentData.PIC_Email || '',
         Date_of_Birth: formatDateOnly(accidentData.Date_of_Birth),
+        Date_5: formatDateOnly(accidentData.Date_5 || accidentData.Date_of_Birth),
         PIC_Member_Number: accidentData.PIC_Member_Number || '',
         PIC_Last_Name: accidentData.PIC_Last_Name || '',
 
@@ -384,6 +385,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
 
         // Occurrence details
         Occurrence_Date1: accidentData.occurrenceDate || formatDateForCRM(accidentData.Occurrence_Date1),
+        Occurrence_Date2: accidentData.Occurrence_Date2 ? formatDateForCRM(accidentData.Occurrence_Date2) : (accidentData.occurrenceDate || formatDateForCRM(accidentData.Occurrence_Date1)),
         Description_of_Occurrence: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
         Details_of_incident_accident: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
         Location: accidentData.Location || accidentData.location || '',
@@ -394,6 +396,10 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
   Accident_or_Incident: sanitizePick(accidentData.Accident_or_Incident || accidentData.Is_this_occurrence_an_Accident_or_an_Incident),
         Reporter_Suggestions: accidentData.Reporter_Suggestions || '',
   Name_of_Flight_Training_School: sanitizePick(accidentData.Name_of_Flight_Training_School),
+  Lookup_5: accidentData.Lookup_5 || accidentData.Name_of_Flight_Training_School || '',
+  Level_2_Maintainer_L2: accidentData.Level_2_Maintainer_L2 || accidentData.Details_of_incident_accident || '',
+  In_vicinity_of_aerodrome: convertToBoolean(accidentData.In_vicinity_of_aerodrome),
+  Y_Code: accidentData.Y_Code || '',
   Involve_IFR_or_Air_Transport_Operations: convertToBoolean(accidentData.Involve_IFR_or_Air_Transport_Operations),
   Involve_near_miss_with_another_aircraft: convertToBoolean(accidentData.Involve_near_miss_with_another_aircraft),
     In_controlled_or_special_use_airspace: convertToBoolean(accidentData.In_controlled_or_special_use_airspace),
@@ -403,7 +409,6 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Registration_number: accidentData.Registration_number && accidentData.Serial_number1 ? 
           `${accidentData.Registration_number}-${accidentData.Serial_number1}` : 
           (accidentData.Registration_number || null),
-  Make1: accidentData.Make1 || '',
   Model: accidentData.Model || '',
         Serial_number: accidentData.Serial_number || '',
   Type1: sanitizePick(accidentData.Type1) || '',
@@ -460,6 +465,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
 
         // Maintainer info
         Maintainer_Name: accidentData.Maintainer_Name || '',
+        Maintainer_Last_Name: accidentData.Maintainer_Last_Name || '',
         Maintainer_Level: accidentData.Maintainer_Level || '',
         Maintainer_Member_Number: accidentData.Maintainer_Member_Number || '',
 
@@ -505,6 +511,8 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         // Defect Information
         Occurrence_Date1: (defectData.Occurrence_Date1 || defectData.dateDefectIdentified) ? 
           formatDateForCRM(defectData.Occurrence_Date1 || defectData.dateDefectIdentified!) : '',
+        Occurrence_Date2: defectData.Occurrence_Date2 ? formatDateForCRM(defectData.Occurrence_Date2) : ((defectData.Occurrence_Date1 || defectData.dateDefectIdentified) ? formatDateForCRM(defectData.Occurrence_Date1 || defectData.dateDefectIdentified!) : ''),
+        Reporter_Suggestions: defectData.Reporter_Suggestions || defectData.preventionSuggestions || '',
         Location_of_aircraft_when_defect_was_found: defectData.Location_of_aircraft_when_defect_was_found || defectData.locationOfAircraft || '',
         Location: defectData.Location || defectData.locationOfAircraft || '',
         State: defectData.State || defectData.state || '',
@@ -520,6 +528,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
 
         // Maintainer Information
         Maintainer_Name: defectData.Maintainer_Name || defectData.maintainerName || '',
+        Maintainer_Last_Name: defectData.Maintainer_Last_Name || defectData.maintainerLastName || '',
         Maintainer_Member_Number: defectData.Maintainer_Member_Number || defectData.maintainerMemberNumber || '',
         Maintainer_Level: defectData.Maintainer_Level || defectData.maintainerLevel || '',
         Do_you_have_further_suggestions_on_how_to_PSO: defectData.Do_you_have_further_suggestions_on_how_to_PSO || defectData.preventionSuggestions || '',
@@ -567,6 +576,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Contact_Phone: complaintData.Contact_Phone || '',
         Reporter_Email: complaintData.Reporter_Email || '',
         Occurrence_Date1: complaintData.Occurrence_Date1 ? formatDateForCRM(complaintData.Occurrence_Date1) : '',
+        Occurrence_Date2: complaintData.Occurrence_Date2 ? formatDateForCRM(complaintData.Occurrence_Date2) : (complaintData.Occurrence_Date1 ? formatDateForCRM(complaintData.Occurrence_Date1) : ''),
         Description_of_Occurrence: complaintData.Description_of_Occurrence || '',
         // Add complaint-specific flag
         Complaint: true,
@@ -587,6 +597,8 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Name1: hazardData.Name1 || '',
         Date_Hazard_Identified: hazardData.Date_Hazard_Identified ? formatDateForCRM(hazardData.Date_Hazard_Identified) : '',
         Occurrence_Date1: hazardData.Date_Hazard_Identified ? formatDateForCRM(hazardData.Date_Hazard_Identified) : '',
+        Occurrence_Date2: hazardData.Occurrence_Date2 ? formatDateForCRM(hazardData.Occurrence_Date2) : (hazardData.Date_Hazard_Identified ? formatDateForCRM(hazardData.Date_Hazard_Identified) : ''),
+        Reporter_Suggestions: hazardData.Reporter_Suggestions || '',
         Location_of_hazard: hazardData.Location_of_Hazard || hazardData.Location_of_hazard || '',
         Location: hazardData.Location_of_Hazard || hazardData.Location_of_hazard || '',
         State: hazardData.State || '',

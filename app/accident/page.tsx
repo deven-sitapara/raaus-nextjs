@@ -1781,6 +1781,26 @@ export default function AccidentForm() {
                   </div>
 
                   <div className="mt-6">
+                    <Select
+                      label="In the vicinity of an aerodrome?"
+                      options={yesNoOptions}
+                      error={errors.In_vicinity_of_aerodrome?.message}
+                      {...register("In_vicinity_of_aerodrome")}
+                    />
+                  </div>
+
+                  <div className="mt-6">
+                    <Input
+                      label="Vicinity Aerodrome (Y Code)"
+                      placeholder="Enter Y Code"
+                      maxLength={50}
+                      error={errors.Y_Code?.message}
+                      helpText="If the occurrence was in vicinity of an aerodrome, enter the Y Code"
+                      {...register("Y_Code")}
+                    />
+                  </div>
+
+                  <div className="mt-6">
                     <Input
                       label="Passenger Details"
                       placeholder="Please supply names of other passengers if applicable"
