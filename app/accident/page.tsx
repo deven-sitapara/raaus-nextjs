@@ -75,14 +75,19 @@ const plbOptions = [
 
 const roleOptions = [
   { value: "", label: "- Please Select -" },
-  { value: "Pilot in Command", label: "Pilot in Command" },
-  { value: "Owner", label: "Owner" },
-  { value: "L1", label: "L1" },
-  { value: "L2", label: "L2" },
+  { value: "Aerodrome Operator", label: "Aerodrome Operator" },
+  { value: "Air Traffic Control", label: "Air Traffic Control" },
+  { value: "Aircraft Owner", label: "Aircraft Owner" },
+  { value: "CASA", label: "CASA" },
+  { value: "Crew", label: "Crew" },
   { value: "LAME", label: "LAME" },
-  { value: "Maintenance Personnel", label: "Maintenance Personnel" },
-  { value: "Witness", label: "Witness" },
+  { value: "Maintainer", label: "Maintainer" },
+  { value: "Operator", label: "Operator" },
   { value: "Other", label: "Other" },
+  { value: "Owner", label: "Owner" },
+  { value: "Pilot in Command", label: "Pilot in Command" },
+  { value: "Rescue/Fire Service", label: "Rescue/Fire Service" },
+  { value: "Witness", label: "Witness" },
 ];
 
 const stateOptions = [
@@ -1206,6 +1211,7 @@ export default function AccidentForm() {
                     />
                   </div>
 
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <Input
                       label="Email Address"
@@ -1236,6 +1242,40 @@ export default function AccidentForm() {
                       error={contactPhoneError}
                     />
                   </div>
+
+                  {/* Date of Birth - Shows when 'Pilot in Command' is selected in Person Reporting */}
+                  {selectedRole === "Pilot in Command" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                      <Input
+                        label="Date of Birth"
+                        type="date"
+                        min="1900-01-01"
+                        max={(() => {
+                          const today = new Date();
+                          const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+                          return maxDate.toISOString().split('T')[0];
+                        })()}
+                        {...register("Date_of_Birth", {
+                          validate: (value) => {
+                            if (!value) return true; // Optional field
+                            const birthDate = new Date(value + 'T00:00:00');
+                            const today = new Date();
+                            let age = today.getFullYear() - birthDate.getFullYear();
+                            const monthDiff = today.getMonth() - birthDate.getMonth();
+                            const dayDiff = today.getDate() - birthDate.getDate();
+                            if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+                              age--;
+                            }
+                            if (age < 18) {
+                              return "Pilot must be at least 18 years old";
+                            }
+                            return true;
+                          }
+                        })}
+                        error={errors.Date_of_Birth?.message}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Pilot in Command Section - Hidden when Person Reporting role is "Pilot in Command" */}
@@ -1765,18 +1805,38 @@ export default function AccidentForm() {
                   <div className="mt-6">
                     <Select
                       label="Did this occurrence involve an aircraft conducting IFR or air transport operations (airline/charter/cargo/medical)"
+                      required
                       options={yesNoOptions}
                       error={errors.Involve_IFR_or_Air_Transport_Operations?.message}
-                      {...register("Involve_IFR_or_Air_Transport_Operations")}
+                      {...register("Involve_IFR_or_Air_Transport_Operations", { required: "This field cannot be blank." })}
                     />
                   </div>
+
 
                   <div className="mt-6">
                     <Select
                       label="Did the occurrence take place in controlled airspace or special use airspace(military/danger/restricted/prohibited)?"
+                      required
                       options={yesNoOptions}
                       error={errors.In_controlled_or_special_use_airspace?.message}
-                      {...register("In_controlled_or_special_use_airspace")}
+                      {...register("In_controlled_or_special_use_airspace", { required: "This field cannot be blank." })}
+                    />
+                  </div>
+
+
+                  {/* Move these two fields above 'In the vicinity of an aerodrome?' and display side by side */}
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Select
+                      label="Involve near miss with another aircraft?"
+                      options={yesNoOptions}
+                      error={errors.Involve_near_miss_with_another_aircraft?.message}
+                      {...register("Involve_near_miss_with_another_aircraft")}
+                    />
+                    <Select
+                      label="Bird or animal Strike?"
+                      options={yesNoOptions}
+                      error={errors.Bird_or_Animal_Strike?.message}
+                      {...register("Bird_or_Animal_Strike")}
                     />
                   </div>
 
