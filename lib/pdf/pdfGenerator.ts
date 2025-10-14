@@ -1,5 +1,8 @@
 import PDFDocument from 'pdfkit';
 import { AccidentFormData, DefectFormData, ComplaintFormData, HazardFormData } from '@/types/forms';
+import * as fs from 'fs';
+import * as path from 'path';
+import SVGtoPDF from 'svg-to-pdfkit';
 
 /**
  * PDF Layout Configuration
@@ -101,13 +104,34 @@ export class PDFGenerator {
   }
 
   /**
-   * Add header with centered title
+   * Add header with logo, centered title, and submission time
    */
-  protected addHeader(title: string): void {
+  protected addHeader(title: string, submissionDate?: string): void {
     // Header background
     this.doc
       .rect(0, 0, this.doc.page.width, this.config.headerHeight)
       .fill(this.primaryColor);
+
+    // Add white background rectangle for logo
+    this.doc
+      .rect(10, 8, 100, 34)
+      .fill('#ffffff');
+
+    // Add logo at top left (on top of white background)
+    try {
+      const logoPath = path.join(process.cwd(), 'public', 'raa-logo.svg');
+      if (fs.existsSync(logoPath)) {
+        const svgContent = fs.readFileSync(logoPath, 'utf8');
+        // Position logo with constrained dimensions to prevent stretching
+        SVGtoPDF(this.doc, svgContent, 12, 10, {
+          width: 95,
+          height: 30,
+          preserveAspectRatio: 'xMidYMid meet'
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to load logo:', error);
+    }
 
     // Centered title
     const titleY = (this.config.headerHeight - this.config.headerFontSize) / 2;
@@ -119,6 +143,18 @@ export class PDFGenerator {
         width: this.doc.page.width, 
         align: 'center'
       });
+
+    // Add submission time at top right below header (if provided)
+    if (submissionDate) {
+      this.doc
+        .fontSize(9)
+        .fillColor(this.secondaryColor)
+        .font('Helvetica')
+        .text(submissionDate, this.doc.page.width - 200, this.config.headerHeight + 10, {
+          width: 150,
+          align: 'right'
+        });
+    }
 
     this.yPosition = this.config.initialY;
     this.hasContent = true;
