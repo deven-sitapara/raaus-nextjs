@@ -64,6 +64,7 @@ export interface AccidentFormData {
   PIC_Contact_Phone?: string;
   PIC_Email?: string;
   Date_of_Birth?: string;
+  Date_5?: string;
   PIC_Member_Number?: string;
   PIC_Last_Name?: string;
 
@@ -76,6 +77,7 @@ export interface AccidentFormData {
 
   // Occurrence details
   Occurrence_Date1?: string;
+  Occurrence_Date2?: string;
   Location?: string;
   State?: AustralianState;
   Occurrence_Type?: string;
@@ -83,6 +85,10 @@ export interface AccidentFormData {
   Description_of_damage_to_aircraft?: string;
   Accident_or_Incident?: "Accident" | "Incident";
   Reporter_Suggestions?: string;
+  Level_2_Maintainer_L2?: string;
+  In_vicinity_of_aerodrome?: boolean | "Yes" | "No";
+  Y_Code?: string;
+  Lookup_5?: string;
   Name_of_Flight_Training_School?: string;
   Involve_IFR_or_Air_Transport_Operations?: boolean | "Yes" | "No";
   Involve_near_miss_with_another_aircraft?: boolean | "Yes" | "No";
@@ -203,9 +209,11 @@ export interface DefectFormData {
   Postcode?: string;
 
   // Defect Information
-  Occurrence_Date1: string; // Date defect identified
+  Occurrence_Date1: string;
+  Occurrence_Date2?: string;
+  Reporter_Suggestions?: string;
   Location_of_aircraft_when_defect_was_found?: string;
-  Location?: string; // Alternative location field
+  Location?: string;
   State?: AustralianState;
   Storage_conditions?: string;
   Description_of_Occurrence?: string;
@@ -261,6 +269,7 @@ export interface DefectFormData {
   defectiveComponent?: string;
   defectDescription?: string;
   maintainerName?: string;
+  maintainerLastName?: string;
   maintainerMemberNumber?: string;
   maintainerLevel?: MaintainerLevel;
   preventionSuggestions?: string;
@@ -297,6 +306,7 @@ export interface ComplaintFormData {
 
   // Complaint Information
   Occurrence_Date1: string;
+  Occurrence_Date2?: string;
   Description_of_Occurrence: string;
   attachments?: File[];
   wishToRemainAnonymous: boolean;
@@ -315,14 +325,15 @@ export interface HazardFormData {
 
   // Hazard Information
   Date_Hazard_Identified?: string;
-  Occurrence_Date1?: string; // Alternative date field
+  Occurrence_Date1?: string;
+  Occurrence_Date2?: string;
+  Reporter_Suggestions?: string;
   Time?: string;
-  Location_of_hazard?: string; // CRM field name
-  Location_of_Hazard?: string; // Alternative field name
-  Location?: string; // Generic location field
+  Location_of_hazard?: string;
+  Location_of_Hazard?: string;
+  Location?: string;
   State?: AustralianState;
   Description_of_Occurrence?: string;
-  Reporter_Suggestions?: string;
 
   // Additional Hazard Fields
   Hazard_Description?: string;

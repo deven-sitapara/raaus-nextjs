@@ -198,10 +198,13 @@ export default function DataPage() {
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
       { key: "Location", header: "Location", sortable: true, width: "180px" },
       { key: "Description_of_Occurrence", header: "Description of Incident/Accident", sortable: true, width: "300px" },
+      { key: "Level_2_Maintainer_L2", header: "Contributing Factors", sortable: true, width: "250px" },
       { key: "Damage_to_aircraft", header: "Damage to Aircraft", sortable: true, width: "150px" },
       { key: "Most_serious_injury_to_pilot", header: "Pilot Injury", sortable: true, width: "130px" },
       { key: "Involve_IFR_or_Air_Transport_Operations", header: "IFR/Air Transport", sortable: true, width: "160px", accessor: (row) => row.Involve_IFR_or_Air_Transport_Operations ? "Yes" : "No" },
       { key: "In_controlled_or_special_use_airspace", header: "Controlled Airspace", sortable: true, width: "170px", accessor: (row) => row.In_controlled_or_special_use_airspace ? "Yes" : "No" },
+      { key: "In_vicinity_of_aerodrome", header: "Near Aerodrome", sortable: true, width: "150px", accessor: (row) => row.In_vicinity_of_aerodrome ? "Yes" : "No" },
+      { key: "Y_Code", header: "Aerodrome Y Code", sortable: true, width: "160px" },
       { key: "Passenger_details", header: "Passenger Details", sortable: true, width: "200px" },
       { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px" },
       { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
@@ -310,7 +313,8 @@ export default function DataPage() {
       { key: "Provide_description_of_defect", header: "Defect Description", sortable: true, width: "300px" },
       
       // Maintainer Information
-      { key: "Maintainer_Name", header: "Maintainer Name", sortable: true, width: "160px" },
+      { key: "Maintainer_Name", header: "Maintainer First Name", sortable: true, width: "160px" },
+      { key: "Maintainer_Last_Name", header: "Maintainer Last Name", sortable: true, width: "170px" },
       { key: "Maintainer_Member_Number", header: "Maintainer Member #", sortable: true, width: "170px" },
       { key: "Maintainer_Level", header: "Maintainer Level", sortable: true, width: "160px" },
       { key: "Do_you_have_further_suggestions_on_how_to_PSO", header: "Prevention Suggestions", sortable: true, width: "250px" },

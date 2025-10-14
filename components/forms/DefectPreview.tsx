@@ -158,12 +158,13 @@ export default function DefectPreview({
           </PreviewSection>
 
           {/* Maintainer Information */}
-          {(data.maintainerName || data.maintainerMemberNumber || data.maintainerLevel) && (
+          {(data.Maintainer_Name || data.Maintainer_Last_Name || data.maintainerMemberNumber || data.maintainerLevel) && (
             <PreviewSection title="Maintainer Information">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                <PreviewField label="Maintainer Name" value={data.maintainerName} />
-                <PreviewField label="Member Number" value={data.maintainerMemberNumber} />
-                <PreviewField label="Maintainer Level" value={data.maintainerLevel} />
+                <PreviewField label="Maintainer First Name" value={data.Maintainer_Name || data.maintainerName} />
+                <PreviewField label="Maintainer Last Name" value={data.Maintainer_Last_Name || data.maintainerLastName} />
+                <PreviewField label="Member Number" value={data.Maintainer_Member_Number || data.maintainerMemberNumber} />
+                <PreviewField label="Maintainer Level" value={data.Maintainer_Level || data.maintainerLevel} />
               </dl>
             </PreviewSection>
           )}

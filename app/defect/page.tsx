@@ -423,12 +423,13 @@ export default function DefectForm() {
         Defective_component: data.defectiveComponent,
         Provide_description_of_defect: data.defectDescription,
         
-        // Maintainer Information - split name into first and last
-        Maintainer_Name: data.maintainerName ? data.maintainerName.trim().split(/\s+/).filter((word: string) => word.length > 0)[0] : '',
-        Maintainer_Last_Name: data.maintainerName ? data.maintainerName.trim().split(/\s+/).filter((word: string) => word.length > 0).slice(1).join(' ') : '',
+        // Maintainer Information
+        Maintainer_Name: data.Maintainer_Name || '',
+        Maintainer_Last_Name: data.Maintainer_Last_Name || '',
         Maintainer_Member_Number: data.maintainerMemberNumber,
         Maintainer_Level: data.maintainerLevel,
         Do_you_have_further_suggestions_on_how_to_PSO: data.preventionSuggestions,
+        Reporter_Suggestions: data.preventionSuggestions,
         
         // Aircraft Information
         Registration_number: data.registrationNumberPrefix && data.registrationNumberSuffix ? 
@@ -913,50 +914,67 @@ export default function DefectForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Maintainer Name"
+                  label="Maintainer First Name"
                   type="text"
-                  placeholder="Robert Johnson"
+                  placeholder="Robert"
                   maxLength={60}
-                  helpText="Enter first and last name (minimum 2 words required)"
                   onKeyPress={(e) => {
                     // Only allow letters (a-z, A-Z) and spaces
                     if (!/[a-zA-Z ]/.test(e.key)) {
                       e.preventDefault();
                     }
                   }}
-                  {...register("maintainerName", {
+                  {...register("Maintainer_Name", {
                     pattern: {
                       value: /^[a-zA-Z\s]*$/,
                       message: "Letters and spaces only",
-                    },
-                    validate: (value) => {
-                      if (!value) return true; // Allow empty if not required
-                      const trimmed = value.trim();
-                      const words = trimmed.split(/\s+/).filter((word: string) => word.length > 0);
-                      if (words.length < 2) {
-                        return "Please enter both first and last name (minimum 2 words)";
-                      }
-                      return true;
                     },
                     onChange: (e) => {
                       // Convert to Title Case
                       e.target.value = toTitleCase(e.target.value);
                       
                       // Trigger member validation if all fields are present
-                      const fullName = e.target.value.trim();
+                      const firstName = e.target.value.trim();
+                      const lastName = watch("Maintainer_Last_Name");
                       const memberNumber = watch("maintainerMemberNumber");
-                      if (memberNumber && fullName) {
-                        // Split full name into first and last name for validation
-                        const nameParts = fullName.split(/\s+/).filter((word: string) => word.length > 0);
-                        const firstName = nameParts[0] || '';
-                        const lastName = nameParts.slice(1).join(' ') || '';
-                        if (firstName && lastName && nameParts.length >= 2) {
-                          validateMaintainer(memberNumber, firstName, lastName);
-                        }
+                      if (memberNumber && firstName && lastName) {
+                        validateMaintainer(memberNumber, firstName, lastName);
                       }
                     }
                   })}
-                  error={errors.maintainerName?.message}
+                  error={errors.Maintainer_Name?.message}
+                />
+
+                <Input
+                  label="Maintainer Last Name"
+                  type="text"
+                  placeholder="Johnson"
+                  maxLength={60}
+                  onKeyPress={(e) => {
+                    // Only allow letters (a-z, A-Z) and spaces
+                    if (!/[a-zA-Z ]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  {...register("Maintainer_Last_Name", {
+                    pattern: {
+                      value: /^[a-zA-Z\s]*$/,
+                      message: "Letters and spaces only",
+                    },
+                    onChange: (e) => {
+                      // Convert to Title Case
+                      e.target.value = toTitleCase(e.target.value);
+                      
+                      // Trigger member validation if all fields are present
+                      const firstName = watch("Maintainer_Name");
+                      const lastName = e.target.value.trim();
+                      const memberNumber = watch("maintainerMemberNumber");
+                      if (memberNumber && firstName && lastName) {
+                        validateMaintainer(memberNumber, firstName as string, lastName);
+                      }
+                    }
+                  })}
+                  error={errors.Maintainer_Last_Name?.message}
                 />
 
                 <div>
@@ -989,15 +1007,10 @@ export default function DefectForm() {
                         // Remove any non-numeric characters
                         e.target.value = e.target.value.replace(/[^0-9]/g, '');
                         const memberNumber = e.target.value;
-                        const fullName = watch("maintainerName");
-                        if (memberNumber && fullName) {
-                          // Split full name into first and last name for validation
-                          const nameParts = fullName.trim().split(/\s+/).filter((word: string) => word.length > 0);
-                          const firstName = nameParts[0] || '';
-                          const lastName = nameParts.slice(1).join(' ') || '';
-                          if (firstName && lastName && nameParts.length >= 2) {
-                            validateMaintainer(memberNumber, firstName, lastName);
-                          }
+                        const firstName = watch("Maintainer_Name");
+                        const lastName = watch("Maintainer_Last_Name");
+                        if (memberNumber && firstName && lastName) {
+                          validateMaintainer(memberNumber, firstName as string, lastName as string);
                         }
                       }
                     })}
