@@ -13,12 +13,12 @@ export class AccidentPDFGenerator extends PDFGenerator {
 
     // Person Reporting Section
     this.addSection('Person Reporting');
-    this.addFieldPair('Role', data.Role || data.role, 'Member Number', data.Member_Number || data.memberNumber);
+    this.addFieldPair('Role', data.role, 'Member Number', data.Member_Number || data.memberNumber);
     this.addFieldPair('First Name', data.Name1 || data.firstName, 'Last Name', data.Last_Name || data.lastName);
     this.addFieldPair('Email', data.Reporter_Email || data.emailAddress, 'Contact Phone', data.Contact_Phone || data.contactPhone);
 
     // Pilot in Command Section (if different from reporter)
-    if ((data.Role || data.role) !== 'Pilot in Command' && (data.PIC_Name || data.PIC_Last_Name)) {
+    if (data.role !== 'Pilot in Command' && (data.PIC_Name || data.PIC_Last_Name)) {
       this.addSection('Pilot in Command');
       this.addFieldPair('First Name', data.PIC_Name, 'Last Name', data.PIC_Last_Name);
       this.addFieldPair('Member Number', data.PIC_Member_Number, 'Date of Birth', formatDateOnly(data.Date_of_Birth));

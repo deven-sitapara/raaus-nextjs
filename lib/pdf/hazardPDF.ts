@@ -12,7 +12,7 @@ export class HazardPDFGenerator extends PDFGenerator {
 
     // Person Reporting Section
     this.addSection('Person Reporting');
-    this.addFieldPair('Role', data.Role, 'Member Number', data.Member_Number);
+    this.addFieldPair('Role', data.role, 'Member Number', data.Member_Number);
     this.addFieldPair('First Name', data.Name1, 'Last Name', data.Last_Name);
     this.addFieldPair('Email', data.Reporter_Email, 'Contact Phone', data.Contact_Phone);
 

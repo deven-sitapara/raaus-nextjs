@@ -10,6 +10,7 @@ export interface TableColumn<T = any> {
   sortable?: boolean;
   width?: string;
   align?: "left" | "center" | "right";
+  sortComparator?: (a: T, b: T) => number;
 }
 
 export interface TableProps<T = any> {
@@ -39,8 +40,8 @@ export function Table<T = any>({
   bordered = true,
   compact = false,
 }: TableProps<T>) {
-  const [sortKey, setSortKey] = React.useState<string | null>(null);
-  const [sortDirection, setSortDirection] = React.useState<SortDirection>(null);
+  const [sortKey, setSortKey] = React.useState<string | null>("Passenger_injury");
+  const [sortDirection, setSortDirection] = React.useState<SortDirection>("asc");
 
   // Handle column sorting
   const handleSort = (columnKey: string) => {
@@ -68,35 +69,51 @@ export function Table<T = any>({
     const column = columns.find((col) => col.key === sortKey);
     if (!column) return data;
 
+    // Find Passenger_injury column for secondary sorting
+    const passengerInjuryColumn = columns.find((col) => col.key === "Passenger_injury");
+
     return [...data].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+      let primaryResult = 0;
 
-      if (column.accessor) {
-        aValue = column.accessor(a);
-        bValue = column.accessor(b);
+      // Use custom sort comparator if provided
+      if (column.sortComparator) {
+        primaryResult = column.sortComparator(a, b);
+        primaryResult = sortDirection === "asc" ? primaryResult : -primaryResult;
       } else {
-        aValue = (a as any)[sortKey];
-        bValue = (b as any)[sortKey];
+        let aValue: any;
+        let bValue: any;
+
+        if (column.accessor) {
+          aValue = column.accessor(a);
+          bValue = column.accessor(b);
+        } else {
+          aValue = (a as any)[sortKey];
+          bValue = (b as any)[sortKey];
+        }
+
+        // Handle different types
+        if (typeof aValue === "string" && typeof bValue === "string") {
+          primaryResult = sortDirection === "asc"
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue);
+        } else if (typeof aValue === "number" && typeof bValue === "number") {
+          primaryResult = sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+        } else {
+          // Default string comparison
+          const aStr = String(aValue || "");
+          const bStr = String(bValue || "");
+          primaryResult = sortDirection === "asc"
+            ? aStr.localeCompare(bStr)
+            : bStr.localeCompare(aStr);
+        }
       }
 
-      // Handle different types
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortDirection === "asc"
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
+      // If primary sort is equal (0), use Passenger_injury as secondary sort (if not already sorting by it)
+      if (primaryResult === 0 && sortKey !== "Passenger_injury" && passengerInjuryColumn?.sortComparator) {
+        return passengerInjuryColumn.sortComparator(a, b);
       }
 
-      if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
-      }
-
-      // Default string comparison
-      const aStr = String(aValue || "");
-      const bStr = String(bValue || "");
-      return sortDirection === "asc"
-        ? aStr.localeCompare(bStr)
-        : bStr.localeCompare(aStr);
+      return primaryResult;
     });
   }, [data, sortKey, sortDirection, columns]);
 

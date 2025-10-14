@@ -154,6 +154,18 @@ export default function DataPage() {
     return row.Occurrence_Type || row.Accident_or_Incident || "-";
   }
 
+  // Utility: Get injury severity rank for sorting (lower number = more serious)
+  function getInjurySeverityRank(injury: string | undefined): number {
+    if (!injury) return 999; // Empty values go to bottom
+    const normalized = injury.toLowerCase();
+    if (normalized === "fatal") return 1;
+    if (normalized === "serious") return 2;
+    if (normalized === "minor") return 3;
+    if (normalized === "nil") return 4;
+    if (normalized === "unknown") return 5;
+    return 999; // Unknown values go to bottom
+  }
+
   // Utility: Get type badge
   function getTypeBadge(type: string) {
     if (type === "Accident") return <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Accident</span>;
@@ -171,6 +183,7 @@ export default function DataPage() {
       { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)) },
       { key: "OccurrenceId", header: "Occurrence ID", sortable: true, width: "140px" },
       { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
+      { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury) },
       
       // Reporter Information
       { key: "Role", header: "Role", sortable: true, width: "150px" },
@@ -206,7 +219,6 @@ export default function DataPage() {
       { key: "In_vicinity_of_aerodrome", header: "Near Aerodrome", sortable: true, width: "150px", accessor: (row) => row.In_vicinity_of_aerodrome ? "Yes" : "No" },
       { key: "Y_Code", header: "Aerodrome Y Code", sortable: true, width: "160px" },
       { key: "Passenger_details", header: "Passenger Details", sortable: true, width: "200px" },
-      { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px" },
       { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
       { key: "Description_of_damage_to_aircraft", header: "Damage Description", sortable: true, width: "250px" },
       

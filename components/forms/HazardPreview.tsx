@@ -116,7 +116,7 @@ export default function HazardPreview({
           {/* Person Reporting */}
           <PreviewSection title="Person Reporting">
             <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-              <PreviewField label="Role" value={data.Role} />
+              <PreviewField label="Role" value={data.role} />
               <PreviewField label="Member Number" value={data.Member_Number} />
               <PreviewField label="First Name" value={data.Name1} />
               <PreviewField label="Last Name" value={data.Last_Name} />

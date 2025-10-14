@@ -9,29 +9,34 @@ export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElemen
 
 const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
   ({ className, label, error, onCheckedChange, ...props }, ref) => {
+    const checkboxId = props.id || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
+    
     return (
       <div className="w-full">
         <div className="flex items-center">
-          <input
-            type="checkbox"
-            className={cn(
-              "h-4 w-4 rounded border-gray-300 text-blue-600",
-              "focus:ring-2 focus:ring-blue-500 focus:ring-offset-0",
-              error && "border-red-500",
-              className
+          <label htmlFor={checkboxId} className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id={checkboxId}
+              className={cn(
+                "h-4 w-4 rounded border-gray-300 text-blue-600 cursor-pointer",
+                "focus:ring-2 focus:ring-blue-500 focus:ring-offset-0",
+                error && "border-red-500",
+                className
+              )}
+              ref={ref}
+              onChange={(e) => {
+                props.onChange?.(e);
+                onCheckedChange?.(e.target.checked);
+              }}
+              {...props}
+            />
+            {label && (
+              <span className="ml-2 text-sm font-medium text-gray-700 select-none">
+                {label}
+              </span>
             )}
-            ref={ref}
-            onChange={(e) => {
-              props.onChange?.(e);
-              onCheckedChange?.(e.target.checked);
-            }}
-            {...props}
-          />
-          {label && (
-            <label htmlFor={props.id} className="ml-4 text-sm font-medium text-gray-700 cursor-pointer mt-2.5">
-              {label}
-            </label>
-          )}
+          </label>
         </div>
         {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
       </div>

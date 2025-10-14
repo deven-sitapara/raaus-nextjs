@@ -42,13 +42,15 @@ const removeFromStorage = (key: string) => {
 // Enhanced form persistence hook with auto-detection
 export const useFormPersistence = (config: FormPersistenceConfig, watch: any, setValue: any, reset: any) => {
   const { formType, stepIndex, maxSteps } = config;
-  const isInitialized = useRef(false);
+  const isInitialized = useRef<Record<string, boolean>>({});
   
   // Auto-detect and load saved data
   useEffect(() => {
-    if (isInitialized.current) return;
-    
     const storageKey = createStorageKey(formType, stepIndex);
+    
+    // Check if THIS specific step has been initialized
+    if (isInitialized.current[storageKey]) return;
+    
     const savedData = loadFromStorage(storageKey);
     
     if (savedData) {
@@ -58,21 +60,24 @@ export const useFormPersistence = (config: FormPersistenceConfig, watch: any, se
       });
     }
     
-    isInitialized.current = true;
+    // Mark THIS step as initialized
+    isInitialized.current[storageKey] = true;
   }, [formType, stepIndex, setValue]);
 
   // Auto-save form data when it changes
   const watchedValues = watch();
   
   useEffect(() => {
-    if (!isInitialized.current) return;
+    const storageKey = createStorageKey(formType, stepIndex);
+    
+    // Only save if THIS step has been initialized (to avoid saving empty data on mount)
+    if (!isInitialized.current[storageKey]) return;
     
     const hasData = Object.values(watchedValues).some(value => 
       value !== '' && value !== null && value !== undefined && value !== false
     );
     
     if (hasData) {
-      const storageKey = createStorageKey(formType, stepIndex);
       saveToStorage(storageKey, watchedValues);
     }
   }, [watchedValues, formType, stepIndex]);
@@ -121,13 +126,15 @@ export const useSpecialStatePersistence = (
   stateObject: Record<string, any>,
   setters: Record<string, (value: any) => void>
 ) => {
-  const isInitialized = useRef(false);
+  const isInitialized = useRef<Record<string, boolean>>({});
   
   // Load special state on mount
   useEffect(() => {
-    if (isInitialized.current) return;
-    
     const specialKey = createStorageKey(formType, stepIndex, 'special');
+    
+    // Check if THIS specific step has been initialized
+    if (isInitialized.current[specialKey]) return;
+    
     const savedSpecialState = loadFromStorage(specialKey);
     
     if (savedSpecialState) {
@@ -138,19 +145,22 @@ export const useSpecialStatePersistence = (
       });
     }
     
-    isInitialized.current = true;
+    // Mark THIS step as initialized
+    isInitialized.current[specialKey] = true;
   }, [formType, stepIndex, setters]);
 
   // Save special state when it changes
   useEffect(() => {
-    if (!isInitialized.current) return;
+    const specialKey = createStorageKey(formType, stepIndex, 'special');
+    
+    // Only save if THIS step has been initialized
+    if (!isInitialized.current[specialKey]) return;
     
     const hasData = Object.values(stateObject).some(value => 
       value !== '' && value !== null && value !== undefined
     );
     
     if (hasData) {
-      const specialKey = createStorageKey(formType, stepIndex, 'special');
       saveToStorage(specialKey, stateObject);
     }
   }, [stateObject, formType, stepIndex]);
