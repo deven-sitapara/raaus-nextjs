@@ -179,6 +179,11 @@ export interface AccidentFormData {
   Avoidance_manoeuvre_needed?: "Yes" | "No" | "Unknown";
   Alert_Received?: "ATC Verbal" | "TCAS RA" | "TCAS TA" | "Other" | "None" | "Unknown";
 
+  // Custom fields for "Other" options
+  customFlightSchool?: string; // Custom flight training school name when "Other" is selected
+  customRelativeTrack?: string; // Custom relative track when "Other" is selected
+  customAlertReceived?: string; // Custom alert type when "Other" is selected
+
   // Attachments
   attachments?: File[];
 
@@ -199,7 +204,8 @@ export interface AccidentFormData {
 // Form 2: Defect Report Types (Using exact CRM API field names)
 export interface DefectFormData {
   // Person Reporting
-  Role: RoleType;
+  role: RoleType;
+  customRole?: string; // Custom role when "Other" is selected
   Name1: string;
   Member_Number?: string;
   Reporter_First_Name?: string; // Alternative field name
@@ -257,7 +263,6 @@ export interface DefectFormData {
   Is_the_aircraft_used_for_training_purposes?: boolean;
 
   // Legacy fields for backward compatibility
-  role?: RoleType;
   memberNumber?: string;
   firstName?: string;
   lastName?: string;
@@ -315,7 +320,8 @@ export interface ComplaintFormData {
 // Form 4: Hazard Report Types (Using exact CRM API field names)
 export interface HazardFormData {
   // Person Reporting
-  Role: RoleType;
+  role: RoleType;
+  customRole?: string; // Custom role when "Other" is selected
   Member_Number?: string;
   Reporter_First_Name?: string; // Alternative field name
   Contact_Phone?: string;

@@ -127,6 +127,9 @@ export default function DefectForm() {
     formState: { errors },
   } = useForm<DefectFormData>();
 
+  // Watch role for "Other" option
+  const selectedRole = watch("role");
+
   // Form persistence
   const { clearCurrentForm } = useFormPersistence(
     { formType: 'defect' }, 
@@ -408,7 +411,7 @@ export default function DefectForm() {
       
       const submissionData = {
         // Map to CRM field names for consistency
-        Role: data.role,
+        Role: data.role === "Other" && data.customRole?.trim() ? data.customRole.trim() : data.role,
         Name1: data.firstName,
         Member_Number: data.memberNumber,
         Reporter_First_Name: data.firstName,
@@ -647,13 +650,58 @@ export default function DefectForm() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
-              <Select
-                label="Role"
-                required
-                options={roleOptions}
-                {...register("role", { required: "Role is required" })}
-                error={errors.role?.message}
-              />
+              <div>
+                <Select
+                  label="Role"
+                  required
+                  options={roleOptions}
+                  {...register("role", { required: "Role is required" })}
+                  error={errors.role?.message}
+                />
+                
+                {/* Custom Role Input - Shows when 'Other' is selected */}
+                {selectedRole === "Other" && (
+                  <div className="mt-3">
+                    <Input
+                      label="Please specify your role"
+                      placeholder="e.g., Flight Instructor, Engineer, Manager"
+                      maxLength={100}
+                      error={errors.customRole?.message}
+                      onKeyPress={(e) => {
+                        // Allow letters, spaces, hyphens, periods, apostrophes
+                        if (!/[a-zA-Z\s\-.']/i.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      {...register("customRole", {
+                        minLength: {
+                          value: 2,
+                          message: "Role must be at least 2 characters"
+                        },
+                        maxLength: {
+                          value: 100,
+                          message: "Role cannot exceed 100 characters"
+                        },
+                        pattern: {
+                          value: /^[a-zA-Z\s\-.']+$/,
+                          message: "Only letters, spaces, hyphens, periods and apostrophes are allowed"
+                        },
+                        onChange: (e) => {
+                          // Auto-capitalize first letter of each word
+                          const value = e.target.value;
+                          if (value) {
+                            const words = value.split(' ');
+                            const capitalizedWords = words.map((word: string) => 
+                              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                            );
+                            e.target.value = capitalizedWords.join(' ');
+                          }
+                        }
+                      })}
+                    />
+                  </div>
+                )}
+              </div>
 
               <div>
                 <Input
@@ -1113,7 +1161,13 @@ export default function DefectForm() {
                   label="Serial Number"
                   type="text"
                   required
-                  {...register("serialNumber", { required: "Serial number is required" })}
+                  {...register("serialNumber", { 
+                    required: "Serial number is required",
+                    pattern: {
+                      value: /^[a-zA-Z0-9.-]+$/,
+                      message: "Serial number must be alphanumeric"
+                    }
+                  })}
                   error={errors.serialNumber?.message}
                 />
 

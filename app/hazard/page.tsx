@@ -65,6 +65,9 @@ export default function HazardForm() {
     formState: { errors },
   } = useForm<HazardFormData>();
 
+  // Watch for "Other" option selections
+  const selectedRole = watch("role");
+
   // Form persistence
   const { clearCurrentForm } = useFormPersistence(
     { formType: 'hazard' }, 
@@ -176,7 +179,7 @@ export default function HazardForm() {
       
       const submissionData = {
         ...data,
-        Role: data.Role,
+        Role: data.role === "Other" && data.customRole?.trim() ? data.customRole.trim() : data.role,
         Name1: data.Name1,
         Last_Name: data.Last_Name,
         Member_Number: data.Member_Number,
@@ -384,13 +387,25 @@ export default function HazardForm() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
-              <Select
-                label="Role"
-                required
-                options={roleOptions}
-                {...register("Role", { required: true })}
-                error={errors.Role?.message}
-              />
+              <div>
+                <Select
+                  label="Role"
+                  required
+                  options={roleOptions}
+                  {...register("role", { required: true })}
+                  error={errors.role?.message}
+                />
+                {selectedRole === "Other" && (
+                  <Input
+                    label="Please specify your role"
+                    type="text"
+                    placeholder="Enter your role"
+                    className="mt-2"
+                    {...register("customRole")}
+                    error={errors.customRole?.message}
+                  />
+                )}
+              </div>
 
               <div>
                 <Input
