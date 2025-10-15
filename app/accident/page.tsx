@@ -401,6 +401,7 @@ const windGustingOptions = [
 ];
 
 const yesNoOptions = [
+  { value: "", label: "- Please Select -" },
   { value: "Yes", label: "Yes" },
   { value: "No", label: "No" },
 ];
