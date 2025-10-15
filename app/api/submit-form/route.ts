@@ -399,7 +399,6 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
     Lookup_5: (typeof accidentData.Lookup_5 === 'number' && Number.isInteger(accidentData.Lookup_5)) ? accidentData.Lookup_5 : undefined,
   Level_2_Maintainer_L2: accidentData.Level_2_Maintainer_L2 || accidentData.Details_of_incident_accident || '',
   In_vicinity_of_aerodrome: convertToBoolean(accidentData.In_vicinity_of_aerodrome),
-  Y_Code: accidentData.Y_Code || '',
   Involve_IFR_or_Air_Transport_Operations: convertToBoolean(accidentData.Involve_IFR_or_Air_Transport_Operations),
   Involve_near_miss_with_another_aircraft: convertToBoolean(accidentData.Involve_near_miss_with_another_aircraft),
     In_controlled_or_special_use_airspace: convertToBoolean(accidentData.In_controlled_or_special_use_airspace),
@@ -796,6 +795,9 @@ function cleanupCRMRecord(record: Record<string, any>): Record<string, any> {
   ]);
   
   for (const [k, v] of Object.entries(record)) {
+    // Explicitly exclude Y_Code field as it causes issues with Zoho CRM
+    if (k === 'Y_Code') continue;
+    
     if (v === null || v === undefined) continue;
     
     if (typeof v === 'string') {
@@ -835,11 +837,11 @@ function cleanupCRMRecord(record: Record<string, any>): Record<string, any> {
   
   return cleaned;
 }
+
 /**
- * Validate CRM data for common issues before sending to Zoho
+ * Validate CRM data before sending to Zoho
  */
 function validateCRMData(crmData: Record<string, any>): void {
-  
   // Check for problematic field types
   const problematicFields: string[] = [];
   
