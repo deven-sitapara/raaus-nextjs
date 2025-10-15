@@ -11,6 +11,8 @@ interface HazardPreviewProps {
   hazardTime: string;
   contactPhone: string;
   selectedAerodrome?: string;
+  latitude?: string;
+  longitude?: string;
   attachments: FileList | null;
   onBack: () => void;
   onConfirm: () => void;
@@ -23,6 +25,8 @@ export default function HazardPreview({
   hazardTime,
   contactPhone,
   selectedAerodrome,
+  latitude,
+  longitude,
   attachments,
   onBack,
   onConfirm,
@@ -153,6 +157,13 @@ export default function HazardPreview({
                 value={data.Location_of_Hazard}
                 fullWidth
               />
+              {latitude && longitude && (
+                <PreviewField 
+                  label="GPS Coordinates" 
+                  value={`Latitude: ${latitude}, Longitude: ${longitude}`}
+                  fullWidth
+                />
+              )}
               <PreviewField
                 label="Hazard Description"
                 value={data.Hazard_Description}

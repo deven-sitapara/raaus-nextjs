@@ -9,6 +9,7 @@ import { PhoneInput } from "@/components/ui/PhoneInput";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Button } from "@/components/ui/Button";
+import MapPicker from "@/components/ui/MapPicker";
 import { DefectFormData } from "@/types/forms";
 import { validationPatterns, validationMessages, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
@@ -114,6 +115,8 @@ export default function DefectForm() {
   const [defectDate, setDefectDate] = useState("");
   const [defectTime, setDefectTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<DefectFormData | null>(null);
@@ -143,15 +146,17 @@ export default function DefectForm() {
     reset
   );
 
-  // Special state persistence
+  // Special state persistence (includes GPS coordinates)
   const { clearSpecialState } = useSpecialStatePersistence(
     'defect',
     undefined,
-    { defectDate, defectTime, contactPhone },
+    { defectDate, defectTime, contactPhone, latitude, longitude },
     {
       defectDate: setDefectDate,
       defectTime: setDefectTime,
-      contactPhone: setContactPhone
+      contactPhone: setContactPhone,
+      latitude: setLatitude,
+      longitude: setLongitude
     }
   );
 
@@ -426,6 +431,9 @@ export default function DefectForm() {
         Occurrence_Date1: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
         Location_of_aircraft_when_defect_was_found: data.locationOfAircraft,
         Location: data.locationOfAircraft,
+        // GPS Coordinates (uncomment when Zoho fields are created):
+        // Location_Latitude: latitude || "",
+        // Location_Longitude: longitude || "",
         State: data.state,
         Description_of_Occurrence: data.defectDescription,
         Defective_component: data.defectiveComponent,
@@ -549,6 +557,8 @@ export default function DefectForm() {
         defectDate={defectDate}
         defectTime={defectTime}
         contactPhone={contactPhone}
+        latitude={latitude}
+        longitude={longitude}
         attachments={attachments}
         onBack={handleBackToEdit}
         onConfirm={onSubmit}
@@ -981,6 +991,34 @@ export default function DefectForm() {
                 rows={3}
                 {...register("locationOfAircraft", { required: "Location is required" })}
                 error={errors.locationOfAircraft?.message}
+              />
+
+              {/* GPS Coordinates */}
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Latitude"
+                  type="text"
+                  placeholder="-25.274398"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                />
+                <Input
+                  label="Longitude"
+                  type="text"
+                  placeholder="133.775136"
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                />
+              </div>
+
+              <MapPicker
+                latitude={latitude}
+                longitude={longitude}
+                onLocationSelect={(lat, lng) => {
+                  setLatitude(lat);
+                  setLongitude(lng);
+                }}
+                label="Pinpoint Location on Map (Optional)"
               />
 
               <Input

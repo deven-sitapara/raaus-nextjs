@@ -10,6 +10,8 @@ interface DefectPreviewProps {
   defectDate: string;
   defectTime: string;
   contactPhone: string;
+  latitude?: string;
+  longitude?: string;
   attachments: FileList | null;
   onBack: () => void;
   onConfirm: () => void;
@@ -21,6 +23,8 @@ export default function DefectPreview({
   defectDate,
   defectTime,
   contactPhone,
+  latitude,
+  longitude,
   attachments,
   onBack,
   onConfirm,
@@ -137,6 +141,13 @@ export default function DefectPreview({
                 value={data.locationOfAircraft}
                 fullWidth
               />
+              {latitude && longitude && (
+                <PreviewField 
+                  label="GPS Coordinates" 
+                  value={`Latitude: ${latitude}, Longitude: ${longitude}`}
+                  fullWidth
+                />
+              )}
               <PreviewField 
                 label="Defective Component" 
                 value={data.defectiveComponent}

@@ -11,6 +11,8 @@ interface AccidentPreviewProps {
   occurrenceTime: string;
   contactPhone: string;
   pilotContactPhone: string;
+  latitude?: string;
+  longitude?: string;
   attachments: FileList | null;
   onBack: () => void;
   onConfirm: () => void;
@@ -23,6 +25,8 @@ export default function AccidentPreview({
   occurrenceTime,
   contactPhone,
   pilotContactPhone,
+  latitude,
+  longitude,
   attachments,
   onBack,
   onConfirm,
@@ -258,6 +262,13 @@ export default function AccidentPreview({
                   />
                   <PreviewField label="State" value={data.state} />
                   <PreviewField label="Location" value={data.location} />
+                  {latitude && longitude && (
+                    <PreviewField 
+                      label="GPS Coordinates" 
+                      value={`Latitude: ${latitude}, Longitude: ${longitude}`}
+                      fullWidth
+                    />
+                  )}
                   <PreviewField
                     label="Details of Incident/Accident"
                     value={data.detailsOfIncident}

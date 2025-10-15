@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 import { FileUpload } from "@/components/ui/FileUpload";
+import MapPicker from "@/components/ui/MapPicker";
 import { AccidentFormData } from "@/types/forms";
 import { validationPatterns, validationMessages, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
@@ -348,6 +349,8 @@ export default function AccidentForm() {
   const [occurrenceTimeError, setOccurrenceTimeError] = useState("");
   const [didInvolveBirdAnimalStrike, setDidInvolveBirdAnimalStrike] = useState(false);
   const [didInvolveNearMiss, setDidInvolveNearMiss] = useState(false);
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<AccidentFormData | null>(null);
@@ -394,7 +397,7 @@ export default function AccidentForm() {
     }
   );
 
-  // Special state persistence - Step 2: Occurrence date/time and checkboxes
+  // Special state persistence - Step 2: Occurrence date/time, checkboxes, and GPS coordinates
   const { clearSpecialState: clearStep2SpecialState } = useSpecialStatePersistence(
     'accident',
     2,
@@ -402,13 +405,17 @@ export default function AccidentForm() {
       occurrenceDate,
       occurrenceTime,
       didInvolveBirdAnimalStrike,
-      didInvolveNearMiss
+      didInvolveNearMiss,
+      latitude,
+      longitude
     },
     {
       occurrenceDate: setOccurrenceDate,
       occurrenceTime: setOccurrenceTime,
       didInvolveBirdAnimalStrike: setDidInvolveBirdAnimalStrike,
-      didInvolveNearMiss: setDidInvolveNearMiss
+      didInvolveNearMiss: setDidInvolveNearMiss,
+      latitude: setLatitude,
+      longitude: setLongitude
     }
   );
 
@@ -802,6 +809,9 @@ export default function AccidentForm() {
         contactPhone: contactPhone,
         pilotContactPhone: pilotContactPhone,
         occurrenceDate: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
+        // GPS Coordinates (uncomment when Zoho fields are created):
+        // Location_Latitude: latitude || "",
+        // Location_Longitude: longitude || "",
         // Convert Yes/No strings to boolean
         Involve_IFR_or_Air_Transport_Operations: data.Involve_IFR_or_Air_Transport_Operations === "Yes" ? true : data.Involve_IFR_or_Air_Transport_Operations === "No" ? false : data.Involve_IFR_or_Air_Transport_Operations,
         In_controlled_or_special_use_airspace: data.In_controlled_or_special_use_airspace === "Yes" ? true : data.In_controlled_or_special_use_airspace === "No" ? false : data.In_controlled_or_special_use_airspace,
@@ -892,6 +902,8 @@ export default function AccidentForm() {
         occurrenceTime={occurrenceTime}
         contactPhone={contactPhone}
         pilotContactPhone={pilotContactPhone}
+        latitude={latitude}
+        longitude={longitude}
         attachments={attachments}
         onBack={handleBackToEdit}
         onConfirm={onSubmit}
@@ -1756,6 +1768,35 @@ export default function AccidentForm() {
                           message: validationMessages.minLength
                         }
                       })}
+                    />
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 gap-4">
+                    <Input
+                      label="Latitude"
+                      type="text"
+                      placeholder="-25.274398"
+                      value={latitude}
+                      onChange={(e) => setLatitude(e.target.value)}
+                    />
+                    <Input
+                      label="Longitude"
+                      type="text"
+                      placeholder="133.775136"
+                      value={longitude}
+                      onChange={(e) => setLongitude(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="mt-6">
+                    <MapPicker
+                      latitude={latitude}
+                      longitude={longitude}
+                      onLocationSelect={(lat, lng) => {
+                        setLatitude(lat);
+                        setLongitude(lng);
+                      }}
+                      label="Pinpoint Location on Map (Optional)"
                     />
                   </div>
 
