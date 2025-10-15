@@ -10,6 +10,7 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Button } from "@/components/ui/Button";
 import SearchableDropdown from "@/components/ui/SearchableDropdown";
+import MapPicker from "@/components/ui/MapPicker";
 import { HazardFormData } from "@/types/forms";
 import { validationPatterns, validationMessages } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
@@ -64,6 +65,8 @@ export default function HazardForm() {
   const [aerodromes, setAerodromes] = useState<string[]>([]);
   const [selectedAerodrome, setSelectedAerodrome] = useState("");
   const [loadingAerodromes, setLoadingAerodromes] = useState(true);
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
 
   const {
     register,
@@ -86,16 +89,18 @@ export default function HazardForm() {
     reset
   );
 
-  // Special state persistence (includes aerodrome selection)
+  // Special state persistence (includes aerodrome selection and coordinates)
   const { clearSpecialState } = useSpecialStatePersistence(
     'hazard',
     undefined,
-    { hazardDate, hazardTime, contactPhone, selectedAerodrome },
+    { hazardDate, hazardTime, contactPhone, selectedAerodrome, latitude, longitude },
     {
       hazardDate: setHazardDate,
       hazardTime: setHazardTime,
       contactPhone: setContactPhone,
-      selectedAerodrome: setSelectedAerodrome
+      selectedAerodrome: setSelectedAerodrome,
+      latitude: setLatitude,
+      longitude: setLongitude
     }
   );
 
@@ -213,6 +218,8 @@ export default function HazardForm() {
         Date_Hazard_Identified: datetime.toISOString().slice(0, 19),
         Location_of_Hazard: data.Location_of_Hazard,
         Location: data.Location_of_Hazard, // Map to generic location field
+        Location_Latitude: latitude,
+        Location_Longitude: longitude,
         State: data.State,
         Hazard_Relates_To_Specific_Aerodrome: data.hazardRelatesToSpecificAerodrome,
         Hazard_Aerodrome: selectedAerodrome || data.hazardAerodrome,
@@ -307,6 +314,8 @@ export default function HazardForm() {
         hazardTime={hazardTime}
         contactPhone={contactPhone}
         selectedAerodrome={selectedAerodrome}
+        latitude={latitude}
+        longitude={longitude}
         attachments={attachments}
         onBack={handleBackToEdit}
         onConfirm={onSubmit}
@@ -695,6 +704,34 @@ export default function HazardForm() {
                 rows={3}
                 {...register("Location_of_Hazard", { required: "Location of hazard is required" })}
                 error={errors.Location_of_Hazard?.message}
+              />
+
+              {/* GPS Coordinates */}
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Latitude"
+                  type="text"
+                  placeholder="-25.274398"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                />
+                <Input
+                  label="Longitude"
+                  type="text"
+                  placeholder="133.775136"
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                />
+              </div>
+
+              <MapPicker
+                latitude={latitude}
+                longitude={longitude}
+                onLocationSelect={(lat, lng) => {
+                  setLatitude(lat);
+                  setLongitude(lng);
+                }}
+                label="Pinpoint Location on Map (Optional)"
               />
 
               <Textarea
