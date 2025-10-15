@@ -327,7 +327,7 @@ This document outlines all field validations implemented for the Accident/Incide
 - **Min Length**: 3 characters
 - **Max Length**: 16 characters
 - **Error Message**: "Invalid minimum characters length"
-- **Placeholder**: "10-1122 or E13-1199"
+- **Placeholder**: "10-1234 or VH-ABC"
 
 #### Second Aircraft Manufacturer
 - **Validation**: Alphanumeric with spaces and hyphens, 3-16 characters
@@ -335,7 +335,7 @@ This document outlines all field validations implemented for the Accident/Incide
 - **Min Length**: 3 characters
 - **Max Length**: 16 characters
 - **Error Message**: "Invalid minimum characters length"
-- **Placeholder**: "abc-123"
+- **Placeholder**: "Cessna"
 
 #### Second Aircraft Model
 - **Validation**: Alphanumeric with spaces and hyphens, 3-16 characters
@@ -343,7 +343,7 @@ This document outlines all field validations implemented for the Accident/Incide
 - **Min Length**: 3 characters
 - **Max Length**: 16 characters
 - **Error Message**: "Invalid minimum characters length"
-- **Placeholder**: "abc-123"
+- **Placeholder**: "172"
 
 #### Horizontal Proximity
 - **Validation**: Decimal number
