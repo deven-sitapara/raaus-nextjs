@@ -766,10 +766,34 @@ export default function DataPage() {
                             {filteredMandatory.length > 0 && (
                               <div ref={mandatoryRef} className="mb-6 p-4 border-l-4 border-red-500">
                                 <div className="sticky top-0 bg-red-100 z-10 -mx-4 px-4 -mt-4 pt-3 pb-3 mb-3 border-b-2 border-red-300">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-6 bg-red-500 rounded-full"></div>
-                                    <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Mandatory Fields</h4>
-                                    <span className="text-xs text-gray-600 font-medium">({filteredMandatory.length} fields)</span>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-1.5 h-6 bg-red-500 rounded-full" />
+                                      <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Mandatory Fields</h4>
+                                      <span className="text-xs text-gray-600 font-medium">({filteredMandatory.length} fields)</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => {
+                                          const updated = { ...columnVisibility };
+                                          filteredMandatory.forEach(key => { updated[key] = true; });
+                                          setColumnVisibility(updated);
+                                        }}
+                                        className="text-xs px-2 py-0.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                                      >
+                                        All
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          const updated = { ...columnVisibility };
+                                          filteredMandatory.forEach(key => { updated[key] = false; });
+                                          setColumnVisibility(updated);
+                                        }}
+                                        className="text-xs px-2 py-0.5 bg-white text-red-600 border border-red-300 rounded hover:bg-red-50 transition-colors"
+                                      >
+                                        None
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2">
@@ -801,10 +825,34 @@ export default function DataPage() {
                             {filteredImportant.length > 0 && (
                               <div ref={importantRef} className="mb-6 p-4 border-l-4 border-orange-500">
                                 <div className="sticky top-0 bg-orange-100 z-10 -mx-4 px-4 -mt-4 pt-3 pb-3 mb-3 border-b-2 border-orange-300">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-6 bg-orange-500 rounded-full"></div>
-                                    <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Important Fields</h4>
-                                    <span className="text-xs text-gray-600 font-medium">({filteredImportant.length} fields)</span>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-1.5 h-6 bg-orange-500 rounded-full" />
+                                      <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Important Fields</h4>
+                                      <span className="text-xs text-gray-600 font-medium">({filteredImportant.length} fields)</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => {
+                                          const updated = { ...columnVisibility };
+                                          filteredImportant.forEach(key => { updated[key] = true; });
+                                          setColumnVisibility(updated);
+                                        }}
+                                        className="text-xs px-2 py-0.5 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
+                                      >
+                                        All
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          const updated = { ...columnVisibility };
+                                          filteredImportant.forEach(key => { updated[key] = false; });
+                                          setColumnVisibility(updated);
+                                        }}
+                                        className="text-xs px-2 py-0.5 bg-white text-orange-600 border border-orange-300 rounded hover:bg-orange-50 transition-colors"
+                                      >
+                                        None
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2">
@@ -836,10 +884,34 @@ export default function DataPage() {
                             {filteredOptional.length > 0 && (
                               <div ref={optionalRef} className="mb-6 p-4 border-l-4 border-yellow-500">
                                 <div className="sticky top-0 bg-yellow-100 z-10 -mx-4 px-4 -mt-4 pt-3 pb-3 mb-3 border-b-2 border-yellow-400">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-6 bg-yellow-500 rounded-full"></div>
-                                    <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Optional Fields</h4>
-                                    <span className="text-xs text-gray-600 font-medium">({filteredOptional.length} fields)</span>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-1.5 h-6 bg-yellow-500 rounded-full" />
+                                      <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Optional Fields</h4>
+                                      <span className="text-xs text-gray-600 font-medium">({filteredOptional.length} fields)</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => {
+                                          const updated = { ...columnVisibility };
+                                          filteredOptional.forEach(key => { updated[key] = true; });
+                                          setColumnVisibility(updated);
+                                        }}
+                                        className="text-xs px-2 py-0.5 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
+                                      >
+                                        All
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          const updated = { ...columnVisibility };
+                                          filteredOptional.forEach(key => { updated[key] = false; });
+                                          setColumnVisibility(updated);
+                                        }}
+                                        className="text-xs px-2 py-0.5 bg-white text-yellow-600 border border-yellow-300 rounded hover:bg-yellow-50 transition-colors"
+                                      >
+                                        None
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2">
