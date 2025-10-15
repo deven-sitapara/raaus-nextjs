@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils/cn";
+import type { ColumnCategory } from "@/lib/utils/columnCategories";
 
 export interface TableColumn<T = any> {
   key: string;
@@ -11,6 +12,8 @@ export interface TableColumn<T = any> {
   width?: string;
   align?: "left" | "center" | "right";
   sortComparator?: (a: T, b: T) => number;
+  category?: ColumnCategory;
+  priority?: number;
 }
 
 export interface TableProps<T = any> {
@@ -27,6 +30,34 @@ export interface TableProps<T = any> {
 }
 
 type SortDirection = "asc" | "desc" | null;
+
+// Helper to get category background color for headers
+const getCategoryBgClass = (category?: ColumnCategory): string => {
+  switch (category) {
+    case 'mandatory':
+      return 'bg-red-50';
+    case 'important':
+      return 'bg-orange-50';
+    case 'optional':
+      return 'bg-yellow-50';
+    default:
+      return 'bg-slate-50';
+  }
+}
+
+// Helper to get border color for headers
+const getCategoryBorderClass = (category?: ColumnCategory): string => {
+  switch (category) {
+    case 'mandatory':
+      return 'border-b-[3px] border-red-500';
+    case 'important':
+      return 'border-b-[3px] border-orange-500';
+    case 'optional':
+      return 'border-b-[3px] border-yellow-500';
+    default:
+      return 'border-b-2 border-slate-300';
+  }
+};
 
 export function Table<T = any>({
   columns,
@@ -170,17 +201,18 @@ export function Table<T = any>({
         className
       )}
     >
-      <thead className="bg-gradient-to-r from-slate-100 to-slate-50 sticky top-0 z-10">
+      <thead className="sticky top-0 z-10">
           <tr>
             {columns.map((column) => (
               <th
                 key={column.key}
                 onClick={() => column.sortable && handleSort(column.key)}
                 className={cn(
-                  "px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider bg-slate-50",
-                  bordered && "border-b-2 border-slate-300",
+                  "px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider",
+                  getCategoryBgClass(column.category),
+                  getCategoryBorderClass(column.category),
                   compact && "px-4 py-2",
-                  column.sortable && "cursor-pointer select-none hover:bg-slate-200 transition-colors",
+                  column.sortable && "cursor-pointer select-none transition-colors",
                   column.align === "center" && "text-center",
                   column.align === "right" && "text-right"
                 )}

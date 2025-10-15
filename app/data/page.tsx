@@ -5,6 +5,12 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Table, TableColumn } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import axios from "axios";
+import { 
+  getColumnMetadata, 
+  getColumnsByCategory, 
+  CATEGORY_CONFIGS,
+  type ColumnCategory 
+} from "@/lib/utils/columnCategories";
 
 // The record type is flexible to support all form types
 type OccurrenceRecord = Record<string, any>;
@@ -24,11 +30,16 @@ export default function DataPage() {
   const [occurrenceType, setOccurrenceType] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [showColumnSelector, setShowColumnSelector] = useState(false);
+  // Store column visibility per form type
+  const [columnVisibilityMap, setColumnVisibilityMap] = useState<Record<string, ColumnVisibility>>({});
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({});
   const [columnSearchQuery, setColumnSearchQuery] = useState("");
   const columnSelectorRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const mandatoryRef = useRef<HTMLDivElement>(null);
+  const importantRef = useRef<HTMLDivElement>(null);
+  const optionalRef = useRef<HTMLDivElement>(null);
 
   // Close column selector when clicking outside
   useEffect(() => {
@@ -176,14 +187,35 @@ export default function DataPage() {
     return <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{type}</span>;
   }
 
-  // Column sets based on actual form fields (from forms.ts and form pages)
-  const columnSets: Record<string, TableColumn<OccurrenceRecord>[]> = useMemo(() => ({
+  /**
+   * Column sets based on actual form fields (from forms.ts and form pages)
+   * 
+   * COLUMN CATEGORIZATION SYSTEM:
+   * Categories are automatically applied via getColumnMetadata() from columnCategories.ts
+   * - MANDATORY (Red): Required form fields - always needed for records
+   * - IMPORTANT (Orange): High-priority fields like OccurrenceId, Passenger_injury, PIC info
+   * - OPTIONAL (Yellow): Supplementary fields for detailed analysis
+   * 
+   * Category metadata is used for:
+   * 1. Table header colors (light tint matching category)
+   * 2. Column filter organization (3-section segregated popup)
+   * 3. Priority ordering within each category
+   */
+  const columnSets: Record<string, TableColumn<OccurrenceRecord>[]> = useMemo(() => {
+    // Get metadata for categorization
+    const accidentMeta = getColumnMetadata('Accident');
+    const defectMeta = getColumnMetadata('Defect');
+    const hazardMeta = getColumnMetadata('Hazard');
+    const complaintMeta = getColumnMetadata('Complaint');
+    const allMeta = getColumnMetadata('All');
+    
+    return {
     Accident: [
       // Core Identifiers
-      { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)) },
-      { key: "OccurrenceId", header: "Occurrence ID", sortable: true, width: "140px" },
-      { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
-      { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury) },
+      { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)), category: accidentMeta.Type?.category, priority: accidentMeta.Type?.priority },
+      { key: "OccurrenceId", header: "Occurrence ID", sortable: true, width: "140px", category: accidentMeta.OccurrenceId?.category, priority: accidentMeta.OccurrenceId?.priority },
+      { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1), category: accidentMeta.Occurrence_Date1?.category, priority: accidentMeta.Occurrence_Date1?.priority },
+      { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury), category: accidentMeta.Passenger_injury?.category, priority: accidentMeta.Passenger_injury?.priority },
       
       // Reporter Information
       { key: "Role", header: "Role", sortable: true, width: "150px" },
@@ -423,28 +455,55 @@ export default function DataPage() {
       { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
       { key: "Modified_Time", header: "Modified", sortable: true, width: "180px", accessor: (row) => formatDate(row.Modified_Time) },
     ],
-  }), []);
+  };
+  }, []);
 
-  // Determine which columns to show based on filter
+  // Determine which columns to show based on filter and apply category metadata
   const currentColumns = useMemo(() => {
-    if (!occurrenceType) return columnSets.All;
-    if (columnSets[occurrenceType]) return columnSets[occurrenceType];
-    return columnSets.All;
+    const formType = occurrenceType || 'All';
+    const baseColumns = columnSets[formType] || columnSets.All;
+    const metadata = getColumnMetadata(formType);
+    
+    // Apply category and priority metadata to each column
+    return baseColumns.map(col => {
+      const meta = metadata[col.key];
+      return {
+        ...col,
+        category: meta?.category || 'optional',
+        priority: meta?.priority || 999
+      };
+    });
   }, [occurrenceType, columnSets]);
 
-  // Initialize column visibility when columns change
+  // When occurrenceType changes, restore previous selection or reset to mandatory
   useEffect(() => {
     if (currentColumns.length > 0) {
-      setColumnVisibility(prev => {
+      const formType = occurrenceType || 'All';
+      const metadata = getColumnMetadata(formType);
+      const mandatoryColumns = getColumnsByCategory(
+        currentColumns.map(col => col.key),
+        metadata
+      ).mandatory;
+
+      // If we have a saved selection for this form type, restore it
+      if (columnVisibilityMap[formType]) {
+        setColumnVisibility(columnVisibilityMap[formType]);
+      } else {
+        // Otherwise, default to mandatory columns only
         const updated: ColumnVisibility = {};
         currentColumns.forEach((col) => {
-          // Keep previous visibility state if exists, otherwise default to true
-          updated[col.key] = prev[col.key] !== undefined ? prev[col.key] : true;
+          updated[col.key] = mandatoryColumns.includes(col.key);
         });
-        return updated;
-      });
+        setColumnVisibility(updated);
+      }
     }
-  }, [currentColumns]);
+  }, [currentColumns, occurrenceType]);
+
+  // Whenever columnVisibility changes, save it for the current form type
+  useEffect(() => {
+    const formType = occurrenceType || 'All';
+    setColumnVisibilityMap(prev => ({ ...prev, [formType]: columnVisibility }));
+  }, [columnVisibility, occurrenceType]);
 
   // Filter columns based on visibility
   const visibleColumns = currentColumns.filter(col => columnVisibility[col.key]);
@@ -540,137 +599,294 @@ export default function DataPage() {
                 </svg>
                 Columns ({visibleColumns.length}/{currentColumns.length})
               </Button>
-              {showColumnSelector && (
-                <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4" onClick={() => setShowColumnSelector(false)}>
-                  <div 
-                    className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[80vh] flex flex-col"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {/* Header */}
-                    <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-lg flex-shrink-0">
-                      <div className="flex items-center justify-between mb-3">
+              {showColumnSelector && (() => {
+                // Get metadata for current form type
+                const formType = occurrenceType || 'All';
+                const metadata = getColumnMetadata(formType);
+                
+                // Organize columns by category
+                const columnsByCategory = getColumnsByCategory(
+                  currentColumns.map(col => col.key), 
+                  metadata
+                );
+                
+                // Filter columns based on search query across all categories
+                const getFilteredColumns = (category: ColumnCategory) => {
+                  if (!columnSearchQuery.trim()) {
+                    return columnsByCategory[category];
+                  }
+                  const query = columnSearchQuery.toLowerCase();
+                  return columnsByCategory[category].filter(key => {
+                    const col = currentColumns.find(c => c.key === key);
+                    return col && (
+                      col.header.toLowerCase().includes(query) ||
+                      col.key.toLowerCase().includes(query)
+                    );
+                  });
+                };
+
+                const filteredMandatory = getFilteredColumns('mandatory');
+                const filteredImportant = getFilteredColumns('important');
+                const filteredOptional = getFilteredColumns('optional');
+                const totalFiltered = filteredMandatory.length + filteredImportant.length + filteredOptional.length;
+
+                return (
+                  <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 px-4 bg-black/40" onClick={() => setShowColumnSelector(false)}>
+                    <div 
+                      className="bg-white rounded-lg shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* Header */}
+                      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold text-slate-900 text-lg">Manage Columns</h3>
-                          <p className="text-xs text-slate-600 mt-0.5">
+                          <h3 className="font-bold text-gray-900 text-lg">Column Settings</h3>
+                          <p className="text-sm text-gray-600 mt-0.5">
                             {visibleColumns.length} of {currentColumns.length} columns visible
                           </p>
                         </div>
                         <button
                           onClick={() => setShowColumnSelector(false)}
-                          className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md hover:bg-slate-200"
+                          className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
                       </div>
-                      
-                      {/* Search Input */}
-                      <div className="relative">
-                        <svg 
-                          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <input
-                          type="text"
-                          placeholder="Search columns..."
-                          value={columnSearchQuery}
-                          onChange={(e) => setColumnSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent"
-                        />
-                        {columnSearchQuery && (
-                          <button
-                            onClick={() => setColumnSearchQuery("")}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+
+                      {/* Search + Quick Actions */}
+                      <div className="px-6 py-4 border-b border-gray-200">
+                        {/* Search Bar */}
+                        <div className="relative mb-3">
+                          <svg 
+                            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          <input
+                            type="text"
+                            placeholder="Search columns..."
+                            value={columnSearchQuery}
+                            onChange={(e) => setColumnSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          {columnSearchQuery && (
+                            <button
+                              onClick={() => setColumnSearchQuery("")}
+                              aria-label="Clear search"
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Quick Actions and Section Navigation */}
+                        <div className="flex items-center justify-between gap-3">
+                          {/* Quick Actions */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                const updated: ColumnVisibility = {};
+                                currentColumns.forEach(col => { updated[col.key] = true; });
+                                setColumnVisibility(updated);
+                              }}
+                              className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium"
+                            >
+                              Show All
+                            </button>
+                            <button
+                              onClick={() => {
+                                const updated: ColumnVisibility = {};
+                                currentColumns.forEach(col => { updated[col.key] = false; });
+                                setColumnVisibility(updated);
+                              }}
+                              className="px-3 py-1.5 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors font-medium"
+                            >
+                              Hide All
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Select only mandatory fields
+                                const updated: ColumnVisibility = {};
+                                currentColumns.forEach(col => {
+                                  updated[col.key] = filteredMandatory.includes(col.key);
+                                });
+                                setColumnVisibility(updated);
+                              }}
+                              className="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium"
+                            >
+                              Mandatory Only
+                            </button>
+                          </div>
+
+                          {/* Section Navigation Buttons */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => mandatoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                              className="px-4 py-1.5 text-xs font-medium rounded transition-all bg-red-100 text-red-700 hover:bg-red-200 border border-red-300"
+                            >
+                              Mandatory
+                            </button>
+                            <button
+                              onClick={() => importantRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                              className="px-4 py-1.5 text-xs font-medium rounded transition-all bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-300"
+                            >
+                              Important
+                            </button>
+                            <button
+                              onClick={() => optionalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                              className="px-4 py-1.5 text-xs font-medium rounded transition-all bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border border-yellow-300"
+                            >
+                              Optional
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Column List - Categorized */}
+                      <div 
+                        className="px-6 my-4 overflow-y-auto flex-1"
+                      >
+                        {totalFiltered === 0 ? (
+                          <div className="text-center py-16 text-gray-500">
+                            <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                          </button>
+                            <p className="text-sm">No columns found matching &quot;{columnSearchQuery}&quot;</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-6">
+                            {/* Mandatory Fields Section */}
+                            {filteredMandatory.length > 0 && (
+                              <div ref={mandatoryRef} className="mb-6 p-4 border-l-4 border-red-500">
+                                <div className="sticky top-0 bg-red-100 z-10 -mx-4 px-4 -mt-4 pt-3 pb-3 mb-3 border-b-2 border-red-300">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-6 bg-red-500 rounded-full"></div>
+                                    <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Mandatory Fields</h4>
+                                    <span className="text-xs text-gray-600 font-medium">({filteredMandatory.length} fields)</span>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {filteredMandatory.map((key) => {
+                                    const column = currentColumns.find(c => c.key === key);
+                                    if (!column) return null;
+                                    return (
+                                      <label
+                                        key={column.key}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-red-50 rounded cursor-pointer transition-colors border border-gray-200 hover:border-red-300"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={columnVisibility[column.key]}
+                                          onChange={() => toggleColumnVisibility(column.key)}
+                                          className="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                                        />
+                                        <span className="text-sm text-gray-700 truncate font-medium">
+                                          {column.header}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Important Fields Section */}
+                            {filteredImportant.length > 0 && (
+                              <div ref={importantRef} className="mb-6 p-4 border-l-4 border-orange-500">
+                                <div className="sticky top-0 bg-orange-100 z-10 -mx-4 px-4 -mt-4 pt-3 pb-3 mb-3 border-b-2 border-orange-300">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-6 bg-orange-500 rounded-full"></div>
+                                    <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Important Fields</h4>
+                                    <span className="text-xs text-gray-600 font-medium">({filteredImportant.length} fields)</span>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {filteredImportant.map((key) => {
+                                    const column = currentColumns.find(c => c.key === key);
+                                    if (!column) return null;
+                                    return (
+                                      <label
+                                        key={column.key}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-orange-50 rounded cursor-pointer transition-colors border border-gray-200 hover:border-orange-300"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={columnVisibility[column.key]}
+                                          onChange={() => toggleColumnVisibility(column.key)}
+                                          className="h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                                        />
+                                        <span className="text-sm text-gray-700 truncate">
+                                          {column.header}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Optional Fields Section */}
+                            {filteredOptional.length > 0 && (
+                              <div ref={optionalRef} className="mb-6 p-4 border-l-4 border-yellow-500">
+                                <div className="sticky top-0 bg-yellow-100 z-10 -mx-4 px-4 -mt-4 pt-3 pb-3 mb-3 border-b-2 border-yellow-400">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-6 bg-yellow-500 rounded-full"></div>
+                                    <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Optional Fields</h4>
+                                    <span className="text-xs text-gray-600 font-medium">({filteredOptional.length} fields)</span>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {filteredOptional.map((key) => {
+                                    const column = currentColumns.find(c => c.key === key);
+                                    if (!column) return null;
+                                    return (
+                                      <label
+                                        key={column.key}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-yellow-50 rounded cursor-pointer transition-colors border border-gray-200 hover:border-yellow-300"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={columnVisibility[column.key]}
+                                          onChange={() => toggleColumnVisibility(column.key)}
+                                        />
+                                        <span className="text-sm text-gray-700 truncate">
+                                          {column.header}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
 
-                      {/* Quick Actions */}
-                      <div className="flex gap-2 mt-3">
-                        <button
-                          onClick={() => {
-                            const updated: ColumnVisibility = {};
-                            currentColumns.forEach(col => { updated[col.key] = true; });
-                            setColumnVisibility(updated);
-                          }}
-                          className="text-xs px-3 py-1.5 bg-slate-600 text-white rounded-md hover:bg-slate-700 transition-colors"
+                      {/* Footer */}
+                      <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+                        <span className="text-sm text-gray-600">
+                          {columnSearchQuery && `${totalFiltered} results • `}
+                          {visibleColumns.length} of {currentColumns.length} columns visible
+                        </span>
+                        <Button
+                          onClick={() => setShowColumnSelector(false)}
+                          variant="primary"
+                          className="px-5"
                         >
-                          Select All
-                        </button>
-                        <button
-                          onClick={() => {
-                            const updated: ColumnVisibility = {};
-                            currentColumns.forEach(col => { updated[col.key] = false; });
-                            setColumnVisibility(updated);
-                          }}
-                          className="text-xs px-3 py-1.5 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors"
-                        >
-                          Deselect All
-                        </button>
+                          Done
+                        </Button>
                       </div>
                     </div>
-
-                    {/* Column List */}
-                    <div className="p-4 overflow-y-auto flex-1">
-                      {filteredColumnList.length === 0 ? (
-                        <div className="text-center py-8 text-slate-500">
-                          <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <p className="text-sm">No columns found matching &quot;{columnSearchQuery}&quot;</p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {filteredColumnList.map((column) => (
-                            <label
-                              key={column.key}
-                              className="flex items-start px-3 py-2.5 hover:bg-slate-50 rounded-md cursor-pointer transition-colors group border border-transparent hover:border-slate-200"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={columnVisibility[column.key]}
-                                onChange={() => toggleColumnVisibility(column.key)}
-                                className="mr-3 mt-0.5 h-4 w-4 text-slate-600 border-slate-300 rounded focus:ring-2 focus:ring-slate-500 focus:ring-offset-0 flex-shrink-0"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm text-slate-700 group-hover:text-slate-900 font-medium block">
-                                  {column.header}
-                                </span>
-                                <span className="text-xs text-slate-500 block mt-0.5 truncate">
-                                  {column.key}
-                                </span>
-                              </div>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 rounded-b-lg flex-shrink-0 flex justify-between items-center">
-                      <span className="text-xs text-slate-600">
-                        {columnSearchQuery && `${filteredColumnList.length} results • `}
-                        {visibleColumns.length} visible
-                      </span>
-                      <Button
-                        onClick={() => setShowColumnSelector(false)}
-                        variant="primary"
-                      >
-                        Done
-                      </Button>
-                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* Refresh Button */}
