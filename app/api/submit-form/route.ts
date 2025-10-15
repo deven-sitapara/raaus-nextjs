@@ -388,9 +388,8 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Occurrence_Date2: accidentData.Occurrence_Date2 ? formatDateOnlyForCRM(accidentData.Occurrence_Date2) : (accidentData.occurrenceDate ? formatDateOnlyForCRM(accidentData.occurrenceDate) : (accidentData.Occurrence_Date1 ? formatDateOnlyForCRM(accidentData.Occurrence_Date1) : null)),
         Description_of_Occurrence: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
         Details_of_incident_accident: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
-        Location: accidentData.Y_Code || accidentData.Location || accidentData.location || '', // Map Y_Code and location data to both fields like hazard form
-        Location_of_hazard: accidentData.Y_Code || accidentData.Location || accidentData.location || '', // Map Y_Code and location data to both fields like hazard form
-        Hazard_Aerodrome: accidentData.Y_Code || accidentData.Location || accidentData.location || '', // Map Y_Code to Hazard_Aerodrome CRM field
+        Location: accidentData.Y_Code || accidentData.Location || accidentData.location || '',
+        Location_of_hazard: accidentData.Y_Code || accidentData.Location || accidentData.location || '',
         State: accidentData.State || accidentData.state || '',
   Occurrence_Type: sanitizePick(accidentData.Occurrence_Type),
   Is_this_occurrence_an_Accident_or_an_Incident: sanitizePick(accidentData.Is_this_occurrence_an_Accident_or_an_Incident || accidentData.Accident_or_Incident || 'Incident'),
@@ -605,6 +604,8 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Please_fully_describe_the_identified_hazard: hazardData.Hazard_Description || hazardData.Please_fully_describe_the_identified_hazard || '',
         Potential_Consequences_of_Hazard: hazardData.Potential_Consequences_of_Hazard || '',
         Do_you_have_further_suggestions_on_how_to_PSO: hazardData.Do_you_have_further_suggestions_on_how_to_PSO || '',
+        Hazard_relates_to_specific_aerodrome: convertToBoolean(hazardData.Hazard_Relates_To_Specific_Aerodrome),
+        Hazard_Aerodrome: hazardData.Hazard_Aerodrome || '',
         // Add hazard-specific flag
         Hazard: true,
       });

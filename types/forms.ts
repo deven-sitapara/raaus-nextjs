@@ -351,6 +351,8 @@ export interface HazardFormData {
   Potential_Consequences_of_Hazard?: string; // CRM field name
   hazardRelatesToSpecificAerodrome?: "Yes" | "No";
   hazardAerodrome?: string;
+  Hazard_Relates_To_Specific_Aerodrome?: "Yes" | "No"; // Field name used in submission
+  Hazard_Aerodrome?: string; // Field name used in submission
   
   // Attachments
   attachments?: File[];
