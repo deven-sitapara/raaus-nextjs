@@ -29,7 +29,7 @@ export default function Home() {
               className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
             >
               <h2 className="text-lg font-semibold">
-                Report an accident or incident &gt;
+                Report an accident or incident
               </h2>
             </Link>
             <div className="p-6 group-hover:bg-gray-50 transition-colors duration-300">
@@ -64,7 +64,7 @@ export default function Home() {
               className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
             >
               <h2 className="text-lg font-semibold">
-                Report a defect &gt;
+                Report a defect
               </h2>
             </Link>
             <div className="p-6 group-hover:bg-gray-50 transition-colors duration-300">
@@ -84,7 +84,7 @@ export default function Home() {
               className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
             >
               <h2 className="text-lg font-semibold">
-                Report an identified hazard &gt;
+                Report an identified hazard
               </h2>
             </Link>
             <div className="p-6 group-hover:bg-gray-50 transition-colors duration-300">
@@ -106,7 +106,7 @@ export default function Home() {
               className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
             >
               <h2 className="text-lg font-semibold">
-                Report a confidential complaint &gt;
+                Report a confidential complaint
               </h2>
             </Link>
             <div className="p-6 group-hover:bg-gray-50 transition-colors duration-300">

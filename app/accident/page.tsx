@@ -512,8 +512,6 @@ export default function AccidentForm() {
   const [occurrenceDateError, setOccurrenceDateError] = useState("");
   const [occurrenceTime, setOccurrenceTime] = useState("");
   const [occurrenceTimeError, setOccurrenceTimeError] = useState("");
-  const [didInvolveBirdAnimalStrike, setDidInvolveBirdAnimalStrike] = useState(false);
-  const [didInvolveNearMiss, setDidInvolveNearMiss] = useState(false);
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
@@ -562,23 +560,19 @@ export default function AccidentForm() {
     }
   );
 
-  // Special state persistence - Step 2: Occurrence date/time, checkboxes, and GPS coordinates
+  // Special state persistence - Step 2: Occurrence date/time, and GPS coordinates
   const { clearSpecialState: clearStep2SpecialState } = useSpecialStatePersistence(
     'accident',
     2,
     {
       occurrenceDate,
       occurrenceTime,
-      didInvolveBirdAnimalStrike,
-      didInvolveNearMiss,
       latitude,
       longitude
     },
     {
       occurrenceDate: setOccurrenceDate,
       occurrenceTime: setOccurrenceTime,
-      didInvolveBirdAnimalStrike: setDidInvolveBirdAnimalStrike,
-      didInvolveNearMiss: setDidInvolveNearMiss,
       latitude: setLatitude,
       longitude: setLongitude
     }
@@ -610,6 +604,9 @@ export default function AccidentForm() {
   
   // Watch ATSB reportable status for conditional IRM notification
   const selectedReportableStatus = watch("ATSB_reportable_status");
+  
+  // Watch aerodrome vicinity for conditional Y Code field
+  const selectedAerodromeVicinity = watch("In_vicinity_of_aerodrome");
   
   // Watch registration fields for aircraft lookup
   const registrationPrefix = watch("Registration_number");
@@ -2359,16 +2356,18 @@ export default function AccidentForm() {
                     />
                   </div>
 
-                  <div className="mt-6">
-                    <Input
-                      label="Vicinity Aerodrome (Y Code)"
-                      placeholder="Enter Y Code"
-                      maxLength={50}
-                      error={errors.Y_Code?.message}
-                      helpText="If the occurrence was in vicinity of an aerodrome, enter the Y Code"
-                      {...register("Y_Code")}
-                    />
-                  </div>
+                  {selectedAerodromeVicinity === "Yes" && (
+                    <div className="mt-6">
+                      <Input
+                        label="Vicinity Aerodrome (Y Code)"
+                        placeholder="Enter Y Code"
+                        maxLength={50}
+                        error={errors.Y_Code?.message}
+                        helpText="If the occurrence was in vicinity of an aerodrome, enter the Y Code"
+                        {...register("Y_Code")}
+                      />
+                    </div>
+                  )}
 
                   <div className="mt-6">
                     <Input
@@ -3092,6 +3091,17 @@ export default function AccidentForm() {
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Aircraft Information</h2>
                   
+                  {/* Aircraft Data Pre-population Message */}
+                  {(!registrationPrefix || !registrationSuffix) ? (
+                    <div className="mb-4 p-3 rounded-md bg-blue-50 border border-blue-200 text-blue-700">
+                      Aircraft data will pre-populate based on aircraft prefix and registration number.
+                    </div>
+                  ) : (
+                    <div className="mb-4 p-3 rounded-md bg-green-50 border border-green-200 text-green-700">
+                      Please check pre-populated data is correct and amend any incorrect fields.
+                    </div>
+                  )}
+                  
                   {/* Aircraft Lookup Status */}
                   {(isLookingUpAircraft || aircraftLookupMessage) && (
                     <div className={`mb-4 p-3 rounded-md ${
@@ -3446,6 +3456,18 @@ export default function AccidentForm() {
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* ATSB Acknowledgement Checkbox */}
+                <div className="mt-6">
+                  <Checkbox
+                    label="I acknowledge that my report will be submitted to the ATSB on my behalf in accordance with requirements under the TSI Act"
+                    required
+                    error={errors.atsbAcknowledgement?.message}
+                    {...register("atsbAcknowledgement", {
+                      required: "You must acknowledge that your report will be submitted to the ATSB"
+                    })}
+                  />
                 </div>
                 
                 <div className="flex justify-between pt-8 border-t border-gray-200">

@@ -1183,6 +1183,18 @@ export default function DefectForm() {
               Aircraft Information
             </h2>
             <div className="mb-8"></div>
+            
+            {/* Aircraft Data Pre-population Message */}
+            {(!registrationPrefix || !registrationSuffix) ? (
+              <div className="mb-4 p-3 rounded-md bg-blue-50 border border-blue-200 text-blue-700">
+                Aircraft data will pre-populate based on aircraft prefix and registration number.
+              </div>
+            ) : (
+              <div className="mb-4 p-3 rounded-md bg-green-50 border border-green-200 text-green-700">
+                Please check pre-populated data is correct and amend any incorrect fields.
+              </div>
+            )}
+            
             {/* Aircraft Lookup Status */}
             {(isLookingUpAircraft || aircraftLookupMessage) && (
               <div className={`mb-4 p-3 rounded-md ${
