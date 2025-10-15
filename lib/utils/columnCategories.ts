@@ -56,18 +56,18 @@ export const ACCIDENT_COLUMN_METADATA: Record<string, ColumnMetadata> = {
   Occurrence_Date1: { category: 'mandatory', priority: 3, description: 'When incident occurred' },
   Name1: { category: 'mandatory', priority: 4, description: 'Reporter first name' },
   Last_Name: { category: 'mandatory', priority: 5, description: 'Reporter last name' },
-  Reporter_Email: { category: 'mandatory', priority: 6, description: 'Contact email' },
-  Contact_Phone: { category: 'mandatory', priority: 7, description: 'Contact phone' },
-  State: { category: 'mandatory', priority: 8, description: 'Australian state' },
-  Location: { category: 'mandatory', priority: 9, description: 'Incident location' },
-  Description_of_Occurrence: { category: 'mandatory', priority: 10, description: 'What happened' },
-  Damage_to_aircraft: { category: 'mandatory', priority: 11, description: 'Aircraft damage level' },
-  Most_serious_injury_to_pilot: { category: 'mandatory', priority: 12, description: 'Pilot injury severity' },
-  Accident_or_Incident: { category: 'mandatory', priority: 13, description: 'Classification' },
-  
+  Passenger_injury: { category: 'mandatory', priority: 6, description: 'Passenger injury status - CRITICAL' },
+  Reporter_Email: { category: 'mandatory', priority: 7, description: 'Contact email' },
+  Contact_Phone: { category: 'mandatory', priority: 8, description: 'Contact phone' },
+  State: { category: 'mandatory', priority: 9, description: 'Australian state' },
+  Location: { category: 'mandatory', priority: 10, description: 'Incident location' },
+  Description_of_Occurrence: { category: 'mandatory', priority: 11, description: 'What happened' },
+  Damage_to_aircraft: { category: 'mandatory', priority: 12, description: 'Aircraft damage level' },
+  Most_serious_injury_to_pilot: { category: 'mandatory', priority: 13, description: 'Pilot injury severity' },
+  Accident_or_Incident: { category: 'mandatory', priority: 14, description: 'Classification' },
+
   // ===== IMPORTANT FIELDS (Priority 21-60) =====
   // High-value data for analysis and investigation
-  Passenger_injury: { category: 'important', priority: 21, description: 'Passenger injury status - CRITICAL' },
   Role: { category: 'important', priority: 22, description: 'Reporter role' },
   Member_Number: { category: 'important', priority: 23, description: 'Reporter member number' },
   Registration_number: { category: 'important', priority: 24, description: 'Aircraft registration' },
