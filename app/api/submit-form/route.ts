@@ -388,7 +388,9 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Occurrence_Date2: accidentData.Occurrence_Date2 ? formatDateOnlyForCRM(accidentData.Occurrence_Date2) : (accidentData.occurrenceDate ? formatDateOnlyForCRM(accidentData.occurrenceDate) : (accidentData.Occurrence_Date1 ? formatDateOnlyForCRM(accidentData.Occurrence_Date1) : null)),
         Description_of_Occurrence: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
         Details_of_incident_accident: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
-        Location: accidentData.Location || accidentData.location || '',
+        Location: accidentData.Y_Code || accidentData.Location || accidentData.location || '', // Map Y_Code and location data to both fields like hazard form
+        Location_of_hazard: accidentData.Y_Code || accidentData.Location || accidentData.location || '', // Map Y_Code and location data to both fields like hazard form
+        Hazard_Aerodrome: accidentData.Y_Code || accidentData.Location || accidentData.location || '', // Map Y_Code to Hazard_Aerodrome CRM field
         State: accidentData.State || accidentData.state || '',
   Occurrence_Type: sanitizePick(accidentData.Occurrence_Type),
   Is_this_occurrence_an_Accident_or_an_Incident: sanitizePick(accidentData.Is_this_occurrence_an_Accident_or_an_Incident || accidentData.Accident_or_Incident || 'Incident'),
@@ -795,8 +797,8 @@ function cleanupCRMRecord(record: Record<string, any>): Record<string, any> {
   ]);
   
   for (const [k, v] of Object.entries(record)) {
-    // Explicitly exclude Y_Code field as it causes issues with Zoho CRM
-    if (k === 'Y_Code') continue;
+    // Y_Code and location fields are now mapped to both Location and Location_of_hazard fields like hazard form
+    // if (k === 'Y_Code') continue;
     
     if (v === null || v === undefined) continue;
     
