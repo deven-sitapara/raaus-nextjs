@@ -5,6 +5,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { SelectWithOther } from "@/components/ui/SelectWithOther";
+import SearchableDropdown from "@/components/ui/SearchableDropdown";
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Textarea } from "@/components/ui/Textarea";
@@ -142,10 +143,167 @@ const typeOfOperationOptions = [
 ];
 
 const flightTrainingSchoolOptions = [
-  { value: "Adelaide Biplanes", label: "Adelaide Biplanes" },
-  { value: "Adelaide Biplanes - Weightshift (Group B)", label: "Adelaide Biplanes - Weightshift (Group B)" },
-  { value: "Other", label: "Other" },
-  // Add more options as needed
+  "Please Select -",
+  "Adelaide Biplanes",
+  "Adelaide Biplanes - Weightshift (Group B)",
+  "Adelaide Soaring Club Inc",
+  "Advanced Aviation Training",
+  "Adventure Flight Training - Moama",
+  "Aerchute Industries",
+  "Aerofloat",
+  "Aerohunter Flight Training",
+  "AeroLINQ",
+  "AeroLINQ - Watsbridge",
+  "Agnes Water Air Services",
+  "Air Escape",
+  "Airspeed Aviation",
+  "Airsports Flying School",
+  "Airwego",
+  "Airwings Flight Centre",
+  "Alpine Aviation Australia",
+  "Ariel Aviation",
+  "Ausflight Pty Ltd",
+  "Avid Aviation",
+  "Ayr Flying Services",
+  "Balantree Aviation",
+  "Ballarat Aero Club",
+  "Ballarat Flight Training",
+  "Batchelor Flight Training",
+  "Benalla Aero Club",
+  "Benalla Recreational Flying",
+  "Bendigo Flying Club",
+  "Bendigo Recreational Aviation School - Comfly",
+  "BJs Aviation",
+  "Blue Shed Aviation",
+  "Blue Shed Aviation - Temora",
+  "Blue Sky Flight Training",
+  "Blue Sky Flight Training (West Sale)",
+  "Bob Harris' Flying School",
+  "Bunbury Aero Club",
+  "Bunbury Aero Club - Manjimup",
+  "Busselton Aero Club",
+  "Caboolture Flight School",
+  "Caboolture Recreational Aviation",
+  "Classic Air",
+  "Clement's Flying School",
+  "Cloud Dancer Pilot Training",
+  "Coffs Harbour & District Aero Club",
+  "Colac Flight Training",
+  "Corowa Recreational Flying",
+  "Cory Air – Coonawara",
+  "Cowra Aero Club - Forbes",
+  "Cowra And District Aero Club Inc",
+  "Dave's Flying School",
+  "Eagle Air Pty Ltd",
+  "Eagle Air Pty Ltd - Boonah",
+  "EAS Flight Training",
+  "Echuca Moama School of Aviation Pty Ltd",
+  "Edge Aerospace",
+  "Edge Aerospace - Riddells Creek",
+  "Flight Testing",
+  "Flightscope Aviation",
+  "Fly Illawarra",
+  "Fly Now Redcliffe",
+  "Fly Riverina - Cootamundra",
+  "Fly Riverina - Deniliquin",
+  "Flying with Grace",
+  "FN Aviation",
+  "Gladstone Flying Training & Aircharter",
+  "GoFly Aviation",
+  "Gold Coast Sports Flying Training",
+  "Golden Plains Aviation Pty Ltd",
+  "Goolwa Air Flight Training",
+  "Goulburn Aviation Pty Ltd",
+  "Goulburn Flight Training Centre",
+  "Granite Field Flight Training",
+  "Griffith Aero Club",
+  "Griffith Aero Club - Hillston",
+  "Hastings District Flying Club",
+  "Hawkesbury Powered Parachute Centre",
+  "Howatharra Aviation",
+  "JDH Aviation Pty Ltd T/A Recreational Pilots Academy",
+  "John McBryde - Recreational Flying",
+  "Kangawallaafox Flight School",
+  "KB's Flying School",
+  "Knowsley Airpark",
+  "Kyneton Aero Club",
+  "Lake Keepit Soaring Club",
+  "Latrobe Valley Aero Club",
+  "Learn 2 Fly Bathurst",
+  "Learn 2 Fly Canberra",
+  "Lilydale Flying School",
+  "Lite Air Flying Training",
+  "Lone Eagle Flying School",
+  "Matts Flying",
+  "Melbourne West Flight Training",
+  "Mid Coast Flying",
+  "Midlands Flying School",
+  "Murray Bridge Light Aircraft Flying School",
+  "Myrup Flight Training",
+  "Namoi Aviation",
+  "Namoi Aviation - Gunnedah",
+  "New England Aviation Flight Training School",
+  "Northern Rivers Aero Club",
+  "NT Flight Training",
+  "Oasis Flight Training Pty Ltd",
+  "Oasis Flight Training Pty Ltd - Swan Hill",
+  "Orange Flight Training",
+  "Parkes Recreational Aviation Centre",
+  "Pathfinder Aviation",
+  "Peace Aviation",
+  "Peace Aviation - Bundaberg",
+  "Peninsula Aero Club",
+  "Pro-Sky Flight Training",
+  "Pro-sky Maryborough",
+  "Pro-Sky Port Augusta",
+  "RAMAIR Flying Services",
+  "Recreational Aviation Newcastle",
+  "Riverina Wings Flight Training",
+  "Riverland Flight Training",
+  "Riverland Flight Training Wentworth",
+  "Riviera Aeronautics",
+  "Rockhampton Sport Aviation",
+  "Rotor-Sport Australia",
+  "Royal Aero Club of Western Australia",
+  "Sarge's Light Sport Aviation",
+  "Secure Air Flight Training",
+  "SFA Recreational Aviation",
+  "SkyEast Aviation",
+  "Skyflyte ULA Pty Ltd - Devonport",
+  "Skyflyte ULA Pty Ltd",
+  "Skywise Microlights",
+  "Smartair",
+  "Spencer Gulf Flight Training Pty Ltd",
+  "Sport Aviation Flight Academy",
+  "SportAviation Pty Ltd",
+  "Sportflly Aviation",
+  "Sportsflite Australia",
+  "Stick 'n Rudder",
+  "Strike Aviation Training",
+  "Sunshine Coast Aero Club Queensland Ltd",
+  "Sunshine Coast Sports Flying Training",
+  "Surf Coast Flying School",
+  "Sydney Recreational Flying Club - Taree",
+  "Sydney Recreational Flying Club Inc",
+  "The Recreational Flying Company",
+  "Tooradin Flying School",
+  "Topfun Aviation - Greenside",
+  "Topfun Aviation - Moora",
+  "Townsville Sport Aviation",
+  "Victory Flight Training",
+  "Wagga Air Centre",
+  "Wagga Bike Tyres - Aviation Division",
+  "Walters Aviation",
+  "Warrnambool Flight Training",
+  "Watson Fly",
+  "West Coast Aviation",
+  "Westside Aviation",
+  "White Star Aviation Pty Ltd",
+  "Willflyhire",
+  "Wings Out West",
+  "Wrighton Aviation",
+  "Yarra Valley Flight Training",
+  "YET TO BE DETERMINED"
 ];
 
 const phaseOfFlightOptions = [
@@ -436,6 +594,10 @@ export default function AccidentForm() {
   // Watch the incident type fields for conditional sections
   const didInvolveNearMiss = watch("Involve_near_miss_with_another_aircraft") === "Yes";
   const didInvolveBirdAnimalStrike = watch("Bird_or_Animal_Strike") === "Yes";
+  const selectedDamageToAircraft = watch("Damage_to_aircraft");
+  
+  // Watch ATSB reportable status for conditional IRM notification
+  const selectedReportableStatus = watch("ATSB_reportable_status");
   
   // Watch registration fields for aircraft lookup
   const registrationPrefix = watch("Registration_number");
@@ -698,6 +860,11 @@ export default function AccidentForm() {
         "Wind_gusting",
         "Personal_Locator_Beacon_carried"
       ];
+      
+      // Remove description field from validation if damage is "Nil"
+      if (selectedDamageToAircraft === "Nil") {
+        fieldsToValidate = fieldsToValidate.filter(field => field !== "Description_of_damage_to_aircraft");
+      }
       
       // Check date and time separately since they're not in the form
       if (!occurrenceDate || occurrenceDate.trim() === "") {
@@ -2188,26 +2355,28 @@ export default function AccidentForm() {
                     />
                   </div>
 
-                  <div className="mt-6">
-                    <Textarea
-                      label="Description of Damage to Aircraft"
-                      required
-                      rows={3}
-                      maxLength={255}
-                      error={errors.Description_of_damage_to_aircraft?.message}
-                      {...register("Description_of_damage_to_aircraft", {
-                        required: "This field cannot be blank.",
-                        minLength: {
-                          value: 4,
-                          message: validationMessages.minLength
-                        },
-                        maxLength: {
-                          value: 255,
-                          message: validationMessages.minLength
-                        }
-                      })}
-                    />
-                  </div>
+                  {selectedDamageToAircraft !== "Nil" && (
+                    <div className="mt-6">
+                      <Textarea
+                        label="Description of Damage to Aircraft"
+                        required
+                        rows={3}
+                        maxLength={255}
+                        error={errors.Description_of_damage_to_aircraft?.message}
+                        {...register("Description_of_damage_to_aircraft", {
+                          required: "This field cannot be blank.",
+                          minLength: {
+                            value: 4,
+                            message: validationMessages.minLength
+                          },
+                          maxLength: {
+                            value: 255,
+                            message: validationMessages.minLength
+                          }
+                        })}
+                      />
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <Input
@@ -2448,7 +2617,20 @@ export default function AccidentForm() {
                             {...register("ATSB_reportable_status", { required: "This field cannot be blank." })}
                             className="mr-2"
                           />
-                          Immediately reportable matter
+                          <span className="flex items-center gap-1">
+                            Immediately reportable matter
+                            <span className="group relative inline-flex items-center">
+                              <svg className="w-8 h-6 text-gray-700 cursor-help py-0.5 px-1 hover:bg-blue-50 rounded-full transition-all" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                              </svg>
+                              <div className="invisible group-hover:visible absolute left-full ml-2 top-1/2 -translate-y-1/2 w-72 md:w-96 bg-white border-2 border-gray-500 rounded-lg shadow-xl z-50">
+                                <div className="bg-gray-600 text-white font-semibold text-sm px-3 py-2 rounded-t-md">Immediately Reportable Matter (IRM)</div>
+                                <div className="text-gray-900 text-sm leading-relaxed p-3">
+                                  An aircraft accident; or a loss of separation standards between two aircraft receiving an air navigation service provider (ANSP) separation service; or an occurrence resulting in serious damage to property outside the aircraft.
+                                </div>
+                              </div>
+                            </span>
+                          </span>
                         </label>
                         <label className="flex items-center">
                           <input
@@ -2457,7 +2639,20 @@ export default function AccidentForm() {
                             {...register("ATSB_reportable_status", { required: "This field cannot be blank." })}
                             className="mr-2"
                           />
-                          Routinely reportable matter
+                          <span className="flex items-center gap-1">
+                            Routinely reportable matter
+                            <span className="group relative inline-flex items-center">
+                              <svg className="w-8 h-6 text-gray-700 cursor-help py-0.5 px-1 hover:bg-blue-50 rounded-full transition-all" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                              </svg>
+                              <div className="invisible group-hover:visible absolute left-full ml-2 top-1/2 -translate-y-1/2 w-72 md:w-96 bg-white border-2 border-gray-500 rounded-lg shadow-xl z-50">
+                                <div className="bg-gray-600 text-white font-semibold text-sm px-3 py-2 rounded-t-md">Routinely Reportable Matter (RRM)</div>
+                                <div className="text-gray-700 text-sm leading-relaxed p-3">
+                                  A routinely reportable matter is a transport safety occurrence that has not had a serious outcome and does not require an immediate report, but where transport safety was affected or could have been affected.
+                                </div>
+                              </div>
+                            </span>
+                          </span>
                         </label>
                       </div>
                       {errors.ATSB_reportable_status && (
@@ -2466,12 +2661,14 @@ export default function AccidentForm() {
                     </fieldset>
                   </div>
 
-                  <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-red-700 font-semibold text-sm">
-                      Immediately reportable matters are required to be notified to RAAus via phone as soon as practicable.
-                      RAAus can be contacted on <a href="tel:+61262804700" className="text-red-700 underline">02 6280 4700</a>.
-                    </p>
-                  </div>
+                  {selectedReportableStatus === "IRM" && (
+                    <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-red-700 font-semibold text-sm">
+                        Immediately reportable matters are required to be notified to RAAus via phone as soon as practicable.
+                        RAAus can be contacted on <a href="tel:+61262804700" className="text-red-700 underline">02 6280 4700</a>.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
 
@@ -2574,41 +2771,15 @@ export default function AccidentForm() {
                     {/* Flight Training School - Only show when Type of Operation is Flying Training */}
                     {(selectedTypeOfOperation === "Flying Training – Dual" || selectedTypeOfOperation === "Flying Training – Solo") && (
                       <div>
-                        <Select
+                        <SearchableDropdown
                           label="Name of Flight Training School"
                           required
                           options={flightTrainingSchoolOptions}
+                          value={watch("Name_of_Flight_Training_School") || ""}
+                          onChange={(value) => setValue("Name_of_Flight_Training_School", value)}
+                          placeholder="Search and select flight training school..."
                           error={errors.Name_of_Flight_Training_School?.message}
-                          {...register("Name_of_Flight_Training_School", { 
-                            required: "This field cannot be blank." 
-                          })}
                         />
-                        
-                        {/* Custom Flight School Input - Shows when 'Other' is selected */}
-                        {selectedFlightSchool === "Other" && (
-                          <div className="mt-3">
-                            <Input
-                              label="Please specify flight training school name"
-                              placeholder="e.g., ABC Flight School"
-                              maxLength={100}
-                              error={errors.customFlightSchool?.message}
-                              {...register("customFlightSchool", {
-                                minLength: {
-                                  value: 2,
-                                  message: "School name must be at least 2 characters"
-                                },
-                                maxLength: {
-                                  value: 100,
-                                  message: "School name cannot exceed 100 characters"
-                                },
-                                pattern: {
-                                  value: /^[a-zA-Z0-9\s\-.'&]+$/,
-                                  message: "Only letters, numbers, spaces, hyphens, periods, ampersands and apostrophes are allowed"
-                                }
-                              })}
-                            />
-                          </div>
-                        )}
                       </div>
                     )}
 
@@ -3185,7 +3356,12 @@ export default function AccidentForm() {
                       })}
                       error={errors.Propeller_serial?.message}
                     />
-                    
+                  </div>
+                </div>
+
+                {/* Personal Locator Beacon Section */}
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Select
                       label="Personal Locator Beacon carried"
                       required
@@ -3193,13 +3369,12 @@ export default function AccidentForm() {
                       {...register('Personal_Locator_Beacon_carried', { required: 'PLB status is required' })}
                       error={errors.Personal_Locator_Beacon_carried?.message}
                     />
-                  </div>
-                  
-                  <div className="mt-4">
-                    <Checkbox
+                    
+                    <Select
                       label="PLB Activated"
-                      id="plbActivated"
+                      options={yesNoOptions}
                       {...register('PLB_Activated')}
+                      error={errors.PLB_Activated?.message}
                     />
                   </div>
                 </div>
