@@ -347,21 +347,19 @@ const airspaceClassOptions = [
 ];
 
 const airspaceTypeOptions = [
-  { value: "Not Answered", label: "Not Answered" },
-  { value: "CTA", label: "CTA" },
-  { value: "CTR", label: "CTR" },
-  { value: "CAF", label: "CAF" },
-  { value: "OCTA", label: "OCTA" },
-  { value: "PRD", label: "PRD" },
-  { value: "OCA", label: "OCA" },
+  { value: "None", label: "None" },
+  { value: "Non-Controlled", label: "Non-Controlled" },
+  { value: "Controlled", label: "Controlled" },
+  { value: "Danger Area", label: "Danger Area" },
+  { value: "Military Operating Area", label: "Military Operating Area" },
+  { value: "Restricted Area", label: "Restricted Area" },
+  { value: "Prohibited Area", label: "Prohibited Area" },
 ];
 
 const altitudeTypeOptions = [
-  { value: "Not answered", label: "Not answered" },
-  { value: "AMSL (Above mean sea level)", label: "AMSL (Above mean sea level)" },
-  { value: "AGL (Above ground level)", label: "AGL (Above ground level)" },
-  { value: "Surface", label: "Surface" },
-  { value: "Unknown", label: "Unknown" },
+  { value: "None", label: "None" },
+  { value: "AMSL (Above Mean Sea Level)", label: "AMSL (Above Mean Sea Level)" },
+  { value: "AGL (Above Ground Level)", label: "AGL (Above Ground Level)" },
 ];
 
 const lightConditionsOptions = [
@@ -389,8 +387,9 @@ const visibilityReducedByOptions = [
   { value: "Cloud", label: "Cloud" },
   { value: "Fog", label: "Fog" },
   { value: "Smoke", label: "Smoke" },
+  { value: "Dusk", label: "Dusk" },
   { value: "Haze", label: "Haze" },
-  { value: "unknown", label: "unknown" },
+  { value: "Other", label: "Other" },
 ];
 
 const windGustingOptions = [
@@ -2049,7 +2048,7 @@ export default function AccidentForm() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Input
                               label="Second Aircraft Registration"
-                              placeholder="10-1122 or E13-1199"
+                              placeholder="10-1234 or VH-ABC"
                               maxLength={8}
                               error={errors.Second_aircraft_registration?.message}
                               onKeyPress={(e) => {
@@ -2080,7 +2079,7 @@ export default function AccidentForm() {
 
                             <Input
                               label="Second Aircraft Manufacturer"
-                              placeholder="abc-123"
+                              placeholder="Cessna"
                               maxLength={16}
                               error={errors.Second_Aircraft_Manufacturer?.message}
                               {...register("Second_Aircraft_Manufacturer", {
@@ -2099,7 +2098,7 @@ export default function AccidentForm() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                             <Input
                               label="Second Aircraft Model"
-                              placeholder="abc-123"
+                              placeholder="172"
                               maxLength={16}
                               error={errors.Second_Aircraft_Model?.message}
                               {...register("Second_Aircraft_Model", {
@@ -2112,84 +2111,6 @@ export default function AccidentForm() {
                                   message: validationMessages.minLength
                                 }
                               })}
-                            />
-
-                            <Input
-                              label="Horizontal Proximity"
-                              type="text"
-                              placeholder="e.g., 150"
-                              maxLength={10}
-                              error={errors.Horizontal_Proximity?.message}
-                              onKeyPress={(e) => {
-                                // Only allow numbers and decimal point
-                                if (!/[0-9.]/.test(e.key)) {
-                                  e.preventDefault();
-                                }
-                              }}
-                              {...register("Horizontal_Proximity", {
-                                pattern: {
-                                  value: validationPatterns.decimalNumber,
-                                  message: validationMessages.minLength
-                                },
-                                onChange: (e) => {
-                                  // Remove any non-numeric characters except decimal point
-                                  let value = e.target.value.replace(/[^0-9.]/g, '');
-                                  // Prevent multiple decimal points
-                                  const parts = value.split('.');
-                                  if (parts.length > 2) {
-                                    value = parts[0] + '.' + parts.slice(1).join('');
-                                  }
-                                  e.target.value = value;
-                                }
-                              })}
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                            <Select
-                              label="Horizontal Proximity Unit"
-                              options={proximityUnitOptions}
-                              error={errors.Horizontal_Proximity_Unit?.message}
-                              {...register("Horizontal_Proximity_Unit")}
-                            />
-
-                            <Input
-                              label="Vertical Proximity"
-                              type="text"
-                              placeholder="e.g., 0.5"
-                              maxLength={10}
-                              error={errors.Vertical_Proximity?.message}
-                              onKeyPress={(e) => {
-                                // Only allow numbers and decimal point
-                                if (!/[0-9.]/.test(e.key)) {
-                                  e.preventDefault();
-                                }
-                              }}
-                              {...register("Vertical_Proximity", {
-                                pattern: {
-                                  value: validationPatterns.decimalNumber,
-                                  message: validationMessages.minLength
-                                },
-                                onChange: (e) => {
-                                  // Remove any non-numeric characters except decimal point
-                                  let value = e.target.value.replace(/[^0-9.]/g, '');
-                                  // Prevent multiple decimal points
-                                  const parts = value.split('.');
-                                  if (parts.length > 2) {
-                                    value = parts[0] + '.' + parts.slice(1).join('');
-                                  }
-                                  e.target.value = value;
-                                }
-                              })}
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                            <Select
-                              label="Vertical Proximity Unit"
-                              options={verticalProximityUnitOptions}
-                              error={errors.Vertical_Proximity_Unit?.message}
-                              {...register("Vertical_Proximity_Unit")}
                             />
 
                             <div>
@@ -2226,6 +2147,84 @@ export default function AccidentForm() {
                                 </div>
                               )}
                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <Select
+                              label="Horizontal Proximity Unit"
+                              options={proximityUnitOptions}
+                              error={errors.Horizontal_Proximity_Unit?.message}
+                              {...register("Horizontal_Proximity_Unit")}
+                            />
+
+                            <Input
+                              label="Horizontal Proximity"
+                              type="text"
+                              placeholder="e.g., 150"
+                              maxLength={10}
+                              error={errors.Horizontal_Proximity?.message}
+                              onKeyPress={(e) => {
+                                // Only allow numbers and decimal point
+                                if (!/[0-9.]/.test(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              {...register("Horizontal_Proximity", {
+                                pattern: {
+                                  value: validationPatterns.decimalNumber,
+                                  message: validationMessages.minLength
+                                },
+                                onChange: (e) => {
+                                  // Remove any non-numeric characters except decimal point
+                                  let value = e.target.value.replace(/[^0-9.]/g, '');
+                                  // Prevent multiple decimal points
+                                  const parts = value.split('.');
+                                  if (parts.length > 2) {
+                                    value = parts[0] + '.' + parts.slice(1).join('');
+                                  }
+                                  e.target.value = value;
+                                }
+                              })}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <Select
+                              label="Vertical Proximity Unit"
+                              options={verticalProximityUnitOptions}
+                              error={errors.Vertical_Proximity_Unit?.message}
+                              {...register("Vertical_Proximity_Unit")}
+                            />
+
+                            <Input
+                              label="Vertical Proximity"
+                              type="text"
+                              placeholder="e.g., 0.5"
+                              maxLength={10}
+                              error={errors.Vertical_Proximity?.message}
+                              onKeyPress={(e) => {
+                                // Only allow numbers and decimal point
+                                if (!/[0-9.]/.test(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              {...register("Vertical_Proximity", {
+                                pattern: {
+                                  value: validationPatterns.decimalNumber,
+                                  message: validationMessages.minLength
+                                },
+                                onChange: (e) => {
+                                  // Remove any non-numeric characters except decimal point
+                                  let value = e.target.value.replace(/[^0-9.]/g, '');
+                                  // Prevent multiple decimal points
+                                  const parts = value.split('.');
+                                  if (parts.length > 2) {
+                                    value = parts[0] + '.' + parts.slice(1).join('');
+                                  }
+                                  e.target.value = value;
+                                }
+                              })}
+                            />
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
