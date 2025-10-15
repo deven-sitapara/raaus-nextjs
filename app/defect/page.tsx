@@ -843,7 +843,6 @@ export default function DefectForm() {
                 value={contactPhone}
                 onChange={(value) => setContactPhone(value)}
                 defaultCountry="AU"
-                countries={["AU", "CA", "GB"]}
               />
 
               {/* Date of Birth - Shows when 'Pilot in Command' is selected */}
