@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 import { FileUpload } from "@/components/ui/FileUpload";
 import MapPicker from "@/components/ui/MapPicker";
+import YCodeSelector from "@/components/forms/YCodeSelector";
 import { AccidentFormData } from "@/types/forms";
 import { validationPatterns, validationMessages, validateEmail } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
@@ -513,8 +514,6 @@ export default function AccidentForm() {
   const [occurrenceDateError, setOccurrenceDateError] = useState("");
   const [occurrenceTime, setOccurrenceTime] = useState("");
   const [occurrenceTimeError, setOccurrenceTimeError] = useState("");
-  const [didInvolveBirdAnimalStrike, setDidInvolveBirdAnimalStrike] = useState(false);
-  const [didInvolveNearMiss, setDidInvolveNearMiss] = useState(false);
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
@@ -563,23 +562,19 @@ export default function AccidentForm() {
     }
   );
 
-  // Special state persistence - Step 2: Occurrence date/time, checkboxes, and GPS coordinates
+  // Special state persistence - Step 2: Occurrence date/time and GPS coordinates
   const { clearSpecialState: clearStep2SpecialState } = useSpecialStatePersistence(
     'accident',
     2,
     {
       occurrenceDate,
       occurrenceTime,
-      didInvolveBirdAnimalStrike,
-      didInvolveNearMiss,
       latitude,
       longitude
     },
     {
       occurrenceDate: setOccurrenceDate,
       occurrenceTime: setOccurrenceTime,
-      didInvolveBirdAnimalStrike: setDidInvolveBirdAnimalStrike,
-      didInvolveNearMiss: setDidInvolveNearMiss,
       latitude: setLatitude,
       longitude: setLongitude
     }
@@ -2361,14 +2356,16 @@ export default function AccidentForm() {
                   </div>
 
                   <div className="mt-6">
-                    <Input
+                    <YCodeSelector
+                      value={watch("Y_Code") || ""}
+                      onChange={(value) => setValue("Y_Code", value, { shouldValidate: true })}
                       label="Vicinity Aerodrome (Y Code)"
-                      placeholder="Enter Y Code"
-                      maxLength={50}
+                      placeholder="Search for an aerodrome..."
                       error={errors.Y_Code?.message}
-                      helpText="If the occurrence was in vicinity of an aerodrome, enter the Y Code"
-                      {...register("Y_Code")}
                     />
+                    <p className="mt-1 text-sm text-gray-500">
+                      If the occurrence was in vicinity of an aerodrome, enter the Y Code
+                    </p>
                   </div>
 
                   <div className="mt-6">
