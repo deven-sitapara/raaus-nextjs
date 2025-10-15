@@ -582,7 +582,6 @@ export default function HazardForm() {
                 value={contactPhone}
                 onChange={(value) => setContactPhone(value)}
                 defaultCountry="AU"
-                countries={["AU", "CA", "GB"]}
               />
             </div>
           </div>

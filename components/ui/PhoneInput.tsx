@@ -3,7 +3,12 @@
 import * as React from "react";
 import { cn } from "@/lib/utils/cn";
 
-type CountryCode = "AU" | "CA" | "GB" | "US";
+type CountryCode = 
+  | "AU" | "CA" | "GB" | "US" | "NZ" | "DE" | "FR" | "IT" | "ES" | "NL" 
+  | "BE" | "CH" | "SE" | "NO" | "DK" | "FI" | "IE" | "PT" | "AT" | "PL" 
+  | "CZ" | "HU" | "GR" | "TR" | "RU" | "JP" | "KR" | "CN" | "IN" | "BR" 
+  | "MX" | "AR" | "ZA" | "EG" | "NG" | "KE" | "AE" | "SA" | "TH" | "SG" 
+  | "MY" | "ID" | "PH";
 
 export interface PhoneInputProps {
   label?: string;
@@ -26,6 +31,45 @@ const countryData: Record<CountryCode, { name: string; code: string; flag: strin
   CA: { name: "Canada", code: "+1", flag: "🇨🇦", minLength: 10, maxLength: 10, format: "XXX XXX XXXX", startsWithZero: false },
   GB: { name: "United Kingdom", code: "+44", flag: "🇬🇧", minLength: 11, maxLength: 11, format: "0XXXX XXXXXX", startsWithZero: true },
   US: { name: "United States", code: "+1", flag: "🇺🇸", minLength: 10, maxLength: 10, format: "XXX XXX XXXX", startsWithZero: false },
+  NZ: { name: "New Zealand", code: "+64", flag: "🇳🇿", minLength: 9, maxLength: 10, format: "XXX XXX XXXX", startsWithZero: false },
+  DE: { name: "Germany", code: "+49", flag: "🇩🇪", minLength: 10, maxLength: 11, format: "XXX XXXXXXXX", startsWithZero: false },
+  FR: { name: "France", code: "+33", flag: "🇫🇷", minLength: 9, maxLength: 9, format: "X XX XX XX XX", startsWithZero: false },
+  IT: { name: "Italy", code: "+39", flag: "🇮🇹", minLength: 9, maxLength: 10, format: "XXX XXXXXXX", startsWithZero: false },
+  ES: { name: "Spain", code: "+34", flag: "🇪🇸", minLength: 9, maxLength: 9, format: "XXX XXX XXX", startsWithZero: false },
+  NL: { name: "Netherlands", code: "+31", flag: "🇳🇱", minLength: 9, maxLength: 9, format: "X XXXX XXXX", startsWithZero: false },
+  BE: { name: "Belgium", code: "+32", flag: "🇧🇪", minLength: 8, maxLength: 9, format: "XXX XX XX XX", startsWithZero: false },
+  CH: { name: "Switzerland", code: "+41", flag: "🇨🇭", minLength: 9, maxLength: 9, format: "XX XXX XX XX", startsWithZero: false },
+  SE: { name: "Sweden", code: "+46", flag: "🇸🇪", minLength: 8, maxLength: 9, format: "XX XXX XX XX", startsWithZero: false },
+  NO: { name: "Norway", code: "+47", flag: "🇳🇴", minLength: 8, maxLength: 8, format: "XXX XX XXX", startsWithZero: false },
+  DK: { name: "Denmark", code: "+45", flag: "🇩🇰", minLength: 8, maxLength: 8, format: "XX XX XX XX", startsWithZero: false },
+  FI: { name: "Finland", code: "+358", flag: "🇫🇮", minLength: 9, maxLength: 10, format: "XXX XXX XXX", startsWithZero: false },
+  IE: { name: "Ireland", code: "+353", flag: "🇮🇪", minLength: 9, maxLength: 9, format: "XX XXX XXXX", startsWithZero: false },
+  PT: { name: "Portugal", code: "+351", flag: "🇵🇹", minLength: 9, maxLength: 9, format: "XXX XXX XXX", startsWithZero: false },
+  AT: { name: "Austria", code: "+43", flag: "🇦🇹", minLength: 10, maxLength: 10, format: "XXX XXXXXXX", startsWithZero: false },
+  PL: { name: "Poland", code: "+48", flag: "🇵🇱", minLength: 9, maxLength: 9, format: "XXX XXX XXX", startsWithZero: false },
+  CZ: { name: "Czech Republic", code: "+420", flag: "🇨🇿", minLength: 9, maxLength: 9, format: "XXX XXX XXX", startsWithZero: false },
+  HU: { name: "Hungary", code: "+36", flag: "🇭🇺", minLength: 9, maxLength: 9, format: "XX XXX XXXX", startsWithZero: false },
+  GR: { name: "Greece", code: "+30", flag: "🇬🇷", minLength: 10, maxLength: 10, format: "XXX XXX XXXX", startsWithZero: false },
+  TR: { name: "Turkey", code: "+90", flag: "🇹🇷", minLength: 10, maxLength: 10, format: "XXX XXX XX XX", startsWithZero: false },
+  RU: { name: "Russia", code: "+7", flag: "🇷🇺", minLength: 10, maxLength: 10, format: "XXX XXX XX XX", startsWithZero: false },
+  JP: { name: "Japan", code: "+81", flag: "🇯🇵", minLength: 10, maxLength: 11, format: "XX XXXX XXXX", startsWithZero: false },
+  KR: { name: "South Korea", code: "+82", flag: "🇰🇷", minLength: 10, maxLength: 11, format: "X XXXX XXXX", startsWithZero: false },
+  CN: { name: "China", code: "+86", flag: "🇨🇳", minLength: 11, maxLength: 11, format: "XXX XXXX XXXX", startsWithZero: false },
+  IN: { name: "India", code: "+91", flag: "🇮🇳", minLength: 10, maxLength: 10, format: "XXXXX XXXXX", startsWithZero: false },
+  BR: { name: "Brazil", code: "+55", flag: "🇧🇷", minLength: 11, maxLength: 11, format: "XX XXXXX XXXX", startsWithZero: false },
+  MX: { name: "Mexico", code: "+52", flag: "🇲🇽", minLength: 10, maxLength: 10, format: "XXX XXX XXXX", startsWithZero: false },
+  AR: { name: "Argentina", code: "+54", flag: "🇦🇷", minLength: 10, maxLength: 10, format: "XXX XXX XXXX", startsWithZero: false },
+  ZA: { name: "South Africa", code: "+27", flag: "🇿🇦", minLength: 9, maxLength: 9, format: "XX XXX XXXX", startsWithZero: false },
+  EG: { name: "Egypt", code: "+20", flag: "🇪🇬", minLength: 10, maxLength: 10, format: "XXX XXX XXXX", startsWithZero: false },
+  NG: { name: "Nigeria", code: "+234", flag: "🇳🇬", minLength: 10, maxLength: 11, format: "XXX XXX XXXX", startsWithZero: false },
+  KE: { name: "Kenya", code: "+254", flag: "🇰🇪", minLength: 9, maxLength: 9, format: "XXX XXX XXX", startsWithZero: false },
+  AE: { name: "United Arab Emirates", code: "+971", flag: "🇦🇪", minLength: 9, maxLength: 9, format: "XX XXX XXXX", startsWithZero: false },
+  SA: { name: "Saudi Arabia", code: "+966", flag: "🇸🇦", minLength: 9, maxLength: 9, format: "XX XXX XXXX", startsWithZero: false },
+  TH: { name: "Thailand", code: "+66", flag: "🇹🇭", minLength: 9, maxLength: 10, format: "XX XXX XXXX", startsWithZero: false },
+  SG: { name: "Singapore", code: "+65", flag: "🇸🇬", minLength: 8, maxLength: 8, format: "XXXX XXXX", startsWithZero: false },
+  MY: { name: "Malaysia", code: "+60", flag: "🇲🇾", minLength: 9, maxLength: 10, format: "X XXXX XXXX", startsWithZero: false },
+  ID: { name: "Indonesia", code: "+62", flag: "🇮🇩", minLength: 10, maxLength: 12, format: "XXXX XXXX XXX", startsWithZero: false },
+  PH: { name: "Philippines", code: "+63", flag: "🇵🇭", minLength: 10, maxLength: 10, format: "XXX XXX XXXX", startsWithZero: false },
 };
 
 const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
@@ -40,7 +84,13 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       onValidationChange,
       onCountryChange,
       defaultCountry = "AU",
-      countries = ["AU", "CA", "GB", "US"],
+      countries = [
+        "AU", "CA", "GB", "US", "NZ", "DE", "FR", "IT", "ES", "NL", 
+        "BE", "CH", "SE", "NO", "DK", "FI", "IE", "PT", "AT", "PL", 
+        "CZ", "HU", "GR", "TR", "RU", "JP", "KR", "CN", "IN", "BR", 
+        "MX", "AR", "ZA", "EG", "NG", "KE", "AE", "SA", "TH", "SG", 
+        "MY", "ID", "PH"
+      ],
       placeholder = "0412 345 678",
       className,
       showValidationCriteria = true,
@@ -72,22 +122,13 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       const countryInfo = countryData[country];
       const isEmpty = !phoneValue || phoneValue.trim() === "" || cleanNumber.length === 0;
       
-      // For Australian numbers, check if it follows 04XX pattern (starts with 04)
-      const followsFormat = isEmpty ? false : (
-        country === 'AU' 
-          ? cleanNumber.startsWith('04')
-          : country === 'GB'
-          ? cleanNumber.startsWith('0')
-          : !cleanNumber.startsWith('0')
-      );
-      
       return {
         startsCorrectly: isEmpty ? false : (
           countryInfo.startsWithZero 
             ? cleanNumber.startsWith('0')
             : !cleanNumber.startsWith('0')
         ),
-        followsFormat: followsFormat,
+        followsFormat: !isEmpty, // Simplified - just check if not empty for now
         correctLength: isEmpty ? false : (cleanNumber.length >= countryInfo.minLength && cleanNumber.length <= countryInfo.maxLength),
         notEmpty: phoneValue && phoneValue.trim() !== ""
       };
@@ -122,14 +163,6 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       
       if (!countryInfo.startsWithZero && cleanNumber.startsWith('0')) {
         const errorMsg = `${countryInfo.name} phone numbers should not start with 0`;
-        setInternalError(errorMsg);
-        onValidationChange?.(false, errorMsg);
-        return false;
-      }
-      
-      // Check for specific format (e.g., Australian mobile must start with 04)
-      if (country === 'AU' && !cleanNumber.startsWith('04')) {
-        const errorMsg = "Australian mobile numbers must start with 04";
         setInternalError(errorMsg);
         onValidationChange?.(false, errorMsg);
         return false;

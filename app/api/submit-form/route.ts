@@ -372,7 +372,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         PIC_Contact_Phone: accidentData.PIC_Contact_Phone || accidentData.pilotContactPhone || '',
         PIC_Email: accidentData.PIC_Email || '',
         Date_of_Birth: formatDateOnly(accidentData.Date_of_Birth),
-        Date_5: formatDateOnly(accidentData.Date_5 || accidentData.Date_of_Birth),
+        Date_5: formatDateOnlyForCRM(accidentData.Date_5 || accidentData.Date_of_Birth),
         PIC_Member_Number: accidentData.PIC_Member_Number || '',
         PIC_Last_Name: accidentData.PIC_Last_Name || '',
 

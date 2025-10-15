@@ -5,6 +5,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { SelectWithOther } from "@/components/ui/SelectWithOther";
+import SearchableDropdown from "@/components/ui/SearchableDropdown";
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Textarea } from "@/components/ui/Textarea";
@@ -13,12 +14,20 @@ import { Button } from "@/components/ui/Button";
 import { FileUpload } from "@/components/ui/FileUpload";
 import MapPicker from "@/components/ui/MapPicker";
 import { AccidentFormData } from "@/types/forms";
-import { validationPatterns, validationMessages, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
+import { validationPatterns, validationMessages, validateEmail } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import AccidentPreview from "@/components/forms/AccidentPreview";
 import axios from "axios";
 import Link from "next/link";
 import "./wizard.css";
+
+// Import CountryCode type for phone country state
+type CountryCode = 
+  | "AU" | "CA" | "GB" | "US" | "NZ" | "DE" | "FR" | "IT" | "ES" | "NL" 
+  | "BE" | "CH" | "SE" | "NO" | "DK" | "FI" | "IE" | "PT" | "AT" | "PL" 
+  | "CZ" | "HU" | "GR" | "TR" | "RU" | "JP" | "KR" | "CN" | "IN" | "BR" 
+  | "MX" | "AR" | "ZA" | "EG" | "NG" | "KE" | "AE" | "SA" | "TH" | "SG" 
+  | "MY" | "ID" | "PH";
 
 // Registration prefix options
 const registrationPrefixOptions = [
@@ -135,10 +144,167 @@ const typeOfOperationOptions = [
 ];
 
 const flightTrainingSchoolOptions = [
-  { value: "Adelaide Biplanes", label: "Adelaide Biplanes" },
-  { value: "Adelaide Biplanes - Weightshift (Group B)", label: "Adelaide Biplanes - Weightshift (Group B)" },
-  { value: "Other", label: "Other" },
-  // Add more options as needed
+  "Please Select -",
+  "Adelaide Biplanes",
+  "Adelaide Biplanes - Weightshift (Group B)",
+  "Adelaide Soaring Club Inc",
+  "Advanced Aviation Training",
+  "Adventure Flight Training - Moama",
+  "Aerchute Industries",
+  "Aerofloat",
+  "Aerohunter Flight Training",
+  "AeroLINQ",
+  "AeroLINQ - Watsbridge",
+  "Agnes Water Air Services",
+  "Air Escape",
+  "Airspeed Aviation",
+  "Airsports Flying School",
+  "Airwego",
+  "Airwings Flight Centre",
+  "Alpine Aviation Australia",
+  "Ariel Aviation",
+  "Ausflight Pty Ltd",
+  "Avid Aviation",
+  "Ayr Flying Services",
+  "Balantree Aviation",
+  "Ballarat Aero Club",
+  "Ballarat Flight Training",
+  "Batchelor Flight Training",
+  "Benalla Aero Club",
+  "Benalla Recreational Flying",
+  "Bendigo Flying Club",
+  "Bendigo Recreational Aviation School - Comfly",
+  "BJs Aviation",
+  "Blue Shed Aviation",
+  "Blue Shed Aviation - Temora",
+  "Blue Sky Flight Training",
+  "Blue Sky Flight Training (West Sale)",
+  "Bob Harris' Flying School",
+  "Bunbury Aero Club",
+  "Bunbury Aero Club - Manjimup",
+  "Busselton Aero Club",
+  "Caboolture Flight School",
+  "Caboolture Recreational Aviation",
+  "Classic Air",
+  "Clement's Flying School",
+  "Cloud Dancer Pilot Training",
+  "Coffs Harbour & District Aero Club",
+  "Colac Flight Training",
+  "Corowa Recreational Flying",
+  "Cory Air – Coonawara",
+  "Cowra Aero Club - Forbes",
+  "Cowra And District Aero Club Inc",
+  "Dave's Flying School",
+  "Eagle Air Pty Ltd",
+  "Eagle Air Pty Ltd - Boonah",
+  "EAS Flight Training",
+  "Echuca Moama School of Aviation Pty Ltd",
+  "Edge Aerospace",
+  "Edge Aerospace - Riddells Creek",
+  "Flight Testing",
+  "Flightscope Aviation",
+  "Fly Illawarra",
+  "Fly Now Redcliffe",
+  "Fly Riverina - Cootamundra",
+  "Fly Riverina - Deniliquin",
+  "Flying with Grace",
+  "FN Aviation",
+  "Gladstone Flying Training & Aircharter",
+  "GoFly Aviation",
+  "Gold Coast Sports Flying Training",
+  "Golden Plains Aviation Pty Ltd",
+  "Goolwa Air Flight Training",
+  "Goulburn Aviation Pty Ltd",
+  "Goulburn Flight Training Centre",
+  "Granite Field Flight Training",
+  "Griffith Aero Club",
+  "Griffith Aero Club - Hillston",
+  "Hastings District Flying Club",
+  "Hawkesbury Powered Parachute Centre",
+  "Howatharra Aviation",
+  "JDH Aviation Pty Ltd T/A Recreational Pilots Academy",
+  "John McBryde - Recreational Flying",
+  "Kangawallaafox Flight School",
+  "KB's Flying School",
+  "Knowsley Airpark",
+  "Kyneton Aero Club",
+  "Lake Keepit Soaring Club",
+  "Latrobe Valley Aero Club",
+  "Learn 2 Fly Bathurst",
+  "Learn 2 Fly Canberra",
+  "Lilydale Flying School",
+  "Lite Air Flying Training",
+  "Lone Eagle Flying School",
+  "Matts Flying",
+  "Melbourne West Flight Training",
+  "Mid Coast Flying",
+  "Midlands Flying School",
+  "Murray Bridge Light Aircraft Flying School",
+  "Myrup Flight Training",
+  "Namoi Aviation",
+  "Namoi Aviation - Gunnedah",
+  "New England Aviation Flight Training School",
+  "Northern Rivers Aero Club",
+  "NT Flight Training",
+  "Oasis Flight Training Pty Ltd",
+  "Oasis Flight Training Pty Ltd - Swan Hill",
+  "Orange Flight Training",
+  "Parkes Recreational Aviation Centre",
+  "Pathfinder Aviation",
+  "Peace Aviation",
+  "Peace Aviation - Bundaberg",
+  "Peninsula Aero Club",
+  "Pro-Sky Flight Training",
+  "Pro-sky Maryborough",
+  "Pro-Sky Port Augusta",
+  "RAMAIR Flying Services",
+  "Recreational Aviation Newcastle",
+  "Riverina Wings Flight Training",
+  "Riverland Flight Training",
+  "Riverland Flight Training Wentworth",
+  "Riviera Aeronautics",
+  "Rockhampton Sport Aviation",
+  "Rotor-Sport Australia",
+  "Royal Aero Club of Western Australia",
+  "Sarge's Light Sport Aviation",
+  "Secure Air Flight Training",
+  "SFA Recreational Aviation",
+  "SkyEast Aviation",
+  "Skyflyte ULA Pty Ltd - Devonport",
+  "Skyflyte ULA Pty Ltd",
+  "Skywise Microlights",
+  "Smartair",
+  "Spencer Gulf Flight Training Pty Ltd",
+  "Sport Aviation Flight Academy",
+  "SportAviation Pty Ltd",
+  "Sportflly Aviation",
+  "Sportsflite Australia",
+  "Stick 'n Rudder",
+  "Strike Aviation Training",
+  "Sunshine Coast Aero Club Queensland Ltd",
+  "Sunshine Coast Sports Flying Training",
+  "Surf Coast Flying School",
+  "Sydney Recreational Flying Club - Taree",
+  "Sydney Recreational Flying Club Inc",
+  "The Recreational Flying Company",
+  "Tooradin Flying School",
+  "Topfun Aviation - Greenside",
+  "Topfun Aviation - Moora",
+  "Townsville Sport Aviation",
+  "Victory Flight Training",
+  "Wagga Air Centre",
+  "Wagga Bike Tyres - Aviation Division",
+  "Walters Aviation",
+  "Warrnambool Flight Training",
+  "Watson Fly",
+  "West Coast Aviation",
+  "Westside Aviation",
+  "White Star Aviation Pty Ltd",
+  "Willflyhire",
+  "Wings Out West",
+  "Wrighton Aviation",
+  "Yarra Valley Flight Training",
+  "YET TO BE DETERMINED"
 ];
 
 const phaseOfFlightOptions = [
@@ -339,10 +505,10 @@ export default function AccidentForm() {
 
   const [contactPhone, setContactPhone] = useState("");
   const [contactPhoneError, setContactPhoneError] = useState("");
-  const [contactPhoneCountry, setContactPhoneCountry] = useState<"AU" | "CA" | "GB" | "US">("AU");
+  const [contactPhoneCountry, setContactPhoneCountry] = useState<CountryCode>("AU");
   const [pilotContactPhone, setPilotContactPhone] = useState("");
   const [pilotContactPhoneError, setPilotContactPhoneError] = useState("");
-  const [pilotContactPhoneCountry, setPilotContactPhoneCountry] = useState<"AU" | "CA" | "GB" | "US">("AU");
+  const [pilotContactPhoneCountry, setPilotContactPhoneCountry] = useState<CountryCode>("AU");
   const [occurrenceDate, setOccurrenceDate] = useState("");
   const [occurrenceDateError, setOccurrenceDateError] = useState("");
   const [occurrenceTime, setOccurrenceTime] = useState("");
@@ -437,6 +603,14 @@ export default function AccidentForm() {
   const selectedFlightSchool = watch("Name_of_Flight_Training_School");
   const selectedRelativeTrack = watch("Relative_Track");
   const selectedAlertReceived = watch("Alert_Received");
+  
+  // Watch the incident type fields for conditional sections
+  const didInvolveNearMiss = watch("Involve_near_miss_with_another_aircraft") === "Yes";
+  const didInvolveBirdAnimalStrike = watch("Bird_or_Animal_Strike") === "Yes";
+  const selectedDamageToAircraft = watch("Damage_to_aircraft");
+  
+  // Watch ATSB reportable status for conditional IRM notification
+  const selectedReportableStatus = watch("ATSB_reportable_status");
   
   // Watch registration fields for aircraft lookup
   const registrationPrefix = watch("Registration_number");
@@ -677,23 +851,10 @@ export default function AccidentForm() {
         "emailAddress"
       ];
       
-      // Validate contact phone with country-specific rules
+      // Validate contact phone - PhoneInput component handles its own validation
       if (!contactPhone || contactPhone.trim() === "") {
         setContactPhoneError("Contact Phone is required");
         hasError = true;
-      } else if (!validatePhoneNumber(contactPhone, contactPhoneCountry)) {
-        setContactPhoneError(getPhoneValidationMessage(contactPhoneCountry));
-        hasError = true;
-      }
-
-      // Validate Pilot in Command contact phone (if section is visible)
-      if (selectedRole !== "Pilot in Command") {
-        if (pilotContactPhone && pilotContactPhone.trim() !== "") {
-          if (!validatePhoneNumber(pilotContactPhone, pilotContactPhoneCountry)) {
-            setPilotContactPhoneError(getPhoneValidationMessage(pilotContactPhoneCountry));
-            hasError = true;
-          }
-        }
       }
     } else if (currentStep === 2) {
       // Step 2: Occurrence Information validation
@@ -712,6 +873,11 @@ export default function AccidentForm() {
         "Wind_gusting",
         "Personal_Locator_Beacon_carried"
       ];
+      
+      // Remove description field from validation if damage is "Nil"
+      if (selectedDamageToAircraft === "Nil") {
+        fieldsToValidate = fieldsToValidate.filter(field => field !== "Description_of_damage_to_aircraft");
+      }
       
       // Check date and time separately since they're not in the form
       if (!occurrenceDate || occurrenceDate.trim() === "") {
@@ -1250,7 +1416,7 @@ export default function AccidentForm() {
                       }}
                       onCountryChange={(country) => setContactPhoneCountry(country)}
                       defaultCountry="AU"
-                      countries={["AU", "CA", "GB"]}
+                      countries={["AU", "CA", "GB", "US", "NZ", "DE", "FR", "IT", "ES", "NL", "BE", "CH", "SE", "NO", "DK", "FI", "IE", "PT", "AT", "PL", "CZ", "HU", "GR", "TR", "RU", "JP", "KR", "CN", "IN", "BR", "MX", "AR", "ZA", "EG", "NG", "KE", "AE", "SA", "TH", "SG", "MY", "ID", "PH"]}
                       error={contactPhoneError}
                     />
                   </div>
@@ -1482,7 +1648,7 @@ export default function AccidentForm() {
                         }}
                         onCountryChange={(country) => setPilotContactPhoneCountry(country)}
                         defaultCountry="AU"
-                        countries={["AU", "CA", "GB"]}
+                        countries={["AU", "CA", "GB", "US", "NZ", "DE", "FR", "IT", "ES", "NL", "BE", "CH", "SE", "NO", "DK", "FI", "IE", "PT", "AT", "PL", "CZ", "HU", "GR", "TR", "RU", "JP", "KR", "CN", "IN", "BR", "MX", "AR", "ZA", "EG", "NG", "KE", "AE", "SA", "TH", "SG", "MY", "ID", "PH"]}
                         error={pilotContactPhoneError || errors.PIC_Contact_Phone?.message}
                       />
 
@@ -1866,19 +2032,323 @@ export default function AccidentForm() {
 
 
                   {/* Move these two fields above 'In the vicinity of an aerodrome?' and display side by side */}
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Select
-                      label="Involve near miss with another aircraft?"
-                      options={yesNoOptions}
-                      error={errors.Involve_near_miss_with_another_aircraft?.message}
-                      {...register("Involve_near_miss_with_another_aircraft")}
-                    />
-                    <Select
-                      label="Bird or animal Strike?"
-                      options={yesNoOptions}
-                      error={errors.Bird_or_Animal_Strike?.message}
-                      {...register("Bird_or_Animal_Strike")}
-                    />
+                  <div className="mt-6 space-y-6">
+                    <div>
+                      <Select
+                        label="Involve near miss with another aircraft?"
+                        options={yesNoOptions}
+                        error={errors.Involve_near_miss_with_another_aircraft?.message}
+                        {...register("Involve_near_miss_with_another_aircraft")}
+                      />
+
+                      {/* Near Miss Section - Conditional */}
+                      {didInvolveNearMiss && (
+                        <div className="mt-6 border-b border-gray-200 pb-8">
+                          <h2 className="text-xl font-semibold text-gray-900 mb-6">Near Collision with another aircraft</h2>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Input
+                              label="Second Aircraft Registration"
+                              placeholder="10-1122 or E13-1199"
+                              maxLength={8}
+                              error={errors.Second_aircraft_registration?.message}
+                              onKeyPress={(e) => {
+                                // Only allow alphanumeric and hyphen
+                                if (!/[a-zA-Z0-9-]/.test(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              {...register("Second_aircraft_registration", {
+                                pattern: {
+                                  value: validationPatterns.aircraftRegistration,
+                                  message: validationMessages.aircraftRegistration
+                                },
+                                onChange: (e) => {
+                                  // Remove any non-alphanumeric characters except hyphen
+                                  let value = e.target.value.replace(/[^a-zA-Z0-9-]/g, '');
+                                  // Convert to uppercase
+                                  value = value.toUpperCase();
+                                  // Ensure only one hyphen
+                                  const parts = value.split('-');
+                                  if (parts.length > 2) {
+                                    value = parts[0] + '-' + parts.slice(1).join('');
+                                  }
+                                  e.target.value = value;
+                                }
+                              })}
+                            />
+
+                            <Input
+                              label="Second Aircraft Manufacturer"
+                              placeholder="abc-123"
+                              maxLength={16}
+                              error={errors.Second_Aircraft_Manufacturer?.message}
+                              {...register("Second_Aircraft_Manufacturer", {
+                                pattern: {
+                                  value: validationPatterns.alphanumericDashSpace,
+                                  message: validationMessages.minLength
+                                },
+                                minLength: {
+                                  value: 3,
+                                  message: validationMessages.minLength
+                                }
+                              })}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <Input
+                              label="Second Aircraft Model"
+                              placeholder="abc-123"
+                              maxLength={16}
+                              error={errors.Second_Aircraft_Model?.message}
+                              {...register("Second_Aircraft_Model", {
+                                pattern: {
+                                  value: validationPatterns.alphanumericDashSpace,
+                                  message: validationMessages.minLength
+                                },
+                                minLength: {
+                                  value: 3,
+                                  message: validationMessages.minLength
+                                }
+                              })}
+                            />
+
+                            <Input
+                              label="Horizontal Proximity"
+                              type="text"
+                              placeholder="e.g., 150"
+                              maxLength={10}
+                              error={errors.Horizontal_Proximity?.message}
+                              onKeyPress={(e) => {
+                                // Only allow numbers and decimal point
+                                if (!/[0-9.]/.test(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              {...register("Horizontal_Proximity", {
+                                pattern: {
+                                  value: validationPatterns.decimalNumber,
+                                  message: validationMessages.minLength
+                                },
+                                onChange: (e) => {
+                                  // Remove any non-numeric characters except decimal point
+                                  let value = e.target.value.replace(/[^0-9.]/g, '');
+                                  // Prevent multiple decimal points
+                                  const parts = value.split('.');
+                                  if (parts.length > 2) {
+                                    value = parts[0] + '.' + parts.slice(1).join('');
+                                  }
+                                  e.target.value = value;
+                                }
+                              })}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <Select
+                              label="Horizontal Proximity Unit"
+                              options={proximityUnitOptions}
+                              error={errors.Horizontal_Proximity_Unit?.message}
+                              {...register("Horizontal_Proximity_Unit")}
+                            />
+
+                            <Input
+                              label="Vertical Proximity"
+                              type="text"
+                              placeholder="e.g., 0.5"
+                              maxLength={10}
+                              error={errors.Vertical_Proximity?.message}
+                              onKeyPress={(e) => {
+                                // Only allow numbers and decimal point
+                                if (!/[0-9.]/.test(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              {...register("Vertical_Proximity", {
+                                pattern: {
+                                  value: validationPatterns.decimalNumber,
+                                  message: validationMessages.minLength
+                                },
+                                onChange: (e) => {
+                                  // Remove any non-numeric characters except decimal point
+                                  let value = e.target.value.replace(/[^0-9.]/g, '');
+                                  // Prevent multiple decimal points
+                                  const parts = value.split('.');
+                                  if (parts.length > 2) {
+                                    value = parts[0] + '.' + parts.slice(1).join('');
+                                  }
+                                  e.target.value = value;
+                                }
+                              })}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <Select
+                              label="Vertical Proximity Unit"
+                              options={verticalProximityUnitOptions}
+                              error={errors.Vertical_Proximity_Unit?.message}
+                              {...register("Vertical_Proximity_Unit")}
+                            />
+
+                            <div>
+                              <Select
+                                label="Relative Track"
+                                options={relativeTrackOptions}
+                                error={errors.Relative_Track?.message}
+                                {...register("Relative_Track")}
+                              />
+
+                              {/* Custom Relative Track Input - Shows when 'Other' is selected */}
+                              {selectedRelativeTrack === "Other" && (
+                                <div className="mt-3">
+                                  <Input
+                                    label="Please specify relative track"
+                                    placeholder="e.g., Parallel"
+                                    maxLength={50}
+                                    error={errors.customRelativeTrack?.message}
+                                    {...register("customRelativeTrack", {
+                                      minLength: {
+                                        value: 2,
+                                        message: "Relative track must be at least 2 characters"
+                                      },
+                                      maxLength: {
+                                        value: 50,
+                                        message: "Relative track cannot exceed 50 characters"
+                                      },
+                                      pattern: {
+                                        value: /^[a-zA-Z\s\-.']+$/,
+                                        message: "Only letters, spaces, hyphens, periods and apostrophes are allowed"
+                                      }
+                                    })}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <Select
+                              label="Avoidance Manoeuvre Needed?"
+                              options={avoidanceManoeuvreOptions}
+                              error={errors.Avoidance_manoeuvre_needed?.message}
+                              {...register("Avoidance_manoeuvre_needed")}
+                            />
+
+                            <div>
+                              <Select
+                                label="Alert Received"
+                                options={alertReceivedOptions}
+                                error={errors.Alert_Received?.message}
+                                {...register("Alert_Received")}
+                              />
+
+                              {/* Custom Alert Received Input - Shows when 'Other' is selected */}
+                              {selectedAlertReceived === "Other" && (
+                                <div className="mt-3">
+                                  <Input
+                                    label="Please specify alert type"
+                                    placeholder="e.g., Visual warning"
+                                    maxLength={50}
+                                    error={errors.customAlertReceived?.message}
+                                    {...register("customAlertReceived", {
+                                      minLength: {
+                                        value: 2,
+                                        message: "Alert type must be at least 2 characters"
+                                      },
+                                      maxLength: {
+                                        value: 50,
+                                        message: "Alert type cannot exceed 50 characters"
+                                      },
+                                      pattern: {
+                                        value: /^[a-zA-Z\s\-.']+$/,
+                                        message: "Only letters, spaces, hyphens, periods and apostrophes are allowed"
+                                      }
+                                    })}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <Select
+                        label="Bird or animal Strike?"
+                        options={yesNoOptions}
+                        error={errors.Bird_or_Animal_Strike?.message}
+                        {...register("Bird_or_Animal_Strike")}
+                      />
+
+                      {/* Bird/Animal Strike Section - Conditional */}
+                      {didInvolveBirdAnimalStrike && (
+                        <div className="mt-6 border-b border-gray-200 pb-8">
+                          <h2 className="text-xl font-semibold text-gray-900 mb-6">Bird/animal strike</h2>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Select
+                              label="Type of Strike"
+                              options={strikeTypeOptions}
+                              error={errors.Type_of_strike?.message}
+                              {...register("Type_of_strike")}
+                            />
+
+                            <Select
+                              label="Size"
+                              options={sizeOptions}
+                              error={errors.Size?.message}
+                              {...register("Size")}
+                            />
+                          </div>
+
+                          <div className="mt-6">
+                            <Input
+                              label="Species"
+                              placeholder="Enter species name"
+                              maxLength={50}
+                              error={errors.Species?.message}
+                              onKeyPress={(e) => {
+                                // Only allow letters (a-z, A-Z) and spaces
+                                if (!/[a-zA-Z ]/.test(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              {...register("Species", {
+                                pattern: {
+                                  value: validationPatterns.name,
+                                  message: "Only letters and spaces are allowed"
+                                },
+                                minLength: { value: 2, message: validationMessages.minLength },
+                                onChange: (e) => {
+                                  // Remove any non-letter/space characters and convert to title case
+                                  let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
+                                  e.target.value = toTitleCase(value);
+                                }
+                              })}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <Select
+                              label="Number (approx)"
+                              options={numberOptions}
+                              error={errors.Number_approx?.message}
+                              {...register("Number_approx")}
+                            />
+
+                            <Select
+                              label="Number Struck (approx)"
+                              options={numberOptions}
+                              error={errors.Number_struck_approx?.message}
+                              {...register("Number_struck_approx")}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="mt-6">
@@ -1932,26 +2402,28 @@ export default function AccidentForm() {
                     />
                   </div>
 
-                  <div className="mt-6">
-                    <Textarea
-                      label="Description of Damage to Aircraft"
-                      required
-                      rows={3}
-                      maxLength={255}
-                      error={errors.Description_of_damage_to_aircraft?.message}
-                      {...register("Description_of_damage_to_aircraft", {
-                        required: "This field cannot be blank.",
-                        minLength: {
-                          value: 4,
-                          message: validationMessages.minLength
-                        },
-                        maxLength: {
-                          value: 255,
-                          message: validationMessages.minLength
-                        }
-                      })}
-                    />
-                  </div>
+                  {selectedDamageToAircraft !== "Nil" && (
+                    <div className="mt-6">
+                      <Textarea
+                        label="Description of Damage to Aircraft"
+                        required
+                        rows={3}
+                        maxLength={255}
+                        error={errors.Description_of_damage_to_aircraft?.message}
+                        {...register("Description_of_damage_to_aircraft", {
+                          required: "This field cannot be blank.",
+                          minLength: {
+                            value: 4,
+                            message: validationMessages.minLength
+                          },
+                          maxLength: {
+                            value: 255,
+                            message: validationMessages.minLength
+                          }
+                        })}
+                      />
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <Input
@@ -2192,7 +2664,20 @@ export default function AccidentForm() {
                             {...register("ATSB_reportable_status", { required: "This field cannot be blank." })}
                             className="mr-2"
                           />
-                          Immediately reportable matter
+                          <span className="flex items-center gap-1">
+                            Immediately reportable matter
+                            <span className="group relative inline-flex items-center">
+                              <svg className="w-8 h-6 text-gray-700 cursor-help py-0.5 px-1 hover:bg-blue-50 rounded-full transition-all" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                              </svg>
+                              <div className="invisible group-hover:visible absolute left-full ml-2 top-1/2 -translate-y-1/2 w-72 md:w-96 bg-white border-2 border-gray-500 rounded-lg shadow-xl z-50">
+                                <div className="bg-gray-600 text-white font-semibold text-sm px-3 py-2 rounded-t-md">Immediately Reportable Matter (IRM)</div>
+                                <div className="text-gray-900 text-sm leading-relaxed p-3">
+                                  An aircraft accident; or a loss of separation standards between two aircraft receiving an air navigation service provider (ANSP) separation service; or an occurrence resulting in serious damage to property outside the aircraft.
+                                </div>
+                              </div>
+                            </span>
+                          </span>
                         </label>
                         <label className="flex items-center">
                           <input
@@ -2201,7 +2686,20 @@ export default function AccidentForm() {
                             {...register("ATSB_reportable_status", { required: "This field cannot be blank." })}
                             className="mr-2"
                           />
-                          Routinely reportable matter
+                          <span className="flex items-center gap-1">
+                            Routinely reportable matter
+                            <span className="group relative inline-flex items-center">
+                              <svg className="w-8 h-6 text-gray-700 cursor-help py-0.5 px-1 hover:bg-blue-50 rounded-full transition-all" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                              </svg>
+                              <div className="invisible group-hover:visible absolute left-full ml-2 top-1/2 -translate-y-1/2 w-72 md:w-96 bg-white border-2 border-gray-500 rounded-lg shadow-xl z-50">
+                                <div className="bg-gray-600 text-white font-semibold text-sm px-3 py-2 rounded-t-md">Routinely Reportable Matter (RRM)</div>
+                                <div className="text-gray-700 text-sm leading-relaxed p-3">
+                                  A routinely reportable matter is a transport safety occurrence that has not had a serious outcome and does not require an immediate report, but where transport safety was affected or could have been affected.
+                                </div>
+                              </div>
+                            </span>
+                          </span>
                         </label>
                       </div>
                       {errors.ATSB_reportable_status && (
@@ -2210,350 +2708,18 @@ export default function AccidentForm() {
                     </fieldset>
                   </div>
 
-                  <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-red-700 font-semibold text-sm">
-                      Immediately reportable matters are required to be notified to RAAus via phone as soon as practicable.
-                      RAAus can be contacted on <a href="tel:+61262804700" className="text-red-700 underline">02 6280 4700</a>.
-                    </p>
-                  </div>
+                  {selectedReportableStatus === "IRM" && (
+                    <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-red-700 font-semibold text-sm">
+                        Immediately reportable matters are required to be notified to RAAus via phone as soon as practicable.
+                        RAAus can be contacted on <a href="tel:+61262804700" className="text-red-700 underline">02 6280 4700</a>.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
 
-                
-                {/* Special Incident Types - Checkbox Selection */}
-                <div className="bg-blue-50 p-6 !pb-10 mb-14">
-                  <h3 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Special Incident Types
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">Select all that apply to this occurrence:</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white rounded-md p-3 pb-1 hover:border-blue-200 transition-colors">
-                      <Checkbox
-                        label="Involve near miss with another aircraft"
-                        checked={didInvolveNearMiss}
-                        onCheckedChange={(checked) => {
-                          setDidInvolveNearMiss(checked);
-                          // Also update the form value
-                          setValue("Involve_near_miss_with_another_aircraft", checked);
-                        }}
-                      />
-                    </div>
 
-                    <div className="bg-white rounded-md p-3 pb-1 hover:border-blue-200 transition-colors">
-                      <Checkbox
-                        label="Bird or Animal Strike"
-                        checked={didInvolveBirdAnimalStrike}
-                        onCheckedChange={(checked) => {
-                          setDidInvolveBirdAnimalStrike(checked);
-                          // Also update the form value
-                          setValue("Bird_or_Animal_Strike", checked);
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bird/Animal Strike Section - Conditional */}
-                {didInvolveBirdAnimalStrike && (
-                  <div className="border-b border-gray-200 pb-8">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-6">Bird/animal strike</h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Select
-                        label="Type of Strike"
-                        options={strikeTypeOptions}
-                        error={errors.Type_of_strike?.message}
-                        {...register("Type_of_strike")}
-                      />
-
-                      <Select
-                        label="Size"
-                        options={sizeOptions}
-                        error={errors.Size?.message}
-                        {...register("Size")}
-                      />
-                    </div>
-
-                    <div className="mt-6">
-                      <Input
-                        label="Species"
-                        placeholder="Enter species name"
-                        maxLength={50}
-                        error={errors.Species?.message}
-                        onKeyPress={(e) => {
-                          // Only allow letters (a-z, A-Z) and spaces
-                          if (!/[a-zA-Z ]/.test(e.key)) {
-                            e.preventDefault();
-                          }
-                        }}
-                        {...register("Species", {
-                          pattern: {
-                            value: validationPatterns.name,
-                            message: "Only letters and spaces are allowed"
-                          },
-                          minLength: { value: 2, message: validationMessages.minLength },
-                          onChange: (e) => {
-                            // Remove any non-letter/space characters and convert to title case
-                            let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
-                            e.target.value = toTitleCase(value);
-                          }
-                        })}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                      <Select
-                        label="Number (approx)"
-                        options={numberOptions}
-                        error={errors.Number_approx?.message}
-                        {...register("Number_approx")}
-                      />
-
-                      <Select
-                        label="Number Struck (approx)"
-                        options={numberOptions}
-                        error={errors.Number_struck_approx?.message}
-                        {...register("Number_struck_approx")}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Near Miss Section - Conditional */}
-                {didInvolveNearMiss && (
-                  <div className="border-b border-gray-200 pb-8">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-6">Near Collision with another aircraft</h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Input
-                        label="Second Aircraft Registration"
-                        placeholder="10-1122 or E13-1199"
-                        maxLength={8}
-                        error={errors.Second_aircraft_registration?.message}
-                        onKeyPress={(e) => {
-                          // Only allow alphanumeric and hyphen
-                          if (!/[a-zA-Z0-9-]/.test(e.key)) {
-                            e.preventDefault();
-                          }
-                        }}
-                        {...register("Second_aircraft_registration", {
-                          pattern: {
-                            value: validationPatterns.aircraftRegistration,
-                            message: validationMessages.aircraftRegistration
-                          },
-                          onChange: (e) => {
-                            // Remove any non-alphanumeric characters except hyphen
-                            let value = e.target.value.replace(/[^a-zA-Z0-9-]/g, '');
-                            // Convert to uppercase
-                            value = value.toUpperCase();
-                            // Ensure only one hyphen
-                            const parts = value.split('-');
-                            if (parts.length > 2) {
-                              value = parts[0] + '-' + parts.slice(1).join('');
-                            }
-                            e.target.value = value;
-                          }
-                        })}
-                      />
-
-                      <Input
-                        label="Second Aircraft Manufacturer"
-                        placeholder="abc-123"
-                        maxLength={16}
-                        error={errors.Second_Aircraft_Manufacturer?.message}
-                        {...register("Second_Aircraft_Manufacturer", {
-                          pattern: {
-                            value: validationPatterns.alphanumericDashSpace,
-                            message: validationMessages.minLength
-                          },
-                          minLength: {
-                            value: 3,
-                            message: validationMessages.minLength
-                          }
-                        })}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                      <Input
-                        label="Second Aircraft Model"
-                        placeholder="abc-123"
-                        maxLength={16}
-                        error={errors.Second_Aircraft_Model?.message}
-                        {...register("Second_Aircraft_Model", {
-                          pattern: {
-                            value: validationPatterns.alphanumericDashSpace,
-                            message: validationMessages.minLength
-                          },
-                          minLength: {
-                            value: 3,
-                            message: validationMessages.minLength
-                          }
-                        })}
-                      />
-
-                      <Input
-                        label="Horizontal Proximity"
-                        type="text"
-                        placeholder="e.g., 150"
-                        maxLength={10}
-                        error={errors.Horizontal_Proximity?.message}
-                        onKeyPress={(e) => {
-                          // Only allow numbers and decimal point
-                          if (!/[0-9.]/.test(e.key)) {
-                            e.preventDefault();
-                          }
-                        }}
-                        {...register("Horizontal_Proximity", {
-                          pattern: {
-                            value: validationPatterns.decimalNumber,
-                            message: validationMessages.minLength
-                          },
-                          onChange: (e) => {
-                            // Remove any non-numeric characters except decimal point
-                            let value = e.target.value.replace(/[^0-9.]/g, '');
-                            // Prevent multiple decimal points
-                            const parts = value.split('.');
-                            if (parts.length > 2) {
-                              value = parts[0] + '.' + parts.slice(1).join('');
-                            }
-                            e.target.value = value;
-                          }
-                        })}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                      <Select
-                        label="Horizontal Proximity Unit"
-                        options={proximityUnitOptions}
-                        error={errors.Horizontal_Proximity_Unit?.message}
-                        {...register("Horizontal_Proximity_Unit")}
-                      />
-
-                      <Input
-                        label="Vertical Proximity"
-                        type="text"
-                        placeholder="e.g., 0.5"
-                        maxLength={10}
-                        error={errors.Vertical_Proximity?.message}
-                        onKeyPress={(e) => {
-                          // Only allow numbers and decimal point
-                          if (!/[0-9.]/.test(e.key)) {
-                            e.preventDefault();
-                          }
-                        }}
-                        {...register("Vertical_Proximity", {
-                          pattern: {
-                            value: validationPatterns.decimalNumber,
-                            message: validationMessages.minLength
-                          },
-                          onChange: (e) => {
-                            // Remove any non-numeric characters except decimal point
-                            let value = e.target.value.replace(/[^0-9.]/g, '');
-                            // Prevent multiple decimal points
-                            const parts = value.split('.');
-                            if (parts.length > 2) {
-                              value = parts[0] + '.' + parts.slice(1).join('');
-                            }
-                            e.target.value = value;
-                          }
-                        })}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                      <Select
-                        label="Vertical Proximity Unit"
-                        options={verticalProximityUnitOptions}
-                        error={errors.Vertical_Proximity_Unit?.message}
-                        {...register("Vertical_Proximity_Unit")}
-                      />
-
-                      <div>
-                        <Select
-                          label="Relative Track"
-                          options={relativeTrackOptions}
-                          error={errors.Relative_Track?.message}
-                          {...register("Relative_Track")}
-                        />
-                        
-                        {/* Custom Relative Track Input - Shows when 'Other' is selected */}
-                        {selectedRelativeTrack === "Other" && (
-                          <div className="mt-3">
-                            <Input
-                              label="Please specify relative track"
-                              placeholder="e.g., Parallel"
-                              maxLength={50}
-                              error={errors.customRelativeTrack?.message}
-                              {...register("customRelativeTrack", {
-                                minLength: {
-                                  value: 2,
-                                  message: "Relative track must be at least 2 characters"
-                                },
-                                maxLength: {
-                                  value: 50,
-                                  message: "Relative track cannot exceed 50 characters"
-                                },
-                                pattern: {
-                                  value: /^[a-zA-Z\s\-.']+$/,
-                                  message: "Only letters, spaces, hyphens, periods and apostrophes are allowed"
-                                }
-                              })}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                      <Select
-                        label="Avoidance Manoeuvre Needed?"
-                        options={avoidanceManoeuvreOptions}
-                        error={errors.Avoidance_manoeuvre_needed?.message}
-                        {...register("Avoidance_manoeuvre_needed")}
-                      />
-
-                      <div>
-                        <Select
-                          label="Alert Received"
-                          options={alertReceivedOptions}
-                          error={errors.Alert_Received?.message}
-                          {...register("Alert_Received")}
-                        />
-                        
-                        {/* Custom Alert Received Input - Shows when 'Other' is selected */}
-                        {selectedAlertReceived === "Other" && (
-                          <div className="mt-3">
-                            <Input
-                              label="Please specify alert type"
-                              placeholder="e.g., Visual warning"
-                              maxLength={50}
-                              error={errors.customAlertReceived?.message}
-                              {...register("customAlertReceived", {
-                                minLength: {
-                                  value: 2,
-                                  message: "Alert type must be at least 2 characters"
-                                },
-                                maxLength: {
-                                  value: 50,
-                                  message: "Alert type cannot exceed 50 characters"
-                                },
-                                pattern: {
-                                  value: /^[a-zA-Z\s\-.']+$/,
-                                  message: "Only letters, spaces, hyphens, periods and apostrophes are allowed"
-                                }
-                              })}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
 
 
 
@@ -2652,41 +2818,15 @@ export default function AccidentForm() {
                     {/* Flight Training School - Only show when Type of Operation is Flying Training */}
                     {(selectedTypeOfOperation === "Flying Training – Dual" || selectedTypeOfOperation === "Flying Training – Solo") && (
                       <div>
-                        <Select
+                        <SearchableDropdown
                           label="Name of Flight Training School"
                           required
                           options={flightTrainingSchoolOptions}
+                          value={watch("Name_of_Flight_Training_School") || ""}
+                          onChange={(value) => setValue("Name_of_Flight_Training_School", value)}
+                          placeholder="Search and select flight training school..."
                           error={errors.Name_of_Flight_Training_School?.message}
-                          {...register("Name_of_Flight_Training_School", { 
-                            required: "This field cannot be blank." 
-                          })}
                         />
-                        
-                        {/* Custom Flight School Input - Shows when 'Other' is selected */}
-                        {selectedFlightSchool === "Other" && (
-                          <div className="mt-3">
-                            <Input
-                              label="Please specify flight training school name"
-                              placeholder="e.g., ABC Flight School"
-                              maxLength={100}
-                              error={errors.customFlightSchool?.message}
-                              {...register("customFlightSchool", {
-                                minLength: {
-                                  value: 2,
-                                  message: "School name must be at least 2 characters"
-                                },
-                                maxLength: {
-                                  value: 100,
-                                  message: "School name cannot exceed 100 characters"
-                                },
-                                pattern: {
-                                  value: /^[a-zA-Z0-9\s\-.'&]+$/,
-                                  message: "Only letters, numbers, spaces, hyphens, periods, ampersands and apostrophes are allowed"
-                                }
-                              })}
-                            />
-                          </div>
-                        )}
                       </div>
                     )}
 
@@ -3263,7 +3403,12 @@ export default function AccidentForm() {
                       })}
                       error={errors.Propeller_serial?.message}
                     />
-                    
+                  </div>
+                </div>
+
+                {/* Personal Locator Beacon Section */}
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Select
                       label="Personal Locator Beacon carried"
                       required
@@ -3271,13 +3416,12 @@ export default function AccidentForm() {
                       {...register('Personal_Locator_Beacon_carried', { required: 'PLB status is required' })}
                       error={errors.Personal_Locator_Beacon_carried?.message}
                     />
-                  </div>
-                  
-                  <div className="mt-4">
-                    <Checkbox
+                    
+                    <Select
                       label="PLB Activated"
-                      id="plbActivated"
+                      options={yesNoOptions}
                       {...register('PLB_Activated')}
+                      error={errors.PLB_Activated?.message}
                     />
                   </div>
                 </div>

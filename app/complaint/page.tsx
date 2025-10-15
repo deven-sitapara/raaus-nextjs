@@ -560,7 +560,6 @@ export default function ComplaintForm() {
                 value={contactPhone}
                 onChange={(value) => setContactPhone(value)}
                 defaultCountry="AU"
-                countries={["AU", "CA", "GB"]}
               />
             </div>
             </div>

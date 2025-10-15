@@ -34,7 +34,7 @@
     "react-phone-number-input": "^3.4.12",
     "svg-to-pdfkit": "^0.1.8",
     "tailwind-merge": "^3.3.1",
-    "vercel": "^41.0.2",
+    "vercel": "^25.2.0",
     "zod": "^4.1.11"
   },
   "devDependencies": {
