@@ -187,6 +187,9 @@ export interface AccidentFormData {
   // Attachments
   attachments?: File[];
 
+  // ATSB Acknowledgement
+  atsbAcknowledgement?: boolean;
+
   // Legacy field names for backward compatibility
   memberNumber?: string;
   contactPhone?: string;
