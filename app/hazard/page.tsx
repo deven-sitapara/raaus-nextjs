@@ -9,8 +9,8 @@ import { PhoneInput } from "@/components/ui/PhoneInput";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Button } from "@/components/ui/Button";
-import SearchableDropdown from "@/components/ui/SearchableDropdown";
 import MapPicker from "@/components/ui/MapPicker";
+import YCodeSelector from "@/components/forms/YCodeSelector";
 import { HazardFormData } from "@/types/forms";
 import { validationPatterns, validationMessages } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
@@ -62,9 +62,7 @@ export default function HazardForm() {
   const [attachments, setAttachments] = useState<FileList | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<HazardFormData | null>(null);
-  const [aerodromes, setAerodromes] = useState<string[]>([]);
   const [selectedAerodrome, setSelectedAerodrome] = useState("");
-  const [loadingAerodromes, setLoadingAerodromes] = useState(true);
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
 
@@ -103,20 +101,6 @@ export default function HazardForm() {
       longitude: setLongitude
     }
   );
-
-  // Load aerodrome data
-  useEffect(() => {
-    fetch("/data/aerodrome-codes.json")
-      .then((res) => res.json())
-      .then((data) => {
-        setAerodromes(data.aerodromes || []);
-        setLoadingAerodromes(false);
-      })
-      .catch((err) => {
-        console.error("Failed to load aerodrome data:", err);
-        setLoadingAerodromes(false);
-      });
-  }, []);
 
   // Helper function to convert text to Title Case
   const toTitleCase = (str: string): string => {
@@ -683,16 +667,14 @@ export default function HazardForm() {
 
               {hazardRelatesToAerodrome === "Yes" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
-                  <SearchableDropdown
-                    options={aerodromes}
+                  <YCodeSelector
                     value={selectedAerodrome}
                     onChange={(value) => {
                       setSelectedAerodrome(value);
                       setValue("hazardAerodrome", value);
                     }}
                     label="Hazard Aerodrome"
-                    placeholder={loadingAerodromes ? "Loading aerodromes..." : "Search for an aerodrome..."}
-                    disabled={loadingAerodromes}
+                    placeholder="Search for an aerodrome..."
                     error={errors.hazardAerodrome?.message}
                   />
                 </div>
