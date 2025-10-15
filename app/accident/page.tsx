@@ -869,7 +869,9 @@ export default function AccidentForm() {
         "ATSB_reportable_status",
         "Type_of_operation",
         "Wind_gusting",
-        "Personal_Locator_Beacon_carried"
+        "Personal_Locator_Beacon_carried",
+        "Involve_IFR_or_Air_Transport_Operations",
+        "In_controlled_or_special_use_airspace"
       ];
       
       // Remove description field from validation if damage is "Nil"
@@ -2358,18 +2360,20 @@ export default function AccidentForm() {
                     />
                   </div>
 
-                  <div className="mt-6">
-                    <YCodeSelector
-                      value={watch("Y_Code") || ""}
-                      onChange={(value) => setValue("Y_Code", value, { shouldValidate: true })}
-                      label="Vicinity Aerodrome (Y Code)"
-                      placeholder="Search for an aerodrome..."
-                      error={errors.Y_Code?.message}
-                    />
-                    <p className="mt-1 text-sm text-gray-500">
-                      If the occurrence was in vicinity of an aerodrome, enter the Y Code
-                    </p>
-                  </div>
+                  {selectedAerodromeVicinity === "Yes" && (
+                    <div className="mt-6">
+                      <YCodeSelector
+                        value={watch("Y_Code") || ""}
+                        onChange={(value) => setValue("Y_Code", value, { shouldValidate: true })}
+                        label="Vicinity Aerodrome (Y Code)"
+                        placeholder="Search for an aerodrome..."
+                        error={errors.Y_Code?.message}
+                      />
+                      <p className="mt-1 text-sm text-gray-500">
+                        If the occurrence was in vicinity of an aerodrome, enter the Y Code
+                      </p>
+                    </div>
+                  )}
 
                   <div className="mt-6">
                     <Input
