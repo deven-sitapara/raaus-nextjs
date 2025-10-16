@@ -775,7 +775,7 @@ export default function AccidentForm() {
         setValue("Model", aircraftData.Model || "");
         setValue("Registration_status", aircraftData.Registration_Type || "");
         setValue("Type1", aircraftData.Type || "");
-        setValue("Year_Built1", aircraftData.Year_Built1 || aircraftData.Manufacturer_Date || "");
+        setValue("Year_Built1", (aircraftData.Year_Built1 || aircraftData.Manufacturer_Date || "").toString());
         
         // Auto-fill engine fields
         setValue("Engine_Details", aircraftData.Engine_Details || "");
@@ -965,8 +965,9 @@ export default function AccidentForm() {
       formData.append('formType', 'accident');
       
       // Convert "Yes"/"No" strings to boolean for Zoho CRM compatibility
+      const { Y_Code, ...cleanData } = data; // Exclude Y_Code to prevent type errors
       const submissionData = {
-        ...data,
+        ...cleanData,
         // Use custom values if "Other" is selected, otherwise use the dropdown value
         role: data.role === "Other" && data.customRole && data.customRole.trim() ? data.customRole.trim() : data.role,
         Name_of_Flight_Training_School: data.Name_of_Flight_Training_School === "Other" && data.customFlightSchool && data.customFlightSchool.trim() ? data.customFlightSchool.trim() : data.Name_of_Flight_Training_School,
@@ -975,9 +976,17 @@ export default function AccidentForm() {
         contactPhone: contactPhone,
         pilotContactPhone: pilotContactPhone,
         occurrenceDate: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
-        // GPS Coordinates (uncomment when Zoho fields are created):
-        // Location_Latitude: latitude || "",
-        // Location_Longitude: longitude || "",
+        // GPS Coordinates
+        Latitude: (() => {
+          const latValue = latitude ? parseFloat(latitude) : null;
+          console.log('Latitude value:', latValue, 'from input:', latitude);
+          return latValue !== null && !isNaN(latValue) ? latValue.toString() : '';
+        })(),
+        Longitude: (() => {
+          const lngValue = longitude ? parseFloat(longitude) : null;
+          console.log('Longitude value:', lngValue, 'from input:', longitude);
+          return lngValue !== null && !isNaN(lngValue) ? lngValue.toString() : '';
+        })(),
         // Convert Yes/No strings to boolean
         Involve_IFR_or_Air_Transport_Operations: data.Involve_IFR_or_Air_Transport_Operations === "Yes" ? true : data.Involve_IFR_or_Air_Transport_Operations === "No" ? false : data.Involve_IFR_or_Air_Transport_Operations,
         In_controlled_or_special_use_airspace: data.In_controlled_or_special_use_airspace === "Yes" ? true : data.In_controlled_or_special_use_airspace === "No" ? false : data.In_controlled_or_special_use_airspace,
@@ -2363,8 +2372,8 @@ export default function AccidentForm() {
                   {selectedAerodromeVicinity === "Yes" && (
                     <div className="mt-6">
                       <YCodeSelector
-                        value={watch("Y_Code") || ""}
-                        onChange={(value) => setValue("Y_Code", value, { shouldValidate: true })}
+                        value={watch("Y_Code")?.name || ""}
+                        onChange={(selectedName) => setValue("Y_Code", { name: selectedName, id: selectedName }, { shouldValidate: true })}
                         label="Vicinity Aerodrome (Y Code)"
                         placeholder="Search for an aerodrome..."
                         error={errors.Y_Code?.message}

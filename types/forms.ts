@@ -80,6 +80,8 @@ export interface AccidentFormData {
   Occurrence_Date2?: string;
   Location?: string;
   State?: AustralianState;
+  Latitude?: string;
+  Longitude?: string;
   Occurrence_Type?: string;
   Is_this_occurrence_an_Accident_or_an_Incident?: "Accident" | "Incident";
   Description_of_damage_to_aircraft?: string;
@@ -87,8 +89,8 @@ export interface AccidentFormData {
   Reporter_Suggestions?: string;
   Level_2_Maintainer_L2?: string;
   In_vicinity_of_aerodrome?: boolean | "Yes" | "No";
-  Y_Code?: string;
-  Lookup_5?: string;
+  Y_Code?: { name: string; id: string };
+  Lookup_5?: { name: string; id: string };
   Name_of_Flight_Training_School?: string;
   Involve_IFR_or_Air_Transport_Operations?: boolean | "Yes" | "No";
   Involve_near_miss_with_another_aircraft?: boolean | "Yes" | "No";
@@ -245,6 +247,7 @@ export interface DefectFormData {
   Registration_number?: string;
   Registration_status?: RegistrationStatus;
   Serial_number?: string;
+  Make?: string; // Field name used in submission data
   Make1?: string;
   Model?: string;
   Type1?: AircraftType;
@@ -264,6 +267,10 @@ export interface DefectFormData {
 
   // Training Usage
   Is_the_aircraft_used_for_training_purposes?: boolean;
+
+  // GPS Coordinates
+  Latitude?: string;
+  Longitude?: string;
 
   // Legacy fields for backward compatibility
   memberNumber?: string;
@@ -354,6 +361,12 @@ export interface HazardFormData {
   Hazard_Relates_To_Specific_Aerodrome?: "Yes" | "No"; // Field name used in submission
   Hazard_Aerodrome?: string; // Field name used in submission
   
+  // GPS Coordinates
+  Latitude?: string;
+  Longitude?: string;
+  Location_Latitude?: string;
+  Location_Longitude?: string;
+
   // Attachments
   attachments?: File[];
 }

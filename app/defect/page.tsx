@@ -431,9 +431,9 @@ export default function DefectForm() {
         Occurrence_Date1: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
         Location_of_aircraft_when_defect_was_found: data.locationOfAircraft,
         Location: data.locationOfAircraft,
-        // GPS Coordinates (uncomment when Zoho fields are created):
-        // Location_Latitude: latitude || "",
-        // Location_Longitude: longitude || "",
+        // GPS Coordinates
+        Latitude: latitude || "",
+        Longitude: longitude || "",
         State: data.state,
         Description_of_Occurrence: data.defectDescription,
         Defective_component: data.defectiveComponent,

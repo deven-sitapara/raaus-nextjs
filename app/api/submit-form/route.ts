@@ -388,15 +388,17 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Occurrence_Date2: accidentData.Occurrence_Date2 ? formatDateOnlyForCRM(accidentData.Occurrence_Date2) : (accidentData.occurrenceDate ? formatDateOnlyForCRM(accidentData.occurrenceDate) : (accidentData.Occurrence_Date1 ? formatDateOnlyForCRM(accidentData.Occurrence_Date1) : null)),
         Description_of_Occurrence: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
         Details_of_incident_accident: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
-        Location: accidentData.Y_Code || accidentData.Location || accidentData.location || '',
-        Location_of_hazard: accidentData.Y_Code || accidentData.Location || accidentData.location || '',
+        Location: accidentData.location || accidentData.Location || '',
+        Location_of_hazard: accidentData.location || accidentData.Location || '',
         State: accidentData.State || accidentData.state || '',
+        ...(accidentData.Latitude && accidentData.Latitude.trim() !== '' && { Latitude: accidentData.Latitude.trim() }),
+        ...(accidentData.Longitude && accidentData.Longitude.trim() !== '' && { Longitude: accidentData.Longitude.trim() }),
   Occurrence_Type: sanitizePick(accidentData.Occurrence_Type),
   Is_this_occurrence_an_Accident_or_an_Incident: sanitizePick(accidentData.Is_this_occurrence_an_Accident_or_an_Incident || accidentData.Accident_or_Incident || 'Incident'),
         Description_of_damage_to_aircraft: accidentData.Description_of_damage_to_aircraft || '',
   Accident_or_Incident: sanitizePick(accidentData.Accident_or_Incident || accidentData.Is_this_occurrence_an_Accident_or_an_Incident),
         Reporter_Suggestions: accidentData.Reporter_Suggestions || '',
-    Name_of_Flight_Training_School: sanitizePick(accidentData.Name_of_Flight_Training_School),
+        ...(sanitizePick(accidentData.Name_of_Flight_Training_School) && { Name_of_Flight_Training_School: sanitizePick(accidentData.Name_of_Flight_Training_School) }),
     Lookup_5: (typeof accidentData.Lookup_5 === 'number' && Number.isInteger(accidentData.Lookup_5)) ? accidentData.Lookup_5 : undefined,
   Level_2_Maintainer_L2: accidentData.Level_2_Maintainer_L2 || accidentData.Details_of_incident_accident || '',
   In_vicinity_of_aerodrome: convertToBoolean(accidentData.In_vicinity_of_aerodrome),
@@ -517,6 +519,8 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Location_of_aircraft_when_defect_was_found: defectData.Location_of_aircraft_when_defect_was_found || defectData.locationOfAircraft || '',
         Location: defectData.Location || defectData.locationOfAircraft || '',
         State: defectData.State || defectData.state || '',
+        ...(defectData.Latitude && defectData.Latitude.trim() !== '' && { Latitude: defectData.Latitude.trim() }),
+        ...(defectData.Longitude && defectData.Longitude.trim() !== '' && { Longitude: defectData.Longitude.trim() }),
         Storage_conditions: defectData.Storage_conditions || '',
         Description_of_Occurrence: defectData.Description_of_Occurrence || defectData.defectDescription || '',
         Defective_component: defectData.Defective_component || defectData.defectiveComponent || '',
@@ -540,7 +544,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
             `${defectData.registrationNumberPrefix}-${defectData.registrationNumberSuffix}` : ''),
   Registration_status: sanitizePick(defectData.Registration_status || defectData.registrationStatus || ''),
         Serial_number: defectData.Serial_number || defectData.serialNumber || '',
-        Make1: defectData.Make1 || defectData.make || '',
+        Make1: defectData.Make || defectData.Make1 || defectData.make || '',
         Model: defectData.Model || defectData.model || '',
   Type1: sanitizePick(defectData.Type1 || defectData.type || ''),
         Year_Built1: defectData.Year_Built1 || defectData.yearBuilt || '',
@@ -607,6 +611,8 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Do_you_have_further_suggestions_on_how_to_PSO: hazardData.Do_you_have_further_suggestions_on_how_to_PSO || '',
         Hazard_relates_to_specific_aerodrome: convertToBoolean(hazardData.Hazard_Relates_To_Specific_Aerodrome),
         Hazard_Aerodrome: hazardData.Hazard_Aerodrome || '',
+        ...((hazardData.Latitude || hazardData.Location_Latitude) ? { Latitude: (hazardData.Latitude || hazardData.Location_Latitude!).trim() } : {}),
+        ...((hazardData.Longitude || hazardData.Location_Longitude) ? { Longitude: (hazardData.Longitude || hazardData.Location_Longitude!).trim() } : {}),
         // Add hazard-specific flag
         Hazard: true,
       });
@@ -800,7 +806,7 @@ function cleanupCRMRecord(record: Record<string, any>): Record<string, any> {
   
   for (const [k, v] of Object.entries(record)) {
     // Y_Code field is now mapped separately, location fields use location text only
-    // if (k === 'Y_Code') continue;
+    if (k === 'Y_Code') continue;
     
     if (v === null || v === undefined) continue;
     
