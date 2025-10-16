@@ -7,7 +7,7 @@ Next.js application for Recreational Aviation Australia (RAAus) form submissions
 - ✅ Three form types: Accident/Incident, Defect, and Complaint reporting
 - ✅ Multi-step form wizard for complex forms
 - ✅ Real-time member number validation against Zoho CRM
-- ✅ File upload to Zoho WorkDrive (max 5 files, 256MB total)
+- ✅ File upload to Zoho WorkDrive (max 25 files, 256MB total)
 - ✅ Form validation with regex patterns
 - ✅ Responsive design with Tailwind CSS
 - ✅ TypeScript for type safety
@@ -142,7 +142,7 @@ When a member number is entered with first and last name, the system validates a
 - Non-blocking (form can still be submitted)
 
 ### File Upload
-- Max 5 files per form
+- Max 25 files per form
 - Max 256MB total size
 - Supported formats: Images, videos, documents, audio
 - Uploads to Zoho WorkDrive

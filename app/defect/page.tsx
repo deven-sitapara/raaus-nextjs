@@ -1441,7 +1441,7 @@ export default function DefectForm() {
               description="Upload photos and videos as evidence. Additionally include engine, propeller and airframe maintenance inspection documentation from logbooks as it pertains to the report."
               multiple
               onChange={setAttachments}
-              maxFiles={5}
+              maxFiles={25}
               maxSize={256}
             />
           </div>

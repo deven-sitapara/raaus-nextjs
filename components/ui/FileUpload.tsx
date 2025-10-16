@@ -25,7 +25,7 @@ const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
       onChange,
       accept = "image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.mp3,.wav,.ogg",
       multiple = true,
-      maxFiles = 5,
+      maxFiles = 25,
       maxSize = 256,
       description,
       className,

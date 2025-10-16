@@ -47,7 +47,7 @@ This is a Next.js application for RAAus (Recreational Aviation Australia) form s
 - **Key Features**:
   - Anonymous reporting option with conditional notice
   - Role-based reporting (Pilot in Command, Owner, L1, L2, LAME, Maintenance Personnel, Witness, Other)
-  - Multiple file uploads (max 5 files, 256MB total)
+  - Multiple file uploads (max 25 files, 256MB total)
 
 ## Form Validations
 

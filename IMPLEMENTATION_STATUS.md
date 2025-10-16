@@ -155,7 +155,7 @@ ZOHO_WORKDRIVE_FOLDER_ID=your_folder_id_here
 - Warning display (non-blocking)
 
 ### File Handling
-- Multi-file upload (max 5 files)
+- Multi-file upload (max 25 files)
 - Size validation (max 256MB total)
 - Preview with remove functionality
 - Upload to Zoho WorkDrive
