@@ -409,10 +409,11 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Registration_number: accidentData.Registration_number && accidentData.Serial_number1 ? 
           `${accidentData.Registration_number}-${accidentData.Serial_number1}` : 
           (accidentData.Registration_number || null),
-  Model: accidentData.Model || '',
+        Model: accidentData.Model || '',
         Serial_number: accidentData.Serial_number || '',
-  Type1: sanitizePick(accidentData.Type1) || '',
-  Year_Built1: accidentData.Year_Built1 || '',
+        Make1: accidentData.Make1 || '',
+        Type1: sanitizePick(accidentData.Type1) || '',
+        Year_Built1: accidentData.Year_Built1 || '',
         Total_airframe_hours: convertToText(accidentData.Total_airframe_hours),
         Total_engine_hours: convertToText(accidentData.Total_engine_hours),
         Total_hours_since_service: convertToText(accidentData.Total_hours_since_service),
@@ -798,7 +799,7 @@ function cleanupCRMRecord(record: Record<string, any>): Record<string, any> {
   ]);
   
   for (const [k, v] of Object.entries(record)) {
-    // Y_Code and location fields are now mapped to both Location and Location_of_hazard fields like hazard form
+    // Y_Code field is now mapped separately, location fields use location text only
     // if (k === 'Y_Code') continue;
     
     if (v === null || v === undefined) continue;
