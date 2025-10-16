@@ -285,7 +285,7 @@ export default function AccidentPreview({
                   <PreviewField label="Involve IFR/Air Transport Operations" value={data.Involve_IFR_or_Air_Transport_Operations} />
                   <PreviewField label="In Controlled/Special Use Airspace" value={data.In_controlled_or_special_use_airspace} />
                   <PreviewField label="In Vicinity of Aerodrome" value={data.In_vicinity_of_aerodrome} />
-                  <PreviewField label="Vicinity Aerodrome (Y Code)" value={data.Y_Code} />
+                  <PreviewField label="Vicinity Aerodrome (Y Code)" value={data.Y_Code?.name} />
                   <PreviewField 
                     label="Passenger Details" 
                     value={data.Passenger_details}
