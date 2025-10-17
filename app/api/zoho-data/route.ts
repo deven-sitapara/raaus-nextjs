@@ -28,6 +28,9 @@ export async function GET(request: NextRequest) {
     // Build criteria for search and/or type filter
     const criteriaArray: string[] = [];
     
+    // Always filter to only show records where Display_on_Website is true
+    criteriaArray.push(`(Display_on_Website:equals:true)`);
+    
     if (searchQuery) {
       // Search in multiple fields
       criteriaArray.push(`((Name1:contains:${searchQuery})or(Last_Name:contains:${searchQuery})or(OccurrenceId:contains:${searchQuery})or(Registration_number:contains:${searchQuery})or(Location:contains:${searchQuery}))`);
@@ -107,11 +110,14 @@ function getFallbackMockData(request: NextRequest) {
     Accident_or_Incident: "Accident",
     Damage_to_aircraft: "Minor",
     Most_serious_injury_to_pilot: "Nil",
+    Passenger_injury: "Nil",
+    Persons_on_the_ground_injury: "Nil",
     Registration_number: "24-1234",
     Make1: "Jabiru",
     Model: "J230",
     ATSB_reportable_status: "Yes",
     Created_Time: "2024-10-05T15:00:00",
+    Display_on_Website: true,
     Accident: true,
     Defect: false,
     Hazard: false,
@@ -127,15 +133,18 @@ function getFallbackMockData(request: NextRequest) {
     Occurrence_Date1: "2024-09-28T10:15:00",
     State: "VIC",
     Location: "Moorabbin Airport",
-    Occurrence_Type: "Incident",
+    Occurrence_Type: "Accident",
     Accident_or_Incident: "Incident",
     Damage_to_aircraft: "Nil",
     Most_serious_injury_to_pilot: "Nil",
+    Passenger_injury: "Nil",
+    Persons_on_the_ground_injury: "Nil",
     Registration_number: "10-5678",
     Make1: "Tecnam",
     Model: "P92",
     ATSB_reportable_status: "No",
     Created_Time: "2024-09-28T11:30:00",
+    Display_on_Website: true,
     Accident: true,
     Defect: false,
     Hazard: false,
@@ -160,6 +169,7 @@ function getFallbackMockData(request: NextRequest) {
     Model: "A22LS",
     ATSB_reportable_status: "No",
     Created_Time: "2024-09-15T17:00:00",
+    Display_on_Website: true,
     Accident: false,
     Defect: true,
     Hazard: false,
@@ -184,6 +194,7 @@ function getFallbackMockData(request: NextRequest) {
     Model: "",
     ATSB_reportable_status: "No",
     Created_Time: "2024-08-30T10:00:00",
+    Display_on_Website: false, // This record won't be shown
     Accident: false,
     Defect: false,
     Hazard: true,
@@ -208,6 +219,7 @@ function getFallbackMockData(request: NextRequest) {
     Model: "",
     ATSB_reportable_status: "No",
     Created_Time: "2024-08-12T14:15:00",
+    Display_on_Website: true,
     Accident: false,
     Defect: false,
     Hazard: false,
@@ -227,11 +239,14 @@ function getFallbackMockData(request: NextRequest) {
     Accident_or_Incident: "Accident",
     Damage_to_aircraft: "Destroyed",
     Most_serious_injury_to_pilot: "Serious",
+    Passenger_injury: "Minor",
+    Persons_on_the_ground_injury: "Nil",
     Registration_number: "32-2345",
     Make1: "Rans",
     Model: "S6",
     ATSB_reportable_status: "Yes",
     Created_Time: "2024-07-25T12:00:00",
+    Display_on_Website: true,
     Accident: true,
     Defect: false,
     Hazard: false,
@@ -256,6 +271,7 @@ function getFallbackMockData(request: NextRequest) {
     Model: "RTC",
     ATSB_reportable_status: "No",
     Created_Time: "2024-07-10T16:30:00",
+    Display_on_Website: true,
     Accident: false,
     Defect: true,
     Hazard: false,
@@ -280,6 +296,7 @@ function getFallbackMockData(request: NextRequest) {
     Model: "3K",
     ATSB_reportable_status: "No",
     Created_Time: "2024-06-18T09:00:00",
+    Display_on_Website: false, // This record won't be shown
     Accident: true,
     Defect: false,
     Hazard: false,
@@ -295,6 +312,9 @@ function getFallbackMockData(request: NextRequest) {
       return item[typeFilter] === true;
     });
   }
+  
+  // Always filter to only show records where Display_on_Website is true
+  filteredData = filteredData.filter((item: any) => item.Display_on_Website === true);
 
   const start = (page - 1) * perPage;
   const end = start + perPage;
