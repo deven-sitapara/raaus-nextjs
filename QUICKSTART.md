@@ -71,7 +71,7 @@ types/forms.ts            # TypeScript definitions
 ## 🎯 Key Features
 
 - ✅ Member number validation
-- ✅ File uploads (max 5 files, 256MB)
+- ✅ File uploads (max 25 files, 256MB)
 - ✅ Phone input (AU, CA, GB, US)
 - ✅ Date/time picker
 - ✅ Form validation

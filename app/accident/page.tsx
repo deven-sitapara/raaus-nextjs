@@ -3465,7 +3465,7 @@ export default function AccidentForm() {
                         accept=".csv,.doc,.docm,.docx,.gif,.jpg,.jpeg,.jpe,.pdf,.txt,.asc,.c,.cc,.h,.srt,.xla,.xls,.xlt,.xlw,.xlsx,.zip"
                         multiple
                         onChange={setAttachments}
-                        maxFiles={5}
+                        maxFiles={25}
                         maxSize={256}
                         error={errors.attachments?.message}
                       />
