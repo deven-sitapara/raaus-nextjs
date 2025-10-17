@@ -6,18 +6,11 @@ import { Table, TableColumn } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import axios from "axios";
 import { 
-  getColumnMetadata, 
-  getColumnsByCategory, 
-  CATEGORY_CONFIGS,
-  type ColumnCategory 
+  getColumnMetadata
 } from "@/lib/utils/columnCategories";
 
 // The record type is flexible to support all form types
 type OccurrenceRecord = Record<string, any>;
-
-interface ColumnVisibility {
-  [key: string]: boolean;
-}
 
 export default function DataPage() {
   const [data, setData] = useState<OccurrenceRecord[]>([]);
@@ -29,32 +22,8 @@ export default function DataPage() {
   const [hasMore, setHasMore] = useState(false);
   const [occurrenceType, setOccurrenceType] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [showColumnSelector, setShowColumnSelector] = useState(false);
-  // Store column visibility per form type
-  const [columnVisibilityMap, setColumnVisibilityMap] = useState<Record<string, ColumnVisibility>>({});
-  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({});
-  const [columnSearchQuery, setColumnSearchQuery] = useState("");
-  const columnSelectorRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const mandatoryRef = useRef<HTMLDivElement>(null);
-  const importantRef = useRef<HTMLDivElement>(null);
-  const optionalRef = useRef<HTMLDivElement>(null);
-
-  // Close column selector when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target as Node)) {
-        setShowColumnSelector(false);
-      }
-    };
-    if (showColumnSelector) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showColumnSelector]);
 
   // Sync scrollbars between top scroller and table container
   useEffect(() => {
@@ -177,6 +146,20 @@ export default function DataPage() {
     return 999; // Unknown values go to bottom
   }
 
+  // Utility: Get the highest injury severity among pilot, passenger, and ground injuries
+  function getHighestInjury(pilotInjury: string | undefined, passengerInjury: string | undefined, groundInjury: string | undefined): string {
+    const injuries = [pilotInjury, passengerInjury, groundInjury].filter((injury): injury is string => injury !== undefined && injury !== null && injury !== "");
+    
+    if (injuries.length === 0) return "-";
+    
+    // Find the injury with the lowest rank (most severe)
+    const highestSeverityInjury = injuries.reduce((highest, current) => {
+      return getInjurySeverityRank(current) < getInjurySeverityRank(highest) ? current : highest;
+    });
+    
+    return highestSeverityInjury;
+  }
+
   // Utility: Get type badge
   function getTypeBadge(type: string) {
     if (type === "Accident") return <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Accident</span>;
@@ -212,194 +195,43 @@ export default function DataPage() {
     return {
     Accident: [
       // Core Identifiers
-      { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)), category: accidentMeta.Type?.category, priority: accidentMeta.Type?.priority },
-      { key: "OccurrenceId", header: "Occurrence ID", sortable: true, width: "140px", category: accidentMeta.OccurrenceId?.category, priority: accidentMeta.OccurrenceId?.priority },
       { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1), category: accidentMeta.Occurrence_Date1?.category, priority: accidentMeta.Occurrence_Date1?.priority },
-      { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury), category: accidentMeta.Passenger_injury?.category, priority: accidentMeta.Passenger_injury?.priority },
+   
+      { key: "OccurrenceId", header: "Occurrence ID", sortable: true, width: "140px", category: accidentMeta.OccurrenceId?.category, priority: accidentMeta.OccurrenceId?.priority },
+      { key: "Location", header: "Location", sortable: true, width: "180px", category: accidentMeta.Location?.category, priority: accidentMeta.Location?.priority },
       
-      // Reporter Information
-      { key: "Role", header: "Role", sortable: true, width: "150px" },
-      { key: "Member_Number", header: "Member #", sortable: true, width: "110px" },
-      { key: "Name1", header: "First Name", sortable: true, width: "120px" },
-      { key: "Last_Name", header: "Last Name", sortable: true, width: "120px" },
-      { key: "Reporter_Email", header: "Email", sortable: true, width: "180px" },
-      { key: "Contact_Phone", header: "Contact Phone", sortable: true, width: "130px" },
-      
-      // PIC Information
-      { key: "PIC_Member_Number", header: "PIC Member #", sortable: true, width: "130px" },
-      { key: "Date_of_Birth", header: "PIC Date of Birth", sortable: true, width: "150px", accessor: (row) => formatDate(row.Date_of_Birth) },
-      { key: "PIC_Name", header: "PIC First Name", sortable: true, width: "130px" },
-      { key: "PIC_Last_Name", header: "PIC Last Name", sortable: true, width: "130px" },
-      { key: "PIC_Contact_Phone", header: "PIC Phone", sortable: true, width: "130px" },
-      { key: "PIC_Email", header: "PIC Email", sortable: true, width: "180px" },
-      
-      // Flying Hours
-      { key: "Hours_last_90_days", header: "Hours Last 90 Days", sortable: true, width: "160px" },
-      { key: "Total_flying_hours", header: "Total Flying Hours", sortable: true, width: "160px" },
-      { key: "Hours_on_type", header: "Hours on Type", sortable: true, width: "140px" },
-      { key: "Hours_on_type_last_90_days", header: "Hours on Type (90d)", sortable: true, width: "170px" },
-      
-      // Occurrence Details
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
-      { key: "Location", header: "Location", sortable: true, width: "180px" },
-      { key: "Description_of_Occurrence", header: "Description of Incident/Accident", sortable: true, width: "300px" },
-      { key: "Level_2_Maintainer_L2", header: "Contributing Factors", sortable: true, width: "250px" },
-      { key: "Damage_to_aircraft", header: "Damage to Aircraft", sortable: true, width: "150px" },
-      { key: "Most_serious_injury_to_pilot", header: "Pilot Injury", sortable: true, width: "130px" },
-      { key: "Involve_IFR_or_Air_Transport_Operations", header: "IFR/Air Transport", sortable: true, width: "160px", accessor: (row) => row.Involve_IFR_or_Air_Transport_Operations ? "Yes" : "No" },
-      { key: "In_controlled_or_special_use_airspace", header: "Controlled Airspace", sortable: true, width: "170px", accessor: (row) => row.In_controlled_or_special_use_airspace ? "Yes" : "No" },
-      { key: "In_vicinity_of_aerodrome", header: "Near Aerodrome", sortable: true, width: "150px", accessor: (row) => row.In_vicinity_of_aerodrome ? "Yes" : "No" },
-      { key: "Y_Code", header: "Aerodrome Y Code", sortable: true, width: "160px" },
-      { key: "Passenger_details", header: "Passenger Details", sortable: true, width: "200px" },
-      { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
-      { key: "Description_of_damage_to_aircraft", header: "Damage Description", sortable: true, width: "250px" },
-      
-      // Maintainer Info  
-      { key: "Maintainer_Name", header: "Maintainer First Name", sortable: true, width: "160px" },
-      { key: "Maintainer_Member_Number", header: "Maintainer Member #", sortable: true, width: "170px" },
-      { key: "Maintainer_Last_Name", header: "Maintainer Last Name", sortable: true, width: "170px" },
-      { key: "Maintainer_Level", header: "Maintainer Level", sortable: true, width: "150px" },
-      
-      // Accident/Incident Classification
-      { key: "Accident_or_Incident", header: "Accident/Incident", sortable: true, width: "150px" },
-      { key: "Reporter_Suggestions", header: "Contributions & Suggestions", sortable: true, width: "250px" },
-      { key: "ATSB_reportable_status", header: "ATSB Status (IRM/RRM)", sortable: true, width: "160px" },
-      
-      // Flight Details
-      { key: "Departure_location", header: "Departure Location", sortable: true, width: "160px" },
-      { key: "Destination_location", header: "Destination Location", sortable: true, width: "170px" },
-      { key: "Landing", header: "Landing", sortable: true, width: "150px" },
-      { key: "Type_of_operation", header: "Type of Operation", sortable: true, width: "180px" },
-      { key: "Phase_of_flight", header: "Phase of Flight", sortable: true, width: "150px" },
-      { key: "Effect_of_flight", header: "Effect of Flight", sortable: true, width: "150px", accessor: (row) => Array.isArray(row.Effect_of_flight) ? row.Effect_of_flight.join(", ") : row.Effect_of_flight || "-" },
-      { key: "Flight_Rules", header: "Flight Rules", sortable: true, width: "120px" },
-      
-      // Airspace
-      { key: "Airspace_class", header: "Airspace Class", sortable: true, width: "130px" },
-      { key: "Airspace_type", header: "Airspace Type", sortable: true, width: "130px" },
-      { key: "Altitude", header: "Altitude", sortable: true, width: "110px" },
-      { key: "Altitude_type", header: "Altitude Type", sortable: true, width: "140px" },
-      
-      // Environment
-      { key: "Light_conditions", header: "Light Conditions", sortable: true, width: "150px" },
-      { key: "Visibility", header: "Visibility (km)", sortable: true, width: "130px" },
-      { key: "Wind_speed", header: "Wind Speed (knots)", sortable: true, width: "150px" },
-      { key: "Wind_direction", header: "Wind Direction", sortable: true, width: "140px" },
-      { key: "Visibility_reduced_by", header: "Visibility Reduced By", sortable: true, width: "180px", accessor: (row) => Array.isArray(row.Visibility_reduced_by) ? row.Visibility_reduced_by.join(", ") : row.Visibility_reduced_by || "-" },
-      { key: "Temperature", header: "Temperature (°C)", sortable: true, width: "140px" },
-      { key: "Wind_gusting", header: "Wind Gusting", sortable: true, width: "130px" },
-      { key: "Personal_Locator_Beacon_carried", header: "PLB Carried", sortable: true, width: "120px" },
-      
-      // Near Miss / Wildlife Strike
-      { key: "Involve_near_miss_with_another_aircraft", header: "Near Miss", sortable: true, width: "120px", accessor: (row) => row.Involve_near_miss_with_another_aircraft ? "Yes" : "No" },
-      { key: "Bird_or_Animal_Strike", header: "Wildlife Strike", sortable: true, width: "140px", accessor: (row) => row.Bird_or_Animal_Strike ? "Yes" : "No" },
-      { key: "Type_of_strike", header: "Strike Type", sortable: true, width: "120px" },
-      { key: "Size", header: "Size", sortable: true, width: "100px" },
-      { key: "Species", header: "Species", sortable: true, width: "140px" },
-      { key: "Number_approx", header: "Number Approx", sortable: true, width: "140px" },
-      { key: "Number_struck_approx", header: "Number Struck", sortable: true, width: "140px" },
-      
-      // Near Miss Details
-      { key: "Second_aircraft_registration", header: "2nd Aircraft Rego", sortable: true, width: "160px" },
-      { key: "Second_Aircraft_Manufacturer", header: "2nd Aircraft Make", sortable: true, width: "170px" },
-      { key: "Second_Aircraft_Model", header: "2nd Aircraft Model", sortable: true, width: "170px" },
-      { key: "Horizontal_Proximity", header: "Horizontal Proximity", sortable: true, width: "170px" },
-      { key: "Horizontal_Proximity_Unit", header: "H Proximity Unit", sortable: true, width: "150px" },
-      { key: "Vertical_Proximity", header: "Vertical Proximity", sortable: true, width: "160px" },
-      { key: "Vertical_Proximity_Unit", header: "V Proximity Unit", sortable: true, width: "150px" },
-      { key: "Relative_Track", header: "Relative Track", sortable: true, width: "140px" },
-      { key: "Avoidance_manoeuvre_needed", header: "Avoidance Needed", sortable: true, width: "170px" },
-      { key: "Alert_Received", header: "Alert Received", sortable: true, width: "140px" },
-      
-      // Aircraft Details
-      { key: "Registration_number", header: "Aircraft Rego", sortable: true, width: "130px" },
       { key: "Make1", header: "Make", sortable: true, width: "120px" },
       { key: "Model", header: "Model", sortable: true, width: "120px" },
-      { key: "Type1", header: "Aircraft Type", sortable: true, width: "180px" },
-      { key: "Serial_number", header: "Serial Number", sortable: true, width: "150px" },
-      { key: "Year_Built1", header: "Year Built", sortable: true, width: "110px" },
-      { key: "Registration_status", header: "Rego Status", sortable: true, width: "140px" },
-      { key: "Total_airframe_hours", header: "Total Airframe Hours", sortable: true, width: "170px" },
-      
-      // Engine Details
-      { key: "Engine_model", header: "Engine Model", sortable: true, width: "140px" },
-      { key: "Engine_serial", header: "Engine Serial", sortable: true, width: "140px" },
       { key: "Engine_Details", header: "Engine Details", sortable: true, width: "140px" },
-      { key: "Total_engine_hours", header: "Total Engine Hours", sortable: true, width: "160px" },
-      { key: "Total_hours_since_service", header: "Hours Since Service", sortable: true, width: "170px" },
-      
-      // Propeller Details
-      { key: "Propeller_make", header: "Propeller Make", sortable: true, width: "150px" },
-      { key: "Propeller_model", header: "Propeller Model", sortable: true, width: "150px" },
-      { key: "Propeller_serial", header: "Propeller Serial", sortable: true, width: "150px" },
-      
-      // System Fields
-      { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
+      { key: "Engine_model", header: "Engine Model", sortable: true, width: "140px" },
+        { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury), category: accidentMeta.Passenger_injury?.category, priority: accidentMeta.Passenger_injury?.priority },
+        { key: "Most_serious_injury_to_pilot", header: "Pilot Injury", sortable: true, width: "130px" },
+         { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
+         { key: "Highest_Injury", header: "Highest Injury", sortable: true, width: "130px", accessor: (row) => getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury), sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(getHighestInjury(a.Most_serious_injury_to_pilot, a.Passenger_injury, a.Persons_on_the_ground_injury)) - getInjurySeverityRank(getHighestInjury(b.Most_serious_injury_to_pilot, b.Passenger_injury, b.Persons_on_the_ground_injury)) },
+         { key: "Description_of_damage_to_aircraft", header: "Damage Description", sortable: true, width: "250px" },
+            { key: "Description_of_Occurrence", header: "Description of Incident/Accident", sortable: true, width: "300px" }
     ],
     Defect: [
       // Core Identifiers
-      { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)) },
-      { key: "OccurrenceId", header: "Defect ID", sortable: true, width: "140px" },
-      { key: "Occurrence_Date1", header: "Date Identified", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
-      
-      // Reporter Information
-      { key: "Role", header: "Role", sortable: true, width: "150px" },
-      { key: "Member_Number", header: "Member #", sortable: true, width: "110px" },
-      { key: "Name1", header: "First Name", sortable: true, width: "120px" },
-      { key: "Last_Name", header: "Last Name", sortable: true, width: "120px" },
-      { key: "Reporter_Email", header: "Email", sortable: true, width: "180px" },
-      { key: "Contact_Phone", header: "Contact Phone", sortable: true, width: "130px" },
-      
-      // Defect Location
+     
+     
+      { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1), category: defectMeta.Occurrence_Date1?.category, priority: defectMeta.Occurrence_Date1?.priority },
+       { key: "OccurrenceId", header: "Occurrence ID", sortable: true, width: "140px", category: defectMeta.OccurrenceId?.category, priority: defectMeta.OccurrenceId?.priority },
+      { key: "Location", header: "Location", sortable: true, width: "180px" },
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
-      { key: "Location_of_aircraft_when_defect_was_found", header: "Aircraft Location", sortable: true, width: "220px" },
-      { key: "Defective_component", header: "Defective Component", sortable: true, width: "200px" },
-      { key: "Provide_description_of_defect", header: "Defect Description", sortable: true, width: "300px" },
-      
-      // Maintainer Information
-      { key: "Maintainer_Name", header: "Maintainer First Name", sortable: true, width: "160px" },
-      { key: "Maintainer_Last_Name", header: "Maintainer Last Name", sortable: true, width: "170px" },
-      { key: "Maintainer_Member_Number", header: "Maintainer Member #", sortable: true, width: "170px" },
-      { key: "Maintainer_Level", header: "Maintainer Level", sortable: true, width: "160px" },
-      { key: "Do_you_have_further_suggestions_on_how_to_PSO", header: "Prevention Suggestions", sortable: true, width: "250px" },
-      
-      // Aircraft Details
-      { key: "Registration_number", header: "Aircraft Rego", sortable: true, width: "130px" },
-      { key: "Serial_number", header: "Serial Number", sortable: true, width: "150px" },
-      { key: "Registration_status", header: "Rego Status", sortable: true, width: "140px" },
       { key: "Make1", header: "Make", sortable: true, width: "120px" },
       { key: "Model", header: "Model", sortable: true, width: "120px" },
-      { key: "Year_Built1", header: "Year Built", sortable: true, width: "110px" },
-      { key: "Type1", header: "Aircraft Type", sortable: true, width: "180px" },
-      
-      // Engine Details
       { key: "Engine_Details", header: "Engine Details", sortable: true, width: "140px" },
       { key: "Engine_model", header: "Engine Model", sortable: true, width: "140px" },
-      { key: "Engine_serial", header: "Engine Serial", sortable: true, width: "140px" },
-      { key: "Total_engine_hours", header: "Total Engine Hours", sortable: true, width: "160px" },
-      { key: "Total_hours_since_service", header: "Hours Since Service", sortable: true, width: "170px" },
+      { key: "Provide_description_of_defect", header: "Defect Description", sortable: true, width: "300px" },
       
-      // Propeller Details
-      { key: "Propeller_make", header: "Propeller Make", sortable: true, width: "150px" },
-      { key: "Propeller_model", header: "Propeller Model", sortable: true, width: "150px" },
-      { key: "Propeller_serial", header: "Propeller Serial", sortable: true, width: "150px" },
-      
-      // System Fields
-      { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
     ],
     Hazard: [
       // Core Identifiers
-      { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)) },
-      { key: "OccurrenceId", header: "Hazard ID", sortable: true, width: "140px" },
       { key: "Date_Hazard_Identified", header: "Date Identified", sortable: true, width: "180px", accessor: (row) => formatDate(row.Date_Hazard_Identified || row.Occurrence_Date1) },
+      { key: "OccurrenceId", header: "Hazard ID", sortable: true, width: "140px" },
       
-      // Reporter Information
-      { key: "Role", header: "Role", sortable: true, width: "150px" },
-      { key: "Member_Number", header: "Member #", sortable: true, width: "110px" },
-      { key: "Name1", header: "First Name", sortable: true, width: "120px" },
-      { key: "Last_Name", header: "Last Name", sortable: true, width: "120px" },
-      { key: "Reporter_Email", header: "Email", sortable: true, width: "180px" },
-      { key: "Contact_Phone", header: "Contact Phone", sortable: true, width: "130px" },
       
       // Hazard Information
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
@@ -412,18 +244,9 @@ export default function DataPage() {
     ],
     Complaint: [
       // Core Identifiers
-      { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)) },
-      { key: "OccurrenceId", header: "Complaint ID", sortable: true, width: "140px" },
+      
       { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
-      
-      // Reporter Information
-      { key: "Role", header: "Role", sortable: true, width: "150px" },
-      { key: "Member_Number", header: "Member #", sortable: true, width: "110px" },
-      { key: "Name1", header: "First Name", sortable: true, width: "120px" },
-      { key: "Last_Name", header: "Last Name", sortable: true, width: "120px" },
-      { key: "Reporter_Email", header: "Email", sortable: true, width: "180px" },
-      { key: "Contact_Phone", header: "Contact Phone", sortable: true, width: "130px" },
-      
+      { key: "OccurrenceId", header: "Complaint ID", sortable: true, width: "140px" },
       // Complaint Details
       { key: "Description_of_Occurrence", header: "Complaint Details", sortable: true, width: "400px" },
       
@@ -434,26 +257,18 @@ export default function DataPage() {
       { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)) },
       { key: "OccurrenceId", header: "ID", sortable: true, width: "140px" },
       { key: "Occurrence_Date1", header: "Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
-      { key: "Name1", header: "First Name", sortable: true, width: "120px" },
-      { key: "Last_Name", header: "Last Name", sortable: true, width: "120px" },
-      { key: "Member_Number", header: "Member #", sortable: true, width: "110px" },
-      { key: "Role", header: "Role", sortable: true, width: "150px" },
-      { key: "Contact_Phone", header: "Contact Phone", sortable: true, width: "130px" },
-      { key: "Reporter_Email", header: "Email", sortable: true, width: "180px" },
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
       { key: "Location", header: "Location", sortable: true, width: "180px" },
-      { key: "Registration_number", header: "Aircraft Rego", sortable: true, width: "120px" },
       { key: "Make1", header: "Make", sortable: true, width: "120px" },
       { key: "Model", header: "Model", sortable: true, width: "120px" },
+      { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury) },
+      { key: "Most_serious_injury_to_pilot", header: "Pilot Injury", sortable: true, width: "130px" },
+      { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
+      { key: "Highest_Injury", header: "Highest Injury", sortable: true, width: "130px", accessor: (row) => getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury), sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(getHighestInjury(a.Most_serious_injury_to_pilot, a.Passenger_injury, a.Persons_on_the_ground_injury)) - getInjurySeverityRank(getHighestInjury(b.Most_serious_injury_to_pilot, b.Passenger_injury, b.Persons_on_the_ground_injury)) },
       { key: "Accident_or_Incident", header: "Accident/Incident", sortable: true, width: "140px" },
       { key: "Damage_to_aircraft", header: "Damage", sortable: true, width: "120px" },
       { key: "Description_of_Occurrence", header: "Description", sortable: true, width: "300px" },
-      { key: "Defective_component", header: "Defective Component", sortable: true, width: "180px" },
-      { key: "Level", header: "Classification", sortable: true, width: "130px" },
-      { key: "Occurence_Status", header: "Status", sortable: true, width: "120px" },
-      { key: "ATSB_reportable_status", header: "ATSB Status", sortable: true, width: "120px" },
       { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
-      { key: "Modified_Time", header: "Modified", sortable: true, width: "180px", accessor: (row) => formatDate(row.Modified_Time) },
     ],
   };
   }, []);
@@ -474,53 +289,6 @@ export default function DataPage() {
       };
     });
   }, [occurrenceType, columnSets]);
-
-  // When occurrenceType changes, restore previous selection or reset to mandatory
-  useEffect(() => {
-    if (currentColumns.length > 0) {
-      const formType = occurrenceType || 'All';
-      const metadata = getColumnMetadata(formType);
-      const mandatoryColumns = getColumnsByCategory(
-        currentColumns.map(col => col.key),
-        metadata
-      ).mandatory;
-
-      // If we have a saved selection for this form type, restore it
-      if (columnVisibilityMap[formType]) {
-        setColumnVisibility(columnVisibilityMap[formType]);
-      } else {
-        // Otherwise, default to mandatory columns only
-        const updated: ColumnVisibility = {};
-        currentColumns.forEach((col) => {
-          updated[col.key] = mandatoryColumns.includes(col.key);
-        });
-        setColumnVisibility(updated);
-      }
-    }
-  }, [currentColumns, occurrenceType]);
-
-  // Whenever columnVisibility changes, save it for the current form type
-  useEffect(() => {
-    const formType = occurrenceType || 'All';
-    setColumnVisibilityMap(prev => ({ ...prev, [formType]: columnVisibility }));
-  }, [columnVisibility, occurrenceType]);
-
-  // Filter columns based on visibility
-  const visibleColumns = currentColumns.filter(col => columnVisibility[col.key]);
-
-  // Filter columns based on search query
-  const filteredColumnList = useMemo(() => {
-    if (!columnSearchQuery.trim()) return currentColumns;
-    const query = columnSearchQuery.toLowerCase();
-    return currentColumns.filter(col => 
-      col.header.toLowerCase().includes(query) || 
-      col.key.toLowerCase().includes(query)
-    );
-  }, [currentColumns, columnSearchQuery]);
-
-  const toggleColumnVisibility = (columnKey: string) => {
-    setColumnVisibility(prev => ({ ...prev, [columnKey]: !prev[columnKey] }));
-  };
 
   const handleRowClick = (row: OccurrenceRecord) => {
     // You can implement navigation or modal here
@@ -585,382 +353,6 @@ export default function DataPage() {
               <option value={100}>100 per page</option>
             </select>
 
-            {/* Column Selector */}
-            <div className="relative mb-2.5" ref={columnSelectorRef}>
-              <Button
-                onClick={() => {
-                  setShowColumnSelector(!showColumnSelector);
-                  setColumnSearchQuery(""); // Reset search when opening
-                }}
-                variant="outline"
-              >
-                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-                </svg>
-                Columns ({visibleColumns.length}/{currentColumns.length})
-              </Button>
-              {showColumnSelector && (() => {
-                // Get metadata for current form type
-                const formType = occurrenceType || 'All';
-                const metadata = getColumnMetadata(formType);
-                
-                // Organize columns by category
-                const columnsByCategory = getColumnsByCategory(
-                  currentColumns.map(col => col.key), 
-                  metadata
-                );
-                
-                // Filter columns based on search query across all categories
-                const getFilteredColumns = (category: ColumnCategory) => {
-                  if (!columnSearchQuery.trim()) {
-                    return columnsByCategory[category];
-                  }
-                  const query = columnSearchQuery.toLowerCase();
-                  return columnsByCategory[category].filter(key => {
-                    const col = currentColumns.find(c => c.key === key);
-                    return col && (
-                      col.header.toLowerCase().includes(query) ||
-                      col.key.toLowerCase().includes(query)
-                    );
-                  });
-                };
-
-                const filteredMandatory = getFilteredColumns('mandatory');
-                const filteredImportant = getFilteredColumns('important');
-                const filteredOptional = getFilteredColumns('optional');
-                const totalFiltered = filteredMandatory.length + filteredImportant.length + filteredOptional.length;
-
-                return (
-                  <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 px-4 bg-black/40" onClick={() => setShowColumnSelector(false)}>
-                    <div 
-                      className="bg-white rounded-lg shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {/* Header */}
-                      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                        <div>
-                          <h3 className="font-bold text-gray-900 text-lg">Column Settings</h3>
-                          <p className="text-sm text-gray-600 mt-0.5">
-                            {visibleColumns.length} of {currentColumns.length} columns visible
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => setShowColumnSelector(false)}
-                          className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-
-                      {/* Search + Quick Actions */}
-                      <div className="px-6 py-4 border-b border-gray-200">
-                        {/* Search Bar */}
-                        <div className="relative mb-3">
-                          <svg 
-                            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-                          <input
-                            type="text"
-                            placeholder="Search columns..."
-                            value={columnSearchQuery}
-                            onChange={(e) => setColumnSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                          {columnSearchQuery && (
-                            <button
-                              onClick={() => setColumnSearchQuery("")}
-                              aria-label="Clear search"
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Quick Actions and Section Navigation */}
-                        <div className="flex items-center justify-between gap-3">
-                          {/* Quick Actions */}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                const updated: ColumnVisibility = {};
-                                currentColumns.forEach(col => { updated[col.key] = true; });
-                                setColumnVisibility(updated);
-                              }}
-                              className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium"
-                            >
-                              Show All
-                            </button>
-                            <button
-                              onClick={() => {
-                                const updated: ColumnVisibility = {};
-                                currentColumns.forEach(col => { updated[col.key] = false; });
-                                setColumnVisibility(updated);
-                              }}
-                              className="px-3 py-1.5 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors font-medium"
-                            >
-                              Hide All
-                            </button>
-                            <button
-                              onClick={() => {
-                                // Select only mandatory fields
-                                const updated: ColumnVisibility = {};
-                                currentColumns.forEach(col => {
-                                  updated[col.key] = filteredMandatory.includes(col.key);
-                                });
-                                setColumnVisibility(updated);
-                              }}
-                              className="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium"
-                            >
-                              Mandatory Only
-                            </button>
-                          </div>
-
-                          {/* Section Navigation Buttons */}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => mandatoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                              className="px-4 py-1.5 text-xs font-medium rounded transition-all bg-red-100 text-red-700 hover:bg-red-200 border border-red-300"
-                            >
-                              Mandatory
-                            </button>
-                            <button
-                              onClick={() => importantRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                              className="px-4 py-1.5 text-xs font-medium rounded transition-all bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-300"
-                            >
-                              Important
-                            </button>
-                            <button
-                              onClick={() => optionalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                              className="px-4 py-1.5 text-xs font-medium rounded transition-all bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border border-yellow-300"
-                            >
-                              Optional
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Column List - Categorized */}
-                      <div 
-                        className="px-6 my-4 overflow-y-auto flex-1"
-                      >
-                        {totalFiltered === 0 ? (
-                          <div className="text-center py-16 text-gray-500">
-                            <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p className="text-sm">No columns found matching &quot;{columnSearchQuery}&quot;</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-6">
-                            {/* Mandatory Fields Section */}
-                            {filteredMandatory.length > 0 && (
-                              <div ref={mandatoryRef} className="mb-6 p-4 border-l-4 border-red-500">
-                                <div className="sticky top-0 bg-red-100 z-10 -mx-4 px-4 -mt-4 pt-3 pb-3 mb-3 border-b-2 border-red-300">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-1.5 h-6 bg-red-500 rounded-full" />
-                                      <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Mandatory Fields</h4>
-                                      <span className="text-xs text-gray-600 font-medium">({filteredMandatory.length} fields)</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        onClick={() => {
-                                          const updated = { ...columnVisibility };
-                                          filteredMandatory.forEach(key => { updated[key] = true; });
-                                          setColumnVisibility(updated);
-                                        }}
-                                        className="text-xs px-2 py-0.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                                      >
-                                        All
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          const updated = { ...columnVisibility };
-                                          filteredMandatory.forEach(key => { updated[key] = false; });
-                                          setColumnVisibility(updated);
-                                        }}
-                                        className="text-xs px-2 py-0.5 bg-white text-red-600 border border-red-300 rounded hover:bg-red-50 transition-colors"
-                                      >
-                                        None
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {filteredMandatory.map((key) => {
-                                    const column = currentColumns.find(c => c.key === key);
-                                    if (!column) return null;
-                                    return (
-                                      <label
-                                        key={column.key}
-                                        className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-red-50 rounded cursor-pointer transition-colors border border-gray-200 hover:border-red-300"
-                                      >
-                                        <input
-                                          type="checkbox"
-                                          checked={columnVisibility[column.key]}
-                                          onChange={() => toggleColumnVisibility(column.key)}
-                                          className="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                                        />
-                                        <span className="text-sm text-gray-700 truncate font-medium">
-                                          {column.header}
-                                        </span>
-                                      </label>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Important Fields Section */}
-                            {filteredImportant.length > 0 && (
-                              <div ref={importantRef} className="mb-6 p-4 border-l-4 border-orange-500">
-                                <div className="sticky top-0 bg-orange-100 z-10 -mx-4 px-4 -mt-4 pt-3 pb-3 mb-3 border-b-2 border-orange-300">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-1.5 h-6 bg-orange-500 rounded-full" />
-                                      <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Important Fields</h4>
-                                      <span className="text-xs text-gray-600 font-medium">({filteredImportant.length} fields)</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        onClick={() => {
-                                          const updated = { ...columnVisibility };
-                                          filteredImportant.forEach(key => { updated[key] = true; });
-                                          setColumnVisibility(updated);
-                                        }}
-                                        className="text-xs px-2 py-0.5 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
-                                      >
-                                        All
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          const updated = { ...columnVisibility };
-                                          filteredImportant.forEach(key => { updated[key] = false; });
-                                          setColumnVisibility(updated);
-                                        }}
-                                        className="text-xs px-2 py-0.5 bg-white text-orange-600 border border-orange-300 rounded hover:bg-orange-50 transition-colors"
-                                      >
-                                        None
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {filteredImportant.map((key) => {
-                                    const column = currentColumns.find(c => c.key === key);
-                                    if (!column) return null;
-                                    return (
-                                      <label
-                                        key={column.key}
-                                        className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-orange-50 rounded cursor-pointer transition-colors border border-gray-200 hover:border-orange-300"
-                                      >
-                                        <input
-                                          type="checkbox"
-                                          checked={columnVisibility[column.key]}
-                                          onChange={() => toggleColumnVisibility(column.key)}
-                                          className="h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                                        />
-                                        <span className="text-sm text-gray-700 truncate">
-                                          {column.header}
-                                        </span>
-                                      </label>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Optional Fields Section */}
-                            {filteredOptional.length > 0 && (
-                              <div ref={optionalRef} className="mb-6 p-4 border-l-4 border-yellow-500">
-                                <div className="sticky top-0 bg-yellow-100 z-10 -mx-4 px-4 -mt-4 pt-3 pb-3 mb-3 border-b-2 border-yellow-400">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-1.5 h-6 bg-yellow-500 rounded-full" />
-                                      <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Optional Fields</h4>
-                                      <span className="text-xs text-gray-600 font-medium">({filteredOptional.length} fields)</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        onClick={() => {
-                                          const updated = { ...columnVisibility };
-                                          filteredOptional.forEach(key => { updated[key] = true; });
-                                          setColumnVisibility(updated);
-                                        }}
-                                        className="text-xs px-2 py-0.5 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
-                                      >
-                                        All
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          const updated = { ...columnVisibility };
-                                          filteredOptional.forEach(key => { updated[key] = false; });
-                                          setColumnVisibility(updated);
-                                        }}
-                                        className="text-xs px-2 py-0.5 bg-white text-yellow-600 border border-yellow-300 rounded hover:bg-yellow-50 transition-colors"
-                                      >
-                                        None
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {filteredOptional.map((key) => {
-                                    const column = currentColumns.find(c => c.key === key);
-                                    if (!column) return null;
-                                    return (
-                                      <label
-                                        key={column.key}
-                                        className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-yellow-50 rounded cursor-pointer transition-colors border border-gray-200 hover:border-yellow-300"
-                                      >
-                                        <input
-                                          type="checkbox"
-                                          checked={columnVisibility[column.key]}
-                                          onChange={() => toggleColumnVisibility(column.key)}
-                                        />
-                                        <span className="text-sm text-gray-700 truncate">
-                                          {column.header}
-                                        </span>
-                                      </label>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Footer */}
-                      <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
-                        <span className="text-sm text-gray-600">
-                          {columnSearchQuery && `${totalFiltered} results • `}
-                          {visibleColumns.length} of {currentColumns.length} columns visible
-                        </span>
-                        <Button
-                          onClick={() => setShowColumnSelector(false)}
-                          variant="primary"
-                          className="px-5"
-                        >
-                          Done
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-
             {/* Refresh Button */}
             <Button onClick={fetchData} variant="outline" className="mb-2.5" disabled={loading}>
               <svg
@@ -1000,90 +392,117 @@ export default function DataPage() {
           </div>
         )}
 
-        {/* Table with Synchronized Top and Bottom Scrollbars */}
-        <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
-          {/* Top Scrollbar - Provides horizontal scroll without going to bottom */}
-          <div className="relative bg-slate-50 border-b border-slate-200">
-            <div 
-              ref={topScrollRef}
-              className="overflow-x-auto overflow-y-hidden"
-              style={{ height: '17px' }}
-            >
-              <div style={{ 
-                width: visibleColumns.length > 0 
-                  ? `${visibleColumns.reduce((acc, col) => acc + parseInt(col.width || '150'), 0)}px` 
-                  : '100%',
-                height: '1px' 
-              }} />
-            </div>
-            <div className="absolute top-0 left-4 text-xs text-slate-500 pointer-events-none py-0.5">
-              {/* ← Scroll horizontally → */}
-            </div>
-          </div>
+        {/* Table with Synchronized Top and Bottom Scrollbars - Only show when there are records */}
+        {totalRecords > 0 && !loading && (
+          <>
+            <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
+              {/* Top Scrollbar - Provides horizontal scroll without going to bottom */}
+              <div className="relative bg-slate-50 border-b border-slate-200">
+                <div 
+                  ref={topScrollRef}
+                  className="overflow-x-auto overflow-y-hidden"
+                  style={{ height: '17px' }}
+                >
+                  <div style={{ 
+                    width: currentColumns.length > 0 
+                      ? `${currentColumns.reduce((acc, col) => acc + parseInt(col.width || '150'), 0)}px` 
+                      : '100%',
+                    height: '1px' 
+                  }} />
+                </div>
+                <div className="absolute top-0 left-4 text-xs text-slate-500 pointer-events-none py-0.5">
+                  {/* ← Scroll horizontally → */}
+                </div>
+              </div>
 
-          {/* Table Content with Bottom Scrollbar */}
-          <div 
-            ref={tableContainerRef}
-            className="max-h-[75vh] overflow-auto"
-          >
-            <Table
-              columns={visibleColumns}
-              data={filteredData}
-              loading={loading}
-              onRowClick={handleRowClick}
-              striped
-              hoverable
-              bordered
-              emptyMessage={searchInput ? "No records match your search" : "No occurrence records found"}
-            />
-          </div>
-        </div>
+              {/* Table Content with Bottom Scrollbar */}
+              <div 
+                ref={tableContainerRef}
+                className="max-h-[75vh] overflow-auto"
+              >
+                <Table
+                  columns={currentColumns}
+                  data={filteredData}
+                  loading={loading}
+                  onRowClick={handleRowClick}
+                  striped
+                  hoverable
+                  bordered
+                  emptyMessage={searchInput ? "No records match your search" : "No occurrence records found"}
+                />
+              </div>
+            </div>
 
-        {/* Pagination */}
-        <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-white rounded-lg shadow p-4">
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-700">
-              {searchInput ? (
-                <>Showing {filteredData.length} of {totalRecords} records (filtered)</>
-              ) : (
-                <>Showing {data.length > 0 ? (currentPage - 1) * perPage + 1 : 0} to {Math.min(currentPage * perPage, totalRecords)} of {totalRecords} records</>
-              )}
-            </span>
+            {/* Pagination */}
+            <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-white rounded-lg shadow p-4">
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-700">
+                  {searchInput ? (
+                    <>Showing {filteredData.length} of {totalRecords} records (filtered)</>
+                  ) : (
+                    <>Showing {data.length > 0 ? (currentPage - 1) * perPage + 1 : 0} to {Math.min(currentPage * perPage, totalRecords)} of {totalRecords} records</>
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1 || loading}
+                  variant="outline"
+                >
+                  First
+                </Button>
+                <Button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1 || loading}
+                  variant="outline"
+                >
+                  Previous
+                </Button>
+                <span className="px-4 py-2 text-sm text-gray-700">
+                  Page {currentPage} of {totalPages || 1}
+                </span>
+                <Button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={!hasMore || loading}
+                  variant="outline"
+                >
+                  Next
+                </Button>
+                <Button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages || loading}
+                  variant="outline"
+                >
+                  Last
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Show message when no records are available for display */}
+        {totalRecords === 0 && !loading && !error && (
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <svg
+              className="w-16 h-16 mx-auto mb-4 text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+              />
+            </svg>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Records Available</h3>
+            <p className="text-gray-600">
+              There are currently no occurrence records approved for display on the website.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setCurrentPage(1)}
-              disabled={currentPage === 1 || loading}
-              variant="outline"
-            >
-              First
-            </Button>
-            <Button
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1 || loading}
-              variant="outline"
-            >
-              Previous
-            </Button>
-            <span className="px-4 py-2 text-sm text-gray-700">
-              Page {currentPage} of {totalPages || 1}
-            </span>
-            <Button
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={!hasMore || loading}
-              variant="outline"
-            >
-              Next
-            </Button>
-            <Button
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages || loading}
-              variant="outline"
-            >
-              Last
-            </Button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
