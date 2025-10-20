@@ -1,9 +1,23 @@
 import { PDFGenerator, formatDate, formatDateOnly } from './pdfGenerator';
 import { AccidentFormData } from '@/types/forms';
+import aerodromeData from '@/components/forms/aerodrome-codes.json';
+import accountsData from '@/components/forms/accounts-codes.json';
 
 export class AccidentPDFGenerator extends PDFGenerator {
   constructor() {
     super('STANDARD'); // Use standard layout for multi-page accident reports
+  }
+
+  private getAerodromeName(id: string | undefined): string | undefined {
+    if (!id) return undefined;
+    const aerodrome = aerodromeData.aerodromes.find(a => a.id === id);
+    return aerodrome?.Name;
+  }
+
+  private getAccountName(id: string | undefined): string | undefined {
+    if (!id) return undefined;
+    const account = accountsData.accounts.find(a => a.id === id);
+    return account?.Account_Name;
   }
 
   async generate(data: AccidentFormData, metadata?: any): Promise<Buffer> {
@@ -35,7 +49,7 @@ export class AccidentPDFGenerator extends PDFGenerator {
     this.addSection('Occurrence Information');
     this.addField('Date & Time', formatDate(data.Occurrence_Date1 || data.occurrenceDate));
     this.addFieldPair('State', data.State || data.state, 'Location', data.Location || data.location);
-    this.addField('Incident/Accident Details', data.Details_of_incident_accident || data.detailsOfIncident, true);
+    this.addField('Incident/Accident Details', data.Details_of_incident_accident, true);
     
     // Damage and Injury
     this.addFieldPair('Damage to Aircraft', data.Damage_to_aircraft, 'Most Serious Injury to Pilot', data.Most_serious_injury_to_pilot);
@@ -61,8 +75,8 @@ export class AccidentPDFGenerator extends PDFGenerator {
         this.addField('Landing Location', data.Landing);
       }
       this.addFieldPair('Type of Operation', data.Type_of_operation, 'Phase of Flight', data.Phase_of_flight);
-      if (data.Name_of_Flight_Training_School) {
-        this.addField('Flight Training School', data.Name_of_Flight_Training_School);
+      if (data.Lookup_5) {
+        this.addField('Flight Training School', this.getAccountName(data.Lookup_5));
       }
       this.addFieldPair('Effect of Flight', data.Effect_of_flight, 'Flight Rules', data.Flight_Rules);
     }

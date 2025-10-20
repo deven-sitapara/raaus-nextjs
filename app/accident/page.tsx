@@ -13,8 +13,10 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 import { FileUpload } from "@/components/ui/FileUpload";
 import MapPicker from "@/components/ui/MapPicker";
-import YCodeSelector from "@/components/forms/YCodeSelector";
+import LookupField from "@/components/ui/LookupField";
 import { AccidentFormData } from "@/types/forms";
+import aerodromeData from "@/components/forms/aerodrome-codes.json";
+import accountsData from "@/components/forms/accounts-codes.json";
 import { validationPatterns, validationMessages, validateEmail } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import AccidentPreview from "@/components/forms/AccidentPreview";
@@ -468,7 +470,14 @@ const alertReceivedOptions = [
   { value: "Unknown", label: "Unknown" },
 ];
 
+// Pre-compute lookup options to avoid recreation on every render
+const aerodromeOptions = aerodromeData.aerodromes.map(a => ({ id: a.id, name: a.Name }));
+const flightTrainingOptions = accountsData.accounts.map(a => ({ id: a.id, name: a.Account_Name }));
+
 export default function AccidentForm() {
+  // Configuration: Set to true to clear form after successful submission
+  const CLEAR_FORM_ON_SUBMIT = true;
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -586,7 +595,40 @@ export default function AccidentForm() {
     clearStep2SpecialState();
   };
 
-
+  // Comprehensive form clearing function
+  const clearAllFormData = () => {
+    // Clear sessionStorage
+    clearFormOnSubmission('accident', 3);
+    
+    // Reset React Hook Form
+    reset();
+    
+    // Clear special state (phone numbers, dates, etc.)
+    setContactPhone("");
+    setContactPhoneError("");
+    setContactPhoneCountry("AU");
+    setPilotContactPhone("");
+    setPilotContactPhoneError("");
+    setPilotContactPhoneCountry("AU");
+    setOccurrenceDate("");
+    setOccurrenceDateError("");
+    setOccurrenceTime("");
+    setOccurrenceTimeError("");
+    setLatitude("");
+    setLongitude("");
+    setAttachments(null);
+    
+    // Clear validation states
+    setMemberValidationStatus("");
+    setMemberValidationMessage("");
+    setPilotValidationStatus("");
+    setPilotValidationMessage("");
+    setMaintainerValidationStatus("");
+    setMaintainerValidationMessage("");
+    
+    // Reset to step 1
+    setCurrentStep(1);
+  };
 
   // Watch the type of operation field to conditionally show flight training school
   const selectedTypeOfOperation = watch("Type_of_operation");
@@ -595,7 +637,6 @@ export default function AccidentForm() {
   const selectedRole = watch("role");
   
   // Watch fields with 'Other' option
-  const selectedFlightSchool = watch("Name_of_Flight_Training_School");
   const selectedRelativeTrack = watch("Relative_Track");
   const selectedAlertReceived = watch("Alert_Received");
   
@@ -844,9 +885,9 @@ export default function AccidentForm() {
       fieldsToValidate = [
         "role",
         "customRole", // Add custom role to the clearing list
-        "firstName", 
-        "lastName",
-        "emailAddress"
+        "Name1", 
+        "Last_Name",
+        "Reporter_Email"
       ];
       
       // Validate contact phone - PhoneInput component handles its own validation
@@ -857,9 +898,9 @@ export default function AccidentForm() {
     } else if (currentStep === 2) {
       // Step 2: Occurrence Information validation
       fieldsToValidate = [
-        "state",
-        "location",
-        "detailsOfIncident",
+        "State",
+        "Location",
+        "Details_of_incident_accident",
         "Damage_to_aircraft",
         "Most_serious_injury_to_pilot",
         "Description_of_damage_to_aircraft",
@@ -965,12 +1006,10 @@ export default function AccidentForm() {
       formData.append('formType', 'accident');
       
       // Convert "Yes"/"No" strings to boolean for Zoho CRM compatibility
-      const { Y_Code, ...cleanData } = data; // Exclude Y_Code to prevent type errors
       const submissionData = {
-        ...cleanData,
+        ...data,
         // Use custom values if "Other" is selected, otherwise use the dropdown value
         role: data.role === "Other" && data.customRole && data.customRole.trim() ? data.customRole.trim() : data.role,
-        Name_of_Flight_Training_School: data.Name_of_Flight_Training_School === "Other" && data.customFlightSchool && data.customFlightSchool.trim() ? data.customFlightSchool.trim() : data.Name_of_Flight_Training_School,
         Relative_Track: data.Relative_Track === "Other" && data.customRelativeTrack && data.customRelativeTrack.trim() ? data.customRelativeTrack.trim() : data.Relative_Track,
         Alert_Received: data.Alert_Received === "Other" && data.customAlertReceived && data.customAlertReceived.trim() ? data.customAlertReceived.trim() : data.Alert_Received,
         contactPhone: contactPhone,
@@ -1012,9 +1051,14 @@ export default function AccidentForm() {
 
       if (response.data.success) {
         setSubmissionData(response.data);
-        clearFormOnSubmission('accident', 3);
         setShowPreview(false);
         setSubmitSuccess(true);
+        
+        // Clear form if configured to do so
+        if (CLEAR_FORM_ON_SUBMIT) {
+          clearAllFormData();
+        }
+        
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         throw new Error(response.data.error || "Failed to process accident report");
@@ -1267,14 +1311,14 @@ export default function AccidentForm() {
                         type="text"
                         placeholder="123456"
                         maxLength={6}
-                        error={errors.memberNumber?.message}
+                        error={errors.Member_Number?.message}
                         onKeyPress={(e) => {
                           // Only allow numbers (0-9)
                           if (!/[0-9]/.test(e.key)) {
                             e.preventDefault();
                           }
                         }}
-                        {...register("memberNumber", {
+                        {...register("Member_Number", {
                           pattern: {
                             value: validationPatterns.memberNumber,
                             message: validationMessages.memberNumber,
@@ -1287,8 +1331,8 @@ export default function AccidentForm() {
                             // Remove any non-numeric characters
                             e.target.value = e.target.value.replace(/[^0-9]/g, '');
                             const memberNumber = e.target.value;
-                            const firstName = watch("firstName");
-                            const lastName = watch("lastName");
+                            const firstName = watch("Name1");
+                            const lastName = watch("Last_Name");
                             if (memberNumber && firstName && lastName) {
                               validateMember(memberNumber, firstName, lastName);
                             } else {
@@ -1316,14 +1360,14 @@ export default function AccidentForm() {
                       required
                       placeholder="John"
                       maxLength={30}
-                      error={errors.firstName?.message}
+                      error={errors.Name1?.message}
                       onKeyPress={(e) => {
                         // Only allow letters (a-z, A-Z) and spaces
                         if (!/[a-zA-Z ]/.test(e.key)) {
                           e.preventDefault();
                         }
                       }}
-                      {...register("firstName", {
+                      {...register("Name1", {
                         required: "This field cannot be blank.",
                         pattern: {
                           value: validationPatterns.name,
@@ -1345,8 +1389,8 @@ export default function AccidentForm() {
                           e.target.value = value;
                           
                           const firstName = value;
-                          const memberNumber = watch("memberNumber");
-                          const lastName = watch("lastName");
+                          const memberNumber = watch("Member_Number");
+                          const lastName = watch("Last_Name");
                           if (memberNumber && firstName && lastName) {
                             validateMember(memberNumber, firstName, lastName);
                           }
@@ -1359,14 +1403,14 @@ export default function AccidentForm() {
                       required
                       placeholder="Doe"
                       maxLength={30}
-                      error={errors.lastName?.message}
+                      error={errors.Last_Name?.message}
                       onKeyPress={(e) => {
                         // Only allow letters (a-z, A-Z) and spaces
                         if (!/[a-zA-Z ]/.test(e.key)) {
                           e.preventDefault();
                         }
                       }}
-                      {...register("lastName", {
+                      {...register("Last_Name", {
                         required: "This field cannot be blank.",
                         pattern: {
                           value: validationPatterns.name,
@@ -1388,8 +1432,8 @@ export default function AccidentForm() {
                           e.target.value = value;
                           
                           const lastName = value;
-                          const memberNumber = watch("memberNumber");
-                          const firstName = watch("firstName");
+                          const memberNumber = watch("Member_Number");
+                          const firstName = watch("Name1");
                           if (memberNumber && firstName && lastName) {
                             validateMember(memberNumber, firstName, lastName);
                           }
@@ -1405,8 +1449,8 @@ export default function AccidentForm() {
                       type="email"
                       placeholder="example@domain.com"
                       required
-                      error={errors.emailAddress?.message}
-                      {...register("emailAddress", {
+                      error={errors.Reporter_Email?.message}
+                      {...register("Reporter_Email", {
                         required: "Email address is required",
                         validate: (value) => !value || validateEmail(value) || "Please enter a valid email address (e.g., user@example.com)"
                       })}
@@ -1917,8 +1961,8 @@ export default function AccidentForm() {
                       label="State"
                       required
                       options={stateOptions}
-                      error={errors.state?.message}
-                      {...register("state", { 
+                      error={errors.State?.message}
+                      {...register("State", { 
                         required: "This field cannot be blank." 
                       })}
                     />
@@ -1931,8 +1975,8 @@ export default function AccidentForm() {
                       placeholder="Enter location details"
                       rows={3}
                       maxLength={250}
-                      error={errors.location?.message}
-                      {...register("location", {
+                      error={errors.Location?.message}
+                      {...register("Location", {
                         required: "This field cannot be blank.",
                         minLength: {
                           value: 4,
@@ -1981,8 +2025,8 @@ export default function AccidentForm() {
                       required
                       rows={3}
                       maxLength={255}
-                      error={errors.detailsOfIncident?.message}
-                      {...register("detailsOfIncident", {
+                      error={errors.Details_of_incident_accident?.message}
+                      {...register("Details_of_incident_accident", {
                         required: "This field cannot be blank.",
                         minLength: {
                           value: 4,
@@ -2042,7 +2086,8 @@ export default function AccidentForm() {
 
                   {/* Move these two fields above 'In the vicinity of an aerodrome?' and display side by side */}
                   <div className="mt-6 space-y-6">
-                    <div>
+                    {/* Highlighted Section: Involve Near Miss with Another Aircraft */}
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
                       <Select
                         label="Involve near miss with another aircraft?"
                         options={yesNoOptions}
@@ -2284,7 +2329,8 @@ export default function AccidentForm() {
                       )}
                     </div>
 
-                    <div>
+                    {/* Highlighted Section: Bird or Animal Strike */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
                       <Select
                         label="Bird or animal Strike?"
                         options={yesNoOptions}
@@ -2360,6 +2406,7 @@ export default function AccidentForm() {
                     </div>
                   </div>
 
+                  {/* In the Vicinity of an Aerodrome */}
                   <div className="mt-6">
                     <Select
                       label="In the vicinity of an aerodrome?"
@@ -2367,13 +2414,13 @@ export default function AccidentForm() {
                       error={errors.In_vicinity_of_aerodrome?.message}
                       {...register("In_vicinity_of_aerodrome")}
                     />
-                  </div>
 
                   {selectedAerodromeVicinity === "Yes" && (
                     <div className="mt-6">
-                      <YCodeSelector
-                        value={watch("Y_Code")?.name || ""}
-                        onChange={(selectedName) => setValue("Y_Code", { name: selectedName, id: selectedName }, { shouldValidate: true })}
+                      <LookupField
+                        options={aerodromeOptions}
+                        value={watch("Y_Code") || ""}
+                        onChange={(id) => setValue("Y_Code", id, { shouldValidate: true })}
                         label="Vicinity Aerodrome (Y Code)"
                         placeholder="Search for an aerodrome..."
                         error={errors.Y_Code?.message}
@@ -2383,6 +2430,7 @@ export default function AccidentForm() {
                       </p>
                     </div>
                   )}
+                  </div>
 
                   <div className="mt-6">
                     <Input
@@ -2645,8 +2693,8 @@ export default function AccidentForm() {
                       label="What may have contributed to the event?"
                       required
                       rows={3}
-                      error={errors.Details_of_incident_accident?.message}
-                      {...register("Details_of_incident_accident", {
+                      error={errors.Level_2_Maintainer_L2?.message}
+                      {...register("Level_2_Maintainer_L2", {
                         required: "This field cannot be blank."
                       })}
                     />
@@ -2831,14 +2879,14 @@ export default function AccidentForm() {
                     {/* Flight Training School - Only show when Type of Operation is Flying Training */}
                     {(selectedTypeOfOperation === "Flying Training – Dual" || selectedTypeOfOperation === "Flying Training – Solo") && (
                       <div>
-                        <SearchableDropdown
+                        <LookupField
                           label="Name of Flight Training School"
                           required
-                          options={flightTrainingSchoolOptions}
-                          value={watch("Name_of_Flight_Training_School") || ""}
-                          onChange={(value) => setValue("Name_of_Flight_Training_School", value)}
+                          options={flightTrainingOptions}
+                          value={watch("Lookup_5") || ""}
+                          onChange={(id) => setValue("Lookup_5", id, { shouldValidate: true })}
                           placeholder="Search and select flight training school..."
-                          error={errors.Name_of_Flight_Training_School?.message}
+                          error={errors.Lookup_5?.message}
                         />
                       </div>
                     )}

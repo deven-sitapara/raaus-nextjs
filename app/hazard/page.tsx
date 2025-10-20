@@ -10,8 +10,9 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Button } from "@/components/ui/Button";
 import MapPicker from "@/components/ui/MapPicker";
-import YCodeSelector from "@/components/forms/YCodeSelector";
+import LookupField from "@/components/ui/LookupField";
 import { HazardFormData } from "@/types/forms";
+import aerodromeData from "@/components/forms/aerodrome-codes.json";
 import { validationPatterns, validationMessages } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import HazardPreview from "@/components/forms/HazardPreview";
@@ -48,6 +49,9 @@ const stateOptions = [
   { value: "WA", label: "WA" },
 ];
 
+// Pre-compute lookup options to avoid recreation on every render
+const aerodromeOptions = aerodromeData.aerodromes.map(a => ({ id: a.id, name: a.Name }));
+
 export default function HazardForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -77,7 +81,7 @@ export default function HazardForm() {
 
   // Watch for "Other" option selections
   const selectedRole = watch("role");
-  const hazardRelatesToAerodrome = watch("hazardRelatesToSpecificAerodrome");
+  const hazardRelatesToAerodrome = watch("Hazard_Relates_To_Specific_Aerodrome");
 
   // Form persistence
   const { clearCurrentForm } = useFormPersistence(
@@ -205,8 +209,8 @@ export default function HazardForm() {
         Location_Latitude: latitude,
         Location_Longitude: longitude,
         State: data.State,
-        Hazard_Relates_To_Specific_Aerodrome: data.hazardRelatesToSpecificAerodrome,
-        Hazard_Aerodrome: selectedAerodrome || data.hazardAerodrome,
+        Hazard_Relates_To_Specific_Aerodrome: data.Hazard_Relates_To_Specific_Aerodrome,
+        Y_Code: selectedAerodrome || data.Y_Code,
         Hazard_Description: data.Hazard_Description,
         Please_fully_describe_the_identified_hazard: data.Hazard_Description,
         Description_of_Occurrence: data.Hazard_Description, // Map to generic description field
@@ -660,22 +664,23 @@ export default function HazardForm() {
                     { value: "Yes", label: "Yes" },
                     { value: "No", label: "No" },
                   ]}
-                  {...register("hazardRelatesToSpecificAerodrome")}
-                  error={errors.hazardRelatesToSpecificAerodrome?.message}
+                  {...register("Hazard_Relates_To_Specific_Aerodrome")}
+                  error={errors.Hazard_Relates_To_Specific_Aerodrome?.message}
                 />
               </div>
 
               {hazardRelatesToAerodrome === "Yes" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
-                  <YCodeSelector
+                  <LookupField
+                    options={aerodromeOptions}
                     value={selectedAerodrome}
-                    onChange={(value) => {
-                      setSelectedAerodrome(value);
-                      setValue("hazardAerodrome", value);
+                    onChange={(id) => {
+                      setSelectedAerodrome(id);
+                      setValue("Y_Code", id);
                     }}
                     label="Hazard Aerodrome"
                     placeholder="Search for an aerodrome..."
-                    error={errors.hazardAerodrome?.message}
+                    error={errors.Y_Code?.message}
                   />
                 </div>
               )}
