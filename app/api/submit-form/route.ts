@@ -386,8 +386,8 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         // Occurrence details
         Occurrence_Date1: accidentData.occurrenceDate || formatDateForCRM(accidentData.Occurrence_Date1),
         Occurrence_Date2: accidentData.Occurrence_Date2 ? formatDateOnlyForCRM(accidentData.Occurrence_Date2) : (accidentData.occurrenceDate ? formatDateOnlyForCRM(accidentData.occurrenceDate) : (accidentData.Occurrence_Date1 ? formatDateOnlyForCRM(accidentData.Occurrence_Date1) : null)),
-        Description_of_Occurrence: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
-        Details_of_incident_accident: accidentData.Details_of_incident_accident || accidentData.detailsOfIncident || '',
+        Description_of_Occurrence: accidentData.Details_of_incident_accident || '',
+        Details_of_incident_accident: accidentData.Details_of_incident_accident || '',
         Location: accidentData.location || accidentData.Location || '',
         Location_of_hazard: accidentData.location || accidentData.Location || '',
         State: accidentData.State || accidentData.state || '',
@@ -398,7 +398,6 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Description_of_damage_to_aircraft: accidentData.Description_of_damage_to_aircraft || '',
   Accident_or_Incident: sanitizePick(accidentData.Accident_or_Incident || accidentData.Is_this_occurrence_an_Accident_or_an_Incident),
         Reporter_Suggestions: accidentData.Reporter_Suggestions || '',
-        ...(sanitizePick(accidentData.Name_of_Flight_Training_School) && { Name_of_Flight_Training_School: sanitizePick(accidentData.Name_of_Flight_Training_School) }),
     Lookup_5: accidentData.Lookup_5 || undefined, // Flight Training School lookup - ID
     Y_Code: accidentData.Y_Code || undefined, // Aerodrome lookup - ID
   Level_2_Maintainer_L2: accidentData.Level_2_Maintainer_L2 || accidentData.Details_of_incident_accident || '',
@@ -611,7 +610,6 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Potential_Consequences_of_Hazard: hazardData.Potential_Consequences_of_Hazard || '',
         Do_you_have_further_suggestions_on_how_to_PSO: hazardData.Do_you_have_further_suggestions_on_how_to_PSO || '',
         Hazard_relates_to_specific_aerodrome: convertToBoolean(hazardData.Hazard_Relates_To_Specific_Aerodrome),
-        Hazard_Aerodrome: hazardData.Hazard_Aerodrome || '',
         Y_Code: hazardData.Y_Code || undefined, // Aerodrome lookup - ID
         ...((hazardData.Latitude || hazardData.Location_Latitude) ? { Latitude: (hazardData.Latitude || hazardData.Location_Latitude!).trim() } : {}),
         ...((hazardData.Longitude || hazardData.Location_Longitude) ? { Longitude: (hazardData.Longitude || hazardData.Location_Longitude!).trim() } : {}),

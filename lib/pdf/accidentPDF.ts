@@ -49,7 +49,7 @@ export class AccidentPDFGenerator extends PDFGenerator {
     this.addSection('Occurrence Information');
     this.addField('Date & Time', formatDate(data.Occurrence_Date1 || data.occurrenceDate));
     this.addFieldPair('State', data.State || data.state, 'Location', data.Location || data.location);
-    this.addField('Incident/Accident Details', data.Details_of_incident_accident || data.detailsOfIncident, true);
+    this.addField('Incident/Accident Details', data.Details_of_incident_accident, true);
     
     // Damage and Injury
     this.addFieldPair('Damage to Aircraft', data.Damage_to_aircraft, 'Most Serious Injury to Pilot', data.Most_serious_injury_to_pilot);
