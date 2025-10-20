@@ -399,7 +399,8 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
   Accident_or_Incident: sanitizePick(accidentData.Accident_or_Incident || accidentData.Is_this_occurrence_an_Accident_or_an_Incident),
         Reporter_Suggestions: accidentData.Reporter_Suggestions || '',
         ...(sanitizePick(accidentData.Name_of_Flight_Training_School) && { Name_of_Flight_Training_School: sanitizePick(accidentData.Name_of_Flight_Training_School) }),
-    Lookup_5: (typeof accidentData.Lookup_5 === 'number' && Number.isInteger(accidentData.Lookup_5)) ? accidentData.Lookup_5 : undefined,
+    Lookup_5: accidentData.Lookup_5 || undefined, // Flight Training School lookup - ID
+    Y_Code: accidentData.Y_Code || undefined, // Aerodrome lookup - ID
   Level_2_Maintainer_L2: accidentData.Level_2_Maintainer_L2 || accidentData.Details_of_incident_accident || '',
   In_vicinity_of_aerodrome: convertToBoolean(accidentData.In_vicinity_of_aerodrome),
   Involve_IFR_or_Air_Transport_Operations: convertToBoolean(accidentData.Involve_IFR_or_Air_Transport_Operations),
@@ -611,6 +612,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Do_you_have_further_suggestions_on_how_to_PSO: hazardData.Do_you_have_further_suggestions_on_how_to_PSO || '',
         Hazard_relates_to_specific_aerodrome: convertToBoolean(hazardData.Hazard_Relates_To_Specific_Aerodrome),
         Hazard_Aerodrome: hazardData.Hazard_Aerodrome || '',
+        Y_Code: hazardData.Y_Code || undefined, // Aerodrome lookup - ID
         ...((hazardData.Latitude || hazardData.Location_Latitude) ? { Latitude: (hazardData.Latitude || hazardData.Location_Latitude!).trim() } : {}),
         ...((hazardData.Longitude || hazardData.Location_Longitude) ? { Longitude: (hazardData.Longitude || hazardData.Location_Longitude!).trim() } : {}),
         // Add hazard-specific flag
@@ -805,9 +807,6 @@ function cleanupCRMRecord(record: Record<string, any>): Record<string, any> {
   ]);
   
   for (const [k, v] of Object.entries(record)) {
-    // Y_Code field is now mapped separately, location fields use location text only
-    if (k === 'Y_Code') continue;
-    
     if (v === null || v === undefined) continue;
     
     if (typeof v === 'string') {

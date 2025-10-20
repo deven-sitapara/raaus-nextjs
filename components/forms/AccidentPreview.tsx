@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { AccidentFormData } from "@/types/forms";
+import aerodromeData from "@/components/forms/aerodrome-codes.json";
+import accountsData from "@/components/forms/accounts-codes.json";
 
 interface AccidentPreviewProps {
   data: AccidentFormData;
@@ -33,6 +35,20 @@ export default function AccidentPreview({
   isSubmitting,
 }: AccidentPreviewProps) {
   const [currentTab, setCurrentTab] = useState(1);
+  
+  // Helper function to get aerodrome name from ID
+  const getAerodromeName = (id: string | undefined) => {
+    if (!id) return undefined;
+    const aerodrome = aerodromeData.aerodromes.find(a => a.id === id);
+    return aerodrome?.Name;
+  };
+  
+  // Helper function to get account name from ID
+  const getAccountName = (id: string | undefined) => {
+    if (!id) return undefined;
+    const account = accountsData.accounts.find(a => a.id === id);
+    return account?.Account_Name;
+  };
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -187,10 +203,10 @@ export default function AccidentPreview({
                   {data.role === "Other" && (
                     <PreviewField label="Custom Role" value={data.customRole} />
                   )}
-                  <PreviewField label="Member Number" value={data.memberNumber} />
-                  <PreviewField label="First Name" value={data.firstName} />
-                  <PreviewField label="Last Name" value={data.lastName} />
-                  <PreviewField label="Email" value={data.emailAddress} />
+                  <PreviewField label="Member Number" value={data.Member_Number} />
+                  <PreviewField label="First Name" value={data.Name1} />
+                  <PreviewField label="Last Name" value={data.Last_Name} />
+                  <PreviewField label="Email" value={data.Reporter_Email} />
                   <PreviewField label="Contact Phone" value={contactPhone} />
                 </dl>
               </PreviewSection>
@@ -260,8 +276,8 @@ export default function AccidentPreview({
                     value={formatDateTime(occurrenceDate, occurrenceTime)}
                     fullWidth
                   />
-                  <PreviewField label="State" value={data.state} />
-                  <PreviewField label="Location" value={data.location} />
+                  <PreviewField label="State" value={data.State} />
+                  <PreviewField label="Location" value={data.Location} />
                   {latitude && longitude && (
                     <PreviewField 
                       label="GPS Coordinates" 
@@ -269,9 +285,9 @@ export default function AccidentPreview({
                       fullWidth
                     />
                   )}
-                  <PreviewField
-                    label="Details of Incident/Accident"
-                    value={data.detailsOfIncident}
+                  <PreviewField 
+                    label="Details of Incident/Accident" 
+                    value={data.Details_of_incident_accident}
                     fullWidth
                   />
                 </dl>
@@ -285,7 +301,7 @@ export default function AccidentPreview({
                   <PreviewField label="Involve IFR/Air Transport Operations" value={data.Involve_IFR_or_Air_Transport_Operations} />
                   <PreviewField label="In Controlled/Special Use Airspace" value={data.In_controlled_or_special_use_airspace} />
                   <PreviewField label="In Vicinity of Aerodrome" value={data.In_vicinity_of_aerodrome} />
-                  <PreviewField label="Vicinity Aerodrome (Y Code)" value={data.Y_Code?.name} />
+                  <PreviewField label="Vicinity Aerodrome (Y Code)" value={getAerodromeName(data.Y_Code)} />
                   <PreviewField 
                     label="Passenger Details" 
                     value={data.Passenger_details}
@@ -336,7 +352,7 @@ export default function AccidentPreview({
                   <PreviewField label="Destination Location" value={data.Destination_location} />
                   <PreviewField label="Landing (if different)" value={data.Landing} />
                   <PreviewField label="Type of Operation" value={data.Type_of_operation} />
-                  <PreviewField label="Flight Training School" value={data.Name_of_Flight_Training_School} />
+                  <PreviewField label="Flight Training School" value={getAccountName(data.Lookup_5)} />
                   <PreviewField label="Phase of Flight" value={data.Phase_of_flight} />
                   <PreviewField label="Effect of Flight" value={data.Effect_of_flight} />
                   <PreviewField label="Flight Rules" value={data.Flight_Rules} />

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { HazardFormData } from "@/types/forms";
+import aerodromeData from "@/components/forms/aerodrome-codes.json";
 
 interface HazardPreviewProps {
   data: HazardFormData;
@@ -35,6 +36,13 @@ export default function HazardPreview({
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  // Helper function to get aerodrome name from ID
+  const getAerodromeName = (id: string | undefined) => {
+    if (!id) return undefined;
+    const aerodrome = aerodromeData.aerodromes.find(a => a.id === id);
+    return aerodrome?.Name;
+  };
 
   const formatDateTime = (date: string, time: string) => {
     if (!date || !time) return "N/A";
@@ -148,7 +156,7 @@ export default function HazardPreview({
               {selectedAerodrome && (
                 <PreviewField 
                   label="Hazard Aerodrome" 
-                  value={selectedAerodrome}
+                  value={getAerodromeName(selectedAerodrome) || selectedAerodrome}
                   fullWidth
                 />
               )}

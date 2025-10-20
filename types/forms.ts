@@ -89,9 +89,8 @@ export interface AccidentFormData {
   Reporter_Suggestions?: string;
   Level_2_Maintainer_L2?: string;
   In_vicinity_of_aerodrome?: boolean | "Yes" | "No";
-  Y_Code?: { name: string; id: string };
-  Lookup_5?: { name: string; id: string };
-  Name_of_Flight_Training_School?: string;
+  Y_Code?: string; // Aerodrome lookup - stores ID
+  Lookup_5?: string; // Flight Training School lookup - stores ID
   Involve_IFR_or_Air_Transport_Operations?: boolean | "Yes" | "No";
   Involve_near_miss_with_another_aircraft?: boolean | "Yes" | "No";
   In_controlled_or_special_use_airspace?: boolean | "Yes" | "No";
@@ -202,7 +201,6 @@ export interface AccidentFormData {
   occurrenceDate?: string;
   location?: string;
   state?: AustralianState;
-  detailsOfIncident?: string;
 }
 
 // Form 2: Defect Report Types (Using exact CRM API field names)
@@ -357,9 +355,8 @@ export interface HazardFormData {
   Do_you_have_further_suggestions_on_how_to_PSO?: string;
   Potential_Consequences_of_Hazard?: string; // CRM field name
   hazardRelatesToSpecificAerodrome?: "Yes" | "No";
-  hazardAerodrome?: string;
+  Y_Code?: string; // Aerodrome lookup - stores ID
   Hazard_Relates_To_Specific_Aerodrome?: "Yes" | "No"; // Field name used in submission
-  Hazard_Aerodrome?: string; // Field name used in submission
   
   // GPS Coordinates
   Latitude?: string;
