@@ -18,7 +18,6 @@ import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission }
 import HazardPreview from "@/components/forms/HazardPreview";
 import axios from "axios";
 import Link from "next/link";
-import './hazard-style.css';
 
 const roleOptions = [
   { value: "", label: "- Please Select -" },
