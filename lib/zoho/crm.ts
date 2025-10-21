@@ -232,24 +232,69 @@ export class ZohoCRM {
       const member = response.data.data[0];
       console.log(`Found member:`, member);
 
-      // Check if names match (case-insensitive)
+      // Check if names match (case-insensitive and flexible)
       const crmFirstName = member.First_Name || member.Name1 || '';
       const crmLastName = member.Last_Name || '';
+      const crmFullName = member.Full_Name || '';
 
+      // Create full name from provided input
+      const providedFullName = `${firstName} ${lastName}`.trim();
+      const providedFullNameReversed = `${lastName} ${firstName}`.trim();
+
+      // Check multiple matching strategies
+      let nameMatches = false;
+
+      // Strategy 1: Exact match of separate fields
       const firstNameMatch = crmFirstName.toLowerCase() === firstName.toLowerCase();
       const lastNameMatch = crmLastName.toLowerCase() === lastName.toLowerCase();
 
+      // Strategy 2: Reversed match (user entered first/last swapped)
+      const firstNameReversedMatch = crmFirstName.toLowerCase() === lastName.toLowerCase();
+      const lastNameReversedMatch = crmLastName.toLowerCase() === firstName.toLowerCase();
+
+      // Strategy 3: Full name match (CRM full name vs provided full name)
+      const fullNameMatch = crmFullName.toLowerCase() === providedFullName.toLowerCase();
+      const fullNameReversedMatch = crmFullName.toLowerCase() === providedFullNameReversed.toLowerCase();
+
+      // Strategy 4: Flexible matching - check if provided names are contained in CRM names
+      const crmFullNameCombined = `${crmFirstName} ${crmLastName}`.trim().toLowerCase();
+      const flexibleMatch = crmFullNameCombined === providedFullName.toLowerCase() ||
+                           crmFullName.toLowerCase() === providedFullName.toLowerCase();
+
+      if (firstNameMatch && lastNameMatch) {
+        nameMatches = true;
+      } else if (firstNameReversedMatch && lastNameReversedMatch) {
+        nameMatches = true;
+      } else if (fullNameMatch) {
+        nameMatches = true;
+      } else if (fullNameReversedMatch) {
+        nameMatches = true;
+      } else if (flexibleMatch) {
+        nameMatches = true;
+      }
+
       console.log(`Name comparison:`, {
-        provided: `${firstName} ${lastName}`,
-        crm: `${crmFirstName} ${crmLastName}`,
-        firstMatch: firstNameMatch,
-        lastMatch: lastNameMatch
+        provided: providedFullName,
+        providedReversed: providedFullNameReversed,
+        crm: {
+          separate: `${crmFirstName} ${crmLastName}`,
+          full: crmFullName,
+          combined: crmFullNameCombined
+        },
+        matches: {
+          separate: firstNameMatch && lastNameMatch,
+          reversed: firstNameReversedMatch && lastNameReversedMatch,
+          full: fullNameMatch,
+          fullReversed: fullNameReversedMatch,
+          flexible: flexibleMatch,
+          overall: nameMatches
+        }
       });
 
-      if (!firstNameMatch || !lastNameMatch) {
+      if (!nameMatches) {
         return {
           valid: false,
-          warning: `Member Number ${memberNumber} does not match the provided name. Expected: ${crmFirstName} ${crmLastName}`,
+          warning: `Member Number ${memberNumber} does not match the provided name.`,
         };
       }
 
