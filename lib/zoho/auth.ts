@@ -53,13 +53,11 @@ export class ZohoAuth {
       // Set expiry to 5 minutes before actual expiry
       this.tokenExpiry = Date.now() + (response.data.expires_in - 300) * 1000;
 
-      console.log(`Zoho token obtained for ${service} using single token approach`);
       return this.accessToken;
     } catch (error: any) {
       console.error("Failed to get Zoho access token (single approach):", error);
       
       // Fallback to service-specific approach
-      console.log("Falling back to service-specific token approach...");
       return this.getServiceSpecificToken(service);
     }
   }
@@ -101,7 +99,6 @@ export class ZohoAuth {
         }
       );
 
-      console.log(`Zoho token obtained for ${service} using service-specific approach`);
       return response.data.access_token;
     } catch (error: any) {
       console.error(`Failed to get Zoho access token for ${service}:`, error);

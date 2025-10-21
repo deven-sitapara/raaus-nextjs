@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "cleanup:logs": "node scripts/cleanup-logs.js",
     "zoho:token": "node scripts/generate-zoho-token.js",
     "zoho:token:staging": "node scripts/generate-token-for-env.js staging",
     "zoho:token:production": "node scripts/generate-token-for-env.js production",
