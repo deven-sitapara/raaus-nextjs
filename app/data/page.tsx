@@ -32,16 +32,21 @@ export default function DataPage() {
 
     if (!topScroll || !tableContainer) return;
 
+    let isSyncingTop = false;
+    let isSyncingTable = false;
+
     const handleTopScroll = () => {
-      if (tableContainer) {
-        tableContainer.scrollLeft = topScroll.scrollLeft;
-      }
+      if (isSyncingTop) return;
+      isSyncingTable = true;
+      tableContainer.scrollLeft = topScroll.scrollLeft;
+      setTimeout(() => { isSyncingTable = false; }, 0);
     };
 
     const handleTableScroll = () => {
-      if (topScroll) {
-        topScroll.scrollLeft = tableContainer.scrollLeft;
-      }
+      if (isSyncingTable) return;
+      isSyncingTop = true;
+      topScroll.scrollLeft = tableContainer.scrollLeft;
+      setTimeout(() => { isSyncingTop = false; }, 0);
     };
 
     topScroll.addEventListener('scroll', handleTopScroll);
@@ -320,7 +325,7 @@ export default function DataPage() {
               className="h-10 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 bg-white"
             >
               <option value="">All Forms</option>
-              <option value="Accident">Accident</option>
+              <option value="Accident">Accident & Incident</option>
               <option value="Defect">Defect</option>
               <option value="Hazard">Hazard</option>
               <option value="Complaint">Complaint</option>
@@ -398,16 +403,16 @@ export default function DataPage() {
             <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
               {/* Top Scrollbar - Provides horizontal scroll without going to bottom */}
               <div className="relative bg-slate-50 border-b border-slate-200">
-                <div 
+                <div
                   ref={topScrollRef}
-                  className="overflow-x-auto overflow-y-hidden"
+                  className="overflow-x-auto overflow-y-hidden scrollbar-hide"
                   style={{ height: '17px' }}
                 >
-                  <div style={{ 
-                    width: currentColumns.length > 0 
-                      ? `${currentColumns.reduce((acc, col) => acc + parseInt(col.width || '150'), 0)}px` 
+                  <div style={{
+                    width: currentColumns.length > 0
+                      ? `${currentColumns.reduce((acc, col) => acc + parseInt(col.width || '150'), 0)}px`
                       : '100%',
-                    height: '1px' 
+                    height: '17px'
                   }} />
                 </div>
                 <div className="absolute top-0 left-4 text-xs text-slate-500 pointer-events-none py-0.5">
