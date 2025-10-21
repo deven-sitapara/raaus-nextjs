@@ -176,18 +176,51 @@ export class ZohoCRM {
     const accessToken = await ZohoAuth.getAccessToken("crm");
 
     try {
-      // Search for member by member number
-      const response = await axios.get(
-        `${this.apiDomain}/crm/v2/Contacts/search`,
-        {
-          params: {
-            criteria: `(Member_Number:equals:${memberNumber})`,
-          },
-          headers: {
-            Authorization: `Zoho-oauthtoken ${accessToken}`,
-          },
+      console.log(`🔍 Validating member: ${memberNumber} - ${firstName} ${lastName}`);
+
+      // Try different search criteria formats
+      const searchCriteria = [
+        `(Member_Number:equals:${memberNumber})`,
+        `Member_Number:equals:${memberNumber}`,
+        `((Member_Number:equals:${memberNumber}))`,
+        `(Member_Number:equals:"${memberNumber}")`
+      ];
+
+      let response;
+      let lastError;
+
+      for (const criteria of searchCriteria) {
+        try {
+          console.log(`Trying search criteria: ${criteria}`);
+          response = await axios.get(
+            `${this.apiDomain}/crm/v2/Contacts/search`,
+            {
+              params: {
+                criteria: criteria,
+              },
+              headers: {
+                Authorization: `Zoho-oauthtoken ${accessToken}`,
+              },
+              timeout: 10000, // 10 second timeout
+            }
+          );
+
+          // If we get a successful response, break out of the loop
+          if (response.status === 200) {
+            break;
+          }
+        } catch (error: any) {
+          lastError = error;
+          console.log(`Search criteria "${criteria}" failed:`, error.response?.status, error.response?.data?.message);
+          continue;
         }
-      );
+      }
+
+      if (!response) {
+        throw lastError || new Error("All search criteria failed");
+      }
+
+      console.log(`Search response:`, response.data);
 
       if (!response.data.data || response.data.data.length === 0) {
         return {
@@ -197,25 +230,63 @@ export class ZohoCRM {
       }
 
       const member = response.data.data[0];
+      console.log(`Found member:`, member);
 
-      // Check if names match
-      const firstNameMatch =
-        member.First_Name?.toLowerCase() === firstName.toLowerCase();
-      const lastNameMatch =
-        member.Last_Name?.toLowerCase() === lastName.toLowerCase();
+      // Check if names match (case-insensitive)
+      const crmFirstName = member.First_Name || member.Name1 || '';
+      const crmLastName = member.Last_Name || '';
+
+      const firstNameMatch = crmFirstName.toLowerCase() === firstName.toLowerCase();
+      const lastNameMatch = crmLastName.toLowerCase() === lastName.toLowerCase();
+
+      console.log(`Name comparison:`, {
+        provided: `${firstName} ${lastName}`,
+        crm: `${crmFirstName} ${crmLastName}`,
+        firstMatch: firstNameMatch,
+        lastMatch: lastNameMatch
+      });
 
       if (!firstNameMatch || !lastNameMatch) {
         return {
           valid: false,
-          warning: `Member Number ${memberNumber} does not match the provided name. Please verify your details.`,
+          warning: `Member Number ${memberNumber} does not match the provided name. Expected: ${crmFirstName} ${crmLastName}`,
         };
       }
 
       return { valid: true };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to validate member number:", error);
-      // Don't block submission on validation errors
-      return { valid: true };
+      
+      // Check if it's a specific API error
+      if (error.response) {
+        const status = error.response.status;
+        const errorData = error.response.data;
+        
+        // If it's a 400 Bad Request with INVALID_QUERY, the field might not exist
+        if (status === 400 && errorData?.code === 'INVALID_QUERY') {
+          console.error("Invalid search query - field may not exist:", errorData);
+          return {
+            valid: false,
+            warning: `Unable to validate member number - system configuration issue`,
+          };
+        }
+        
+        // If it's a 404, module might not exist
+        if (status === 404) {
+          console.error("Contacts module not found:", errorData);
+          return {
+            valid: false,
+            warning: `Unable to validate member number - module not found`,
+          };
+        }
+      }
+      
+      // For other errors, don't block submission but log the issue
+      console.error("Member validation failed with error:", error.message);
+      return {
+        valid: false,
+        warning: `Unable to validate member number at this time. Please proceed with submission.`,
+      };
     }
   }
 }
