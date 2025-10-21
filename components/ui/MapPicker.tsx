@@ -48,11 +48,6 @@ function LocationMarker({ onLocationSelect, position }: LocationMarkerProps) {
       
       // Center map on clicked location
       map.flyTo(newPosition, map.getZoom());
-      
-      console.log("📍 Location selected:", {
-        latitude: lat.toFixed(6),
-        longitude: lng.toFixed(6),
-      });
     },
   });
 
@@ -135,7 +130,6 @@ export default function MapPicker({
           const lng = position.coords.longitude.toFixed(6);
           onLocationSelect(lat, lng);
           setMapCenter([parseFloat(lat), parseFloat(lng)]);
-          console.log("📍 Current location:", { latitude: lat, longitude: lng });
         },
         (error) => {
           console.error("Error getting location:", error);
@@ -164,7 +158,6 @@ export default function MapPicker({
         const lng = parseFloat(firstResult.lon).toFixed(6);
         onLocationSelect(lat, lng);
         setMapCenter([parseFloat(lat), parseFloat(lng)]);
-        console.log("📍 Location found:", { latitude: lat, longitude: lng, name: firstResult.display_name });
       }
     } catch (error) {
       console.error("Error searching location:", error);
@@ -188,7 +181,6 @@ export default function MapPicker({
     setMapCenter([parseFloat(lat), parseFloat(lng)]);
     setSearchQuery("");
     setSearchResults([]);
-    console.log("📍 Location selected:", { latitude: lat, longitude: lng, name: result.display_name });
   };
 
   if (!isClient) {

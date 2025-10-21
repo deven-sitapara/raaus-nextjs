@@ -38,8 +38,6 @@ export async function POST(request: NextRequest) {
     };
 
     // Search for aircraft by Aircraft_Concat
-    console.log(`[AIRCRAFT LOOKUP] Searching for Aircraft_Concat: ${aircraftConcat}`);
-
     const aircraftResponse = await axios.get(
       `${API_DOMAIN}/crm/v2.2/Aircraft/search`,
       {
@@ -65,12 +63,9 @@ export async function POST(request: NextRequest) {
     const aircraftData = aircraftResponse.data.data[0];
     const aircraftId = aircraftData.id;
 
-    console.log(`[AIRCRAFT LOOKUP] Found aircraft ID: ${aircraftId}`);
-
     // Fetch engine data
     let engineData = null;
     try {
-      console.log(`[AIRCRAFT LOOKUP] Searching for engine with Aircraft ID: ${aircraftId}`);
       const engineResponse = await axios.get(
         `${API_DOMAIN}/crm/v2.2/Engines/search`,
         {
@@ -84,9 +79,6 @@ export async function POST(request: NextRequest) {
 
       if (engineResponse.data.data && engineResponse.data.data.length > 0) {
         engineData = engineResponse.data.data[0];
-        console.log(`[AIRCRAFT LOOKUP] Found engine data`);
-      } else {
-        console.log(`[AIRCRAFT LOOKUP] No engine data found for aircraft ${aircraftId}`);
       }
     } catch (engineError) {
       console.error(`[AIRCRAFT LOOKUP] Engine lookup error:`, engineError);
@@ -95,8 +87,6 @@ export async function POST(request: NextRequest) {
     // Fetch propeller data
     let propellerData = null;
     try {
-      console.log(`[AIRCRAFT LOOKUP] Searching for propeller with Aircraft Concat: ${aircraftConcat}`);
-
       // Try multiple search criteria for propellers - based on screenshot, use Aircraft Concat first
       const propellerCriteria = [
         `(Aircraft_Concat:equals:${aircraftConcat})`,
@@ -107,8 +97,6 @@ export async function POST(request: NextRequest) {
       ];
 
       for (const criteria of propellerCriteria) {
-        console.log(`[AIRCRAFT LOOKUP] Trying propeller criteria: ${criteria}`);
-
         const propellerResponse = await axios.get(
           `${API_DOMAIN}/crm/v2.2/Propellers/search`,
           {
@@ -120,14 +108,8 @@ export async function POST(request: NextRequest) {
 
         if (propellerResponse.data.data && propellerResponse.data.data.length > 0) {
           propellerData = propellerResponse.data.data[0];
-          console.log(`[AIRCRAFT LOOKUP] Found propeller data with criteria: ${criteria}`);
-          console.log(`[AIRCRAFT LOOKUP] Propeller data structure:`, JSON.stringify(propellerData, null, 2));
           break;
         }
-      }
-
-      if (!propellerData) {
-        console.log(`[AIRCRAFT LOOKUP] No propeller data found for aircraft ${aircraftId} with any criteria`);
       }
     } catch (propellerError) {
       console.error(`[AIRCRAFT LOOKUP] Propeller lookup error:`, propellerError);
@@ -185,11 +167,6 @@ export async function POST(request: NextRequest) {
       engine_found: !!engineData,
       propeller_found: !!propellerData,
     };
-
-    console.log(`[AIRCRAFT LOOKUP] Returning combined data for ${aircraftConcat}:`);
-    console.log(`[AIRCRAFT LOOKUP] Aircraft data: Serial=${combinedData.Serial_Number1}, Make=${combinedData.Manufacturer}`);
-    console.log(`[AIRCRAFT LOOKUP] Engine data: Found=${combinedData.engine_found}, Make=${combinedData.Engine_Details}`);
-    console.log(`[AIRCRAFT LOOKUP] Propeller data: Found=${combinedData.propeller_found}, Make=${combinedData.Propeller_make}, Model=${combinedData.Propeller_model}, Serial=${combinedData.Propeller_serial}`);
 
     return NextResponse.json({
       success: true,

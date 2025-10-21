@@ -11,10 +11,6 @@ export class ZohoCRM {
   static async createRecord(module: string, data: any): Promise<ZohoCRMResponse> {
     const accessToken = await ZohoAuth.getAccessToken("crm");
 
-    // Log the exact payload being sent
-    console.log(`Creating CRM record in module: ${module}`);
-    console.log(`Payload field count: ${Object.keys(data).length}`);
-    console.log("Full payload being sent to Zoho:", JSON.stringify({data: [data]}, null, 2));
 
     try {
       const response = await axios.post<ZohoCRMResponse>(
@@ -30,7 +26,6 @@ export class ZohoCRM {
         }
       );
 
-      console.log("CRM response received:", JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error: any) {
       console.error("Failed to create CRM record - Full error:", error);
@@ -74,8 +69,6 @@ export class ZohoCRM {
   static async updateRecord(module: string, recordId: string, data: any): Promise<ZohoCRMResponse> {
     const accessToken = await ZohoAuth.getAccessToken("crm");
 
-    console.log(`Updating CRM record ${recordId} in module: ${module}`);
-    console.log("Update payload:", JSON.stringify({data: [data]}, null, 2));
 
     try {
       const response = await axios.put<ZohoCRMResponse>(
@@ -91,7 +84,6 @@ export class ZohoCRM {
         }
       );
 
-      console.log("CRM update response:", JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error: any) {
       console.error("Failed to update CRM record:", error);
@@ -138,12 +130,10 @@ export class ZohoCRM {
 
         const occurrenceId = response.data.data?.[0]?.OccurrenceId;
         if (occurrenceId && occurrenceId.trim()) {
-          console.log(`OccurrenceId fetched: ${occurrenceId}`);
           return occurrenceId.trim();
         }
 
         if (i < retries) {
-          console.log(`OccurrenceId not yet populated, retrying in ${sleepMs}ms... (attempt ${i + 1}/${retries})`);
           await this.sleep(sleepMs);
         }
       } catch (error: any) {
@@ -176,8 +166,6 @@ export class ZohoCRM {
     const accessToken = await ZohoAuth.getAccessToken("crm");
 
     try {
-      console.log(`🔍 Validating member: ${memberNumber} - ${firstName} ${lastName}`);
-
       // Try different search criteria formats
       const searchCriteria = [
         `(Member_Number:equals:${memberNumber})`,
@@ -191,7 +179,6 @@ export class ZohoCRM {
 
       for (const criteria of searchCriteria) {
         try {
-          console.log(`Trying search criteria: ${criteria}`);
           response = await axios.get(
             `${this.apiDomain}/crm/v2/Contacts/search`,
             {
@@ -211,7 +198,6 @@ export class ZohoCRM {
           }
         } catch (error: any) {
           lastError = error;
-          console.log(`Search criteria "${criteria}" failed:`, error.response?.status, error.response?.data?.message);
           continue;
         }
       }
@@ -219,8 +205,6 @@ export class ZohoCRM {
       if (!response) {
         throw lastError || new Error("All search criteria failed");
       }
-
-      console.log(`Search response:`, response.data);
 
       if (!response.data.data || response.data.data.length === 0) {
         return {
@@ -230,7 +214,6 @@ export class ZohoCRM {
       }
 
       const member = response.data.data[0];
-      console.log(`Found member:`, member);
 
       // Check if names match (case-insensitive and flexible)
       const crmFirstName = member.First_Name || member.Name1 || '';
@@ -272,24 +255,6 @@ export class ZohoCRM {
       } else if (flexibleMatch) {
         nameMatches = true;
       }
-
-      console.log(`Name comparison:`, {
-        provided: providedFullName,
-        providedReversed: providedFullNameReversed,
-        crm: {
-          separate: `${crmFirstName} ${crmLastName}`,
-          full: crmFullName,
-          combined: crmFullNameCombined
-        },
-        matches: {
-          separate: firstNameMatch && lastNameMatch,
-          reversed: firstNameReversedMatch && lastNameReversedMatch,
-          full: fullNameMatch,
-          fullReversed: fullNameReversedMatch,
-          flexible: flexibleMatch,
-          overall: nameMatches
-        }
-      });
 
       if (!nameMatches) {
         return {
