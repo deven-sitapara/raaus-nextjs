@@ -1018,12 +1018,10 @@ export default function AccidentForm() {
         // GPS Coordinates
         Latitude: (() => {
           const latValue = latitude ? parseFloat(latitude) : null;
-          console.log('Latitude value:', latValue, 'from input:', latitude);
           return latValue !== null && !isNaN(latValue) ? latValue.toString() : '';
         })(),
         Longitude: (() => {
           const lngValue = longitude ? parseFloat(longitude) : null;
-          console.log('Longitude value:', lngValue, 'from input:', longitude);
           return lngValue !== null && !isNaN(lngValue) ? lngValue.toString() : '';
         })(),
         // Convert Yes/No strings to boolean

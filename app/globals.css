@@ -74,16 +74,6 @@ textarea {
   display: none !important;
 }
 
-/* Custom form background color */
-/* Override bg-white for form elements */
-/* .bg-gray-50 {
-  background-color: var(--color-gray-50) !important;
-}
-
-.bg-white {
-  background-color: var(--color-white) !important;
-} */
-
 /* styles.css */
 .no-underline {
   display: none;

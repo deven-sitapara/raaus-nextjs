@@ -5,7 +5,6 @@ import axios from "axios";
 
 export async function GET(request: NextRequest) {
   try {
-    console.log("=== Zoho Data API Called ===");
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "1");
@@ -13,14 +12,10 @@ export async function GET(request: NextRequest) {
     const searchQuery = searchParams.get("search") || "";
     const typeFilter = searchParams.get("type") || "";
     
-    console.log("Query params:", { page, perPage, searchQuery, typeFilter });
-    
     // Get access token
     const accessToken = await ZohoAuth.getAccessToken("crm");
-    console.log("Access token obtained:", accessToken ? "✓" : "✗");
     
     const apiDomain = process.env.ZOHO_CRM_API_DOMAIN || "https://www.zohoapis.com.au";
-    console.log("API Domain:", apiDomain);
     
     // Build API URL with pagination
     let url = `${apiDomain}/crm/v2/Occurrence_Management?page=${page}&per_page=${perPage}`;
@@ -48,21 +43,14 @@ export async function GET(request: NextRequest) {
       url = `${apiDomain}/crm/v2/Occurrence_Management/search?criteria=${encodeURIComponent(criteria)}&page=${page}&per_page=${perPage}`;
     }
     
-    console.log("Fetching from URL:", url);
-    
     const response = await axios.get(url, {
       headers: {
         Authorization: `Zoho-oauthtoken ${accessToken}`,
       },
     });
     
-    console.log("Zoho API Response status:", response.status);
-    console.log("Records fetched:", response.data.data?.length || 0);
-    
     const records = response.data.data || [];
     const info = response.data.info || {};
-    
-    console.log("Returning real Zoho data with", records.length, "records");
     
     return NextResponse.json({
       success: true,
@@ -76,14 +64,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error("Error fetching Zoho data:", error);
-    console.error("Error details:", {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status,
-    });
     
     // Fallback to mock data if Zoho fails
-    console.log("Falling back to mock data due to error");
     return getFallbackMockData(request);
   }
 }

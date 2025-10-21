@@ -159,11 +159,10 @@ export class ZohoWorkDrive {
                       response.data.data?.attributes?.resource_id;
       
       if (folderId) {
-        console.log(`Created folder "${folderName}" with ID: ${folderId}`);
         return folderId;
       }
     } catch (jsonError: any) {
-      console.log("JSON API failed, trying form data approach...");
+      // Fallback to form data approach
     }
 
     // Fallback to form data approach
@@ -189,7 +188,6 @@ export class ZohoWorkDrive {
                       response.data.data?.attributes?.resource_id;
       
       if (folderId) {
-        console.log(`Created folder "${folderName}" with ID: ${folderId}`);
         return folderId;
       }
     } catch (formError: any) {
@@ -226,7 +224,6 @@ export class ZohoWorkDrive {
     // Check if folder already exists
     const existingFolderId = await this.findChildFolder(parentId, sanitizedName);
     if (existingFolderId) {
-      console.log(`Found existing folder "${sanitizedName}" with ID: ${existingFolderId}`);
       return existingFolderId;
     }
 
@@ -297,7 +294,6 @@ export class ZohoWorkDrive {
             fileName, 
             status: 'uploaded_successfully' 
           });
-          console.log(`Uploaded file "${fileName}" with ID: ${fileId}`);
         } else {
           results.push({ 
             fileId: '', 
