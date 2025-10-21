@@ -138,7 +138,7 @@ export default function LookupField({
     <div className="relative w-full" ref={dropdownRef}>
       {/* Label */}
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1" style={{ color: '#374151 !important' }}>
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -228,8 +228,8 @@ export default function LookupField({
                   onMouseEnter={() => setHighlightedIndex(index)}
                   className={`
                     w-full px-3 py-2 text-left hover:bg-blue-50 transition-colors
-                    ${index === highlightedIndex ? 'bg-blue-50' : ''}
-                    ${value === option.id ? 'bg-blue-100 font-medium' : ''}
+                    ${index === highlightedIndex ? 'bg-blue-50 text-gray-900' : 'text-gray-700'}
+                    ${value === option.id ? 'bg-blue-100 font-medium text-gray-900' : ''}
                   `}
                 >
                   {option.name}
