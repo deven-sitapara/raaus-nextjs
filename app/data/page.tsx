@@ -22,6 +22,22 @@ export default function DataPage() {
   const [hasMore, setHasMore] = useState(false);
   const [occurrenceType, setOccurrenceType] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  
+  // New filter states
+  const [filters, setFilters] = useState({
+    dateFrom: "",
+    dateTo: "",
+    location: "",
+    make: "",
+    occurrenceStatus: "",
+    engineMake: "",
+    state: "",
+    injury: "",
+    damage: ""
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [dateFilterMode, setDateFilterMode] = useState<"none" | "range">("none");
+  
   const topScrollRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +78,7 @@ export default function DataPage() {
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line
-  }, [currentPage, perPage, occurrenceType]);
+  }, [currentPage, perPage, occurrenceType, filters]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -73,6 +89,18 @@ export default function DataPage() {
         per_page: perPage.toString(),
       });
       if (occurrenceType) params.append("type", occurrenceType);
+      
+      // Add filter parameters
+      if (dateFilterMode === "range" && filters.dateFrom) params.append("date_from", filters.dateFrom);
+      if (dateFilterMode === "range" && filters.dateTo) params.append("date_to", filters.dateTo);
+      if (filters.location) params.append("location", filters.location);
+      if (filters.make) params.append("make", filters.make);
+      if (filters.occurrenceStatus) params.append("occurrence_status", filters.occurrenceStatus);
+      if (filters.engineMake) params.append("engine_make", filters.engineMake);
+      if (filters.state) params.append("state", filters.state);
+      if (filters.injury) params.append("injury", filters.injury);
+      if (filters.damage) params.append("damage", filters.damage);
+      
       const response = await axios.get(`/api/zoho-data?${params}`);
       if (response.data.success) {
         setData(response.data.data);
@@ -88,25 +116,102 @@ export default function DataPage() {
     }
   };
 
-  // Client-side filtering based on search input
+  // Client-side filtering based on search input and filters
   const filteredData = useMemo(() => {
-    if (!searchInput.trim()) return data;
-    const query = searchInput.toLowerCase();
-    return data.filter(row => {
-      const searchableFields = [
-        row.Name1,
-        row.Last_Name,
-        row.OccurrenceId,
-        row.Occurrence_ID,
-        row.Registration_number,
-        row.Location,
-        row.Member_Number,
-      ];
-      return searchableFields.some(field => 
-        field?.toString().toLowerCase().includes(query)
+    let filtered = data;
+
+    // Apply search input filter
+    if (searchInput.trim()) {
+      const query = searchInput.toLowerCase();
+      filtered = filtered.filter(row => {
+        const searchableFields = [
+          row.Name1,
+          row.Last_Name,
+          row.OccurrenceId,
+          row.Occurrence_ID,
+          row.Registration_number,
+          row.Location,
+          row.Member_Number,
+        ];
+        return searchableFields.some(field => 
+          field?.toString().toLowerCase().includes(query)
+        );
+      });
+    }
+
+    // Apply additional filters
+    if (filters.location) {
+      filtered = filtered.filter(row => 
+        row.Location?.toLowerCase().includes(filters.location.toLowerCase())
       );
-    });
-  }, [data, searchInput]);
+    }
+
+    if (filters.make) {
+      filtered = filtered.filter(row => 
+        row.Make1?.toLowerCase().includes(filters.make.toLowerCase()) ||
+        row.Make?.toLowerCase().includes(filters.make.toLowerCase())
+      );
+    }
+
+    if (filters.occurrenceStatus) {
+      filtered = filtered.filter(row => 
+        row.Occurrence_Status?.toLowerCase().includes(filters.occurrenceStatus.toLowerCase())
+      );
+    }
+
+    if (filters.engineMake) {
+      filtered = filtered.filter(row => 
+        row.Engine_Details?.toLowerCase().includes(filters.engineMake.toLowerCase()) ||
+        row.Engine_model?.toLowerCase().includes(filters.engineMake.toLowerCase())
+      );
+    }
+
+    if (filters.state) {
+      filtered = filtered.filter(row => 
+        row.State?.toLowerCase().includes(filters.state.toLowerCase())
+      );
+    }
+
+    if (filters.injury) {
+      filtered = filtered.filter(row => {
+        const highestInjury = getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury);
+        return highestInjury?.toLowerCase().includes(filters.injury.toLowerCase());
+      });
+    }
+
+    if (filters.damage) {
+      filtered = filtered.filter(row => 
+        row.Damage_to_aircraft?.toLowerCase().includes(filters.damage.toLowerCase()) ||
+        row.Description_of_damage_to_aircraft?.toLowerCase().includes(filters.damage.toLowerCase())
+      );
+    }
+
+    // Apply date range filter only when date filter mode is enabled
+    if (dateFilterMode === "range" && (filters.dateFrom || filters.dateTo)) {
+      filtered = filtered.filter(row => {
+        const occurrenceDate = row.Occurrence_Date1;
+        if (!occurrenceDate) return false;
+        
+        const date = new Date(occurrenceDate);
+        if (isNaN(date.getTime())) return false;
+        
+        if (filters.dateFrom) {
+          const fromDate = new Date(filters.dateFrom);
+          if (date < fromDate) return false;
+        }
+        
+        if (filters.dateTo) {
+          const toDate = new Date(filters.dateTo);
+          toDate.setHours(23, 59, 59, 999); // End of day
+          if (date > toDate) return false;
+        }
+        
+        return true;
+      });
+    }
+
+    return filtered;
+  }, [data, searchInput, filters]);
 
   // Utility: Format date
   const formatDate = (dateString: string) => {
@@ -203,6 +308,7 @@ export default function DataPage() {
       { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1), category: accidentMeta.Occurrence_Date1?.category, priority: accidentMeta.Occurrence_Date1?.priority },
    
       { key: "OccurrenceId", header: "Occurrence ID", sortable: true, width: "140px", category: accidentMeta.OccurrenceId?.category, priority: accidentMeta.OccurrenceId?.priority },
+      { key: "Occurrence_Status", header: "Occurrence Status", sortable: true, width: "160px" },
       { key: "Location", header: "Location", sortable: true, width: "180px", category: accidentMeta.Location?.category, priority: accidentMeta.Location?.priority },
       
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
@@ -210,9 +316,9 @@ export default function DataPage() {
       { key: "Model", header: "Model", sortable: true, width: "120px" },
       { key: "Engine_Details", header: "Engine Details", sortable: true, width: "140px" },
       { key: "Engine_model", header: "Engine Model", sortable: true, width: "140px" },
-        { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury), category: accidentMeta.Passenger_injury?.category, priority: accidentMeta.Passenger_injury?.priority },
-        { key: "Most_serious_injury_to_pilot", header: "Pilot Injury", sortable: true, width: "130px" },
-         { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
+        // { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury), category: accidentMeta.Passenger_injury?.category, priority: accidentMeta.Passenger_injury?.priority },
+        // { key: "Most_serious_injury_to_pilot", header: "Pilot Injury", sortable: true, width: "130px" },
+        //  { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
          { key: "Highest_Injury", header: "Highest Injury", sortable: true, width: "130px", accessor: (row) => getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury), sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(getHighestInjury(a.Most_serious_injury_to_pilot, a.Passenger_injury, a.Persons_on_the_ground_injury)) - getInjurySeverityRank(getHighestInjury(b.Most_serious_injury_to_pilot, b.Passenger_injury, b.Persons_on_the_ground_injury)) },
          { key: "Description_of_damage_to_aircraft", header: "Damage Description", sortable: true, width: "250px" },
             { key: "Description_of_Occurrence", header: "Description of Incident/Accident", sortable: true, width: "300px" }
@@ -223,6 +329,7 @@ export default function DataPage() {
      
       { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1), category: defectMeta.Occurrence_Date1?.category, priority: defectMeta.Occurrence_Date1?.priority },
        { key: "OccurrenceId", header: "Occurrence ID", sortable: true, width: "140px", category: defectMeta.OccurrenceId?.category, priority: defectMeta.OccurrenceId?.priority },
+       { key: "Occurrence_Status", header: "Occurrence Status", sortable: true, width: "160px" },
       { key: "Location", header: "Location", sortable: true, width: "180px" },
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
       { key: "Make1", header: "Make", sortable: true, width: "120px" },
@@ -236,6 +343,7 @@ export default function DataPage() {
       // Core Identifiers
       { key: "Date_Hazard_Identified", header: "Date Identified", sortable: true, width: "180px", accessor: (row) => formatDate(row.Date_Hazard_Identified || row.Occurrence_Date1) },
       { key: "OccurrenceId", header: "Hazard ID", sortable: true, width: "140px" },
+      { key: "Occurrence_Status", header: "Occurrence Status", sortable: true, width: "160px" },
       
       
       // Hazard Information
@@ -252,6 +360,7 @@ export default function DataPage() {
       
       { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
       { key: "OccurrenceId", header: "Complaint ID", sortable: true, width: "140px" },
+      { key: "Occurrence_Status", header: "Occurrence Status", sortable: true, width: "160px" },
       // Complaint Details
       { key: "Description_of_Occurrence", header: "Complaint Details", sortable: true, width: "400px" },
       
@@ -261,14 +370,15 @@ export default function DataPage() {
     All: [
       { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)) },
       { key: "OccurrenceId", header: "ID", sortable: true, width: "140px" },
+      { key: "Occurrence_Status", header: "Occurrence Status", sortable: true, width: "160px" },
       { key: "Occurrence_Date1", header: "Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
       { key: "Location", header: "Location", sortable: true, width: "180px" },
       { key: "Make1", header: "Make", sortable: true, width: "120px" },
       { key: "Model", header: "Model", sortable: true, width: "120px" },
-      { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury) },
-      { key: "Most_serious_injury_to_pilot", header: "Pilot Injury", sortable: true, width: "130px" },
-      { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
+      // { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury) },
+      // { key: "Most_serious_injury_to_pilot", header: "Pilot Injury", sortable: true, width: "130px" },
+      // { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
       { key: "Highest_Injury", header: "Highest Injury", sortable: true, width: "130px", accessor: (row) => getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury), sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(getHighestInjury(a.Most_serious_injury_to_pilot, a.Passenger_injury, a.Persons_on_the_ground_injury)) - getInjurySeverityRank(getHighestInjury(b.Most_serious_injury_to_pilot, b.Passenger_injury, b.Persons_on_the_ground_injury)) },
       { key: "Accident_or_Incident", header: "Accident/Incident", sortable: true, width: "140px" },
       { key: "Damage_to_aircraft", header: "Damage", sortable: true, width: "120px" },
@@ -342,6 +452,18 @@ export default function DataPage() {
               />
             </div>
 
+            {/* Filter Toggle Button */}
+            <Button 
+              onClick={() => setShowFilters(!showFilters)}
+              variant="outline"
+              className="mb-2.5"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filters {Object.values(filters).some(v => v) && dateFilterMode === "range" && <span className="ml-1 text-blue-600">●</span>}
+            </Button>
+
             {/* Per Page Selector */}
             <select
               value={perPage}
@@ -375,6 +497,266 @@ export default function DataPage() {
               </svg>
             </Button>
           </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              {/* Date Filter Mode Selection */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date Filter
+                </label>
+                <div className="flex items-center space-x-6">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="dateFilterMode"
+                      value="none"
+                      checked={dateFilterMode === "none"}
+                      onChange={(e) => {
+                        setDateFilterMode(e.target.value as "none" | "range");
+                        if (e.target.value === "none") {
+                          setFilters(prev => ({ ...prev, dateFrom: "", dateTo: "" }));
+                        }
+                        setCurrentPage(1);
+                      }}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">No date filter</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="dateFilterMode"
+                      value="range"
+                      checked={dateFilterMode === "range"}
+                      onChange={(e) => {
+                        setDateFilterMode(e.target.value as "none" | "range");
+                        setCurrentPage(1);
+                      }}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Date range</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {/* Date Range Filters - Only show when date filter mode is range */}
+                {dateFilterMode === "range" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date From
+                      </label>
+                      <input
+                        type="date"
+                        value={filters.dateFrom}
+                        onChange={(e) => {
+                          setFilters(prev => ({ ...prev, dateFrom: e.target.value }));
+                          setCurrentPage(1);
+                        }}
+                        className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date To
+                      </label>
+                      <input
+                        type="date"
+                        value={filters.dateTo}
+                        onChange={(e) => {
+                          setFilters(prev => ({ ...prev, dateTo: e.target.value }));
+                          setCurrentPage(1);
+                        }}
+                        className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Location Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter location..."
+                    value={filters.location}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, location: e.target.value }));
+                      setCurrentPage(1);
+                    }}
+                    className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Aircraft Make Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Aircraft Make
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Cessna, Piper..."
+                    value={filters.make}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, make: e.target.value }));
+                      setCurrentPage(1);
+                    }}
+                    className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Occurrence Status Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Occurrence Status
+                  </label>
+                  <select
+                    value={filters.occurrenceStatus}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, occurrenceStatus: e.target.value }));
+                      setCurrentPage(1);
+                    }}
+                    className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="Open">Open</option>
+                    <option value="Closed">Closed</option>
+                    <option value="sm_review">sm_review</option>
+                    <option value="im_review">im_review</option>
+                    <option value="assigned_for_delegation">assigned_for_delegation</option>
+                    <option value="risk_assessment">risk_assessment</option>
+                    <option value="under_investigation">under_investigation</option>
+                    <option value="outcome_approved">outcome_approved</option>
+                    <option value="unassigned">unassigned</option>
+                    <option value="outcome_sent">outcome_sent</option>
+                    <option value="assigned_for_investigation">assigned_for_investigation</option>
+                    <option value="Awaiting Further Information">Awaiting Further Information</option>
+                    <option value="Awaiting Initial Review">Awaiting Initial Review</option>
+                    <option value="Under Investigation">Under Investigation</option>
+                    <option value="Safety Closure Review">Safety Closure Review</option>
+                    <option value="Under Closure Review">Under Closure Review</option>
+                  </select>
+                </div>
+
+                {/* Engine Make Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Engine Make
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Rotax, Lycoming..."
+                    value={filters.engineMake}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, engineMake: e.target.value }));
+                      setCurrentPage(1);
+                    }}
+                    className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* State Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    State
+                  </label>
+                  <select
+                    value={filters.state}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, state: e.target.value }));
+                      setCurrentPage(1);
+                    }}
+                    className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">All States</option>
+                    <option value="ACT">ACT</option>
+                    <option value="NSW">NSW</option>
+                    <option value="NT">NT</option>
+                    <option value="QLD">QLD</option>
+                    <option value="SA">SA</option>
+                    <option value="TAS">TAS</option>
+                    <option value="VIC">VIC</option>
+                    <option value="WA">WA</option>
+                  </select>
+                </div>
+
+                {/* Injury Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Highest Injury
+                  </label>
+                  <select
+                    value={filters.injury}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, injury: e.target.value }));
+                      setCurrentPage(1);
+                    }}
+                    className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">All Injuries</option>
+                    <option value="Fatal">Fatal</option>
+                    <option value="Serious">Serious</option>
+                    <option value="Minor">Minor</option>
+                    <option value="Nil">Nil</option>
+                    <option value="Unknown">Unknown</option>
+                  </select>
+                </div>
+
+                {/* Damage Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Damage Level
+                  </label>
+                  <select
+                    value={filters.damage}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, damage: e.target.value }));
+                      setCurrentPage(1);
+                    }}
+                    className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">All Damage Levels</option>
+                    <option value="Destroyed">Destroyed</option>
+                    <option value="Major">Major</option>
+                    <option value="Minor">Minor</option>
+                    <option value="Nil">Nil</option>
+                    <option value="Unknown">Unknown</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Clear Filters Button - Positioned on the right side */}
+              <div className="flex justify-end mt-4">
+                <Button
+                  onClick={() => {
+                    setFilters({
+                      dateFrom: "",
+                      dateTo: "",
+                      location: "",
+                      make: "",
+                      occurrenceStatus: "",
+                      engineMake: "",
+                      state: "",
+                      injury: "",
+                      damage: ""
+                    });
+                    setDateFilterMode("none");
+                    setCurrentPage(1);
+                  }}
+                  variant="outline"
+                  className="px-4 py-2 text-sm"
+                >
+                  Clear All Filters
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Error Message */}
