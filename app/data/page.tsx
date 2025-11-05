@@ -12,6 +12,36 @@ import {
 // The record type is flexible to support all form types
 type OccurrenceRecord = Record<string, any>;
 
+// Expandable Description Cell Component
+function ExpandableDescription({ text }: { text: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  if (!text || text === "-") return <span>-</span>;
+  
+  const shouldTruncate = text.length > 100;
+  const displayText = isExpanded ? text : text.substring(0, 100);
+  
+  return (
+    <div className="relative">
+      <div className="whitespace-pre-wrap break-words">
+        {displayText}
+        {shouldTruncate && !isExpanded && "..."}
+      </div>
+      {shouldTruncate && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }}
+          className="text-blue-600 hover:text-blue-800 font-medium text-xs mt-1 underline"
+        >
+          {isExpanded ? "Show less" : "Read more"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function DataPage() {
   const [data, setData] = useState<OccurrenceRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,8 +59,9 @@ export default function DataPage() {
     dateTo: "",
     location: "",
     make: "",
-    occurrenceStatus: "",
+    model: "",
     engineMake: "",
+    engineModel: "",
     state: "",
     injury: "",
     damage: ""
@@ -95,7 +126,6 @@ export default function DataPage() {
       if (dateFilterMode === "range" && filters.dateTo) params.append("date_to", filters.dateTo);
       if (filters.location) params.append("location", filters.location);
       if (filters.make) params.append("make", filters.make);
-      if (filters.occurrenceStatus) params.append("occurrence_status", filters.occurrenceStatus);
       if (filters.engineMake) params.append("engine_make", filters.engineMake);
       if (filters.state) params.append("state", filters.state);
       if (filters.injury) params.append("injury", filters.injury);
@@ -124,6 +154,7 @@ export default function DataPage() {
     if (searchInput.trim()) {
       const query = searchInput.toLowerCase();
       filtered = filtered.filter(row => {
+        // Create an array of searchable values from the row
         const searchableFields = [
           row.Name1,
           row.Last_Name,
@@ -131,7 +162,14 @@ export default function DataPage() {
           row.Occurrence_ID,
           row.Registration_number,
           row.Location,
+          row.Location_of_hazard,
           row.Member_Number,
+          row.Make1,
+          row.Make,
+          row.Model,
+          row.State,
+          row.Engine_Details,
+          row.Engine_model,
         ];
         return searchableFields.some(field => 
           field?.toString().toLowerCase().includes(query)
@@ -153,9 +191,9 @@ export default function DataPage() {
       );
     }
 
-    if (filters.occurrenceStatus) {
+    if (filters.model) {
       filtered = filtered.filter(row => 
-        row.Occurrence_Status?.toLowerCase().includes(filters.occurrenceStatus.toLowerCase())
+        row.Model?.toLowerCase().includes(filters.model.toLowerCase())
       );
     }
 
@@ -163,6 +201,12 @@ export default function DataPage() {
       filtered = filtered.filter(row => 
         row.Engine_Details?.toLowerCase().includes(filters.engineMake.toLowerCase()) ||
         row.Engine_model?.toLowerCase().includes(filters.engineMake.toLowerCase())
+      );
+    }
+
+    if (filters.engineModel) {
+      filtered = filtered.filter(row => 
+        row.Engine_model?.toLowerCase().includes(filters.engineModel.toLowerCase())
       );
     }
 
@@ -211,7 +255,7 @@ export default function DataPage() {
     }
 
     return filtered;
-  }, [data, searchInput, filters]);
+  }, [data, searchInput, filters, dateFilterMode]);
 
   // Utility: Format date
   const formatDate = (dateString: string) => {
@@ -221,8 +265,6 @@ export default function DataPage() {
       year: "numeric",
       month: "short",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 
@@ -307,8 +349,7 @@ export default function DataPage() {
       // Core Identifiers
       { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1), category: accidentMeta.Occurrence_Date1?.category, priority: accidentMeta.Occurrence_Date1?.priority },
    
-      { key: "OccurrenceId", header: "Occurrence ID", sortable: true, width: "140px", category: accidentMeta.OccurrenceId?.category, priority: accidentMeta.OccurrenceId?.priority },
-      { key: "Occurrence_Status", header: "Occurrence Status", sortable: true, width: "160px" },
+      { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px", category: accidentMeta.OccurrenceId?.category, priority: accidentMeta.OccurrenceId?.priority },
       { key: "Location", header: "Location", sortable: true, width: "180px", category: accidentMeta.Location?.category, priority: accidentMeta.Location?.priority },
       
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
@@ -321,15 +362,15 @@ export default function DataPage() {
         //  { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
          { key: "Highest_Injury", header: "Highest Injury", sortable: true, width: "130px", accessor: (row) => getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury), sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(getHighestInjury(a.Most_serious_injury_to_pilot, a.Passenger_injury, a.Persons_on_the_ground_injury)) - getInjurySeverityRank(getHighestInjury(b.Most_serious_injury_to_pilot, b.Passenger_injury, b.Persons_on_the_ground_injury)) },
          { key: "Description_of_damage_to_aircraft", header: "Damage Description", sortable: true, width: "250px" },
-            { key: "Description_of_Occurrence", header: "Description of Incident/Accident", sortable: true, width: "300px" }
-    ],
+         { key: "Public_Outcome1", header: "Description", sortable: true, width: "400px", accessor: (row) => <ExpandableDescription text={row.Public_Outcome1 || "-"} /> },
+    //         { key: "Description_of_Occurrence", header: "Description of Incident/Accident", sortable: true, width: "300px" }
+     ],
     Defect: [
       // Core Identifiers
      
      
       { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1), category: defectMeta.Occurrence_Date1?.category, priority: defectMeta.Occurrence_Date1?.priority },
-       { key: "OccurrenceId", header: "Occurrence ID", sortable: true, width: "140px", category: defectMeta.OccurrenceId?.category, priority: defectMeta.OccurrenceId?.priority },
-       { key: "Occurrence_Status", header: "Occurrence Status", sortable: true, width: "160px" },
+       { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px", category: defectMeta.OccurrenceId?.category, priority: defectMeta.OccurrenceId?.priority },
       { key: "Location", header: "Location", sortable: true, width: "180px" },
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
       { key: "Make1", header: "Make", sortable: true, width: "120px" },
@@ -337,13 +378,13 @@ export default function DataPage() {
       { key: "Engine_Details", header: "Engine Details", sortable: true, width: "140px" },
       { key: "Engine_model", header: "Engine Model", sortable: true, width: "140px" },
       { key: "Provide_description_of_defect", header: "Defect Description", sortable: true, width: "300px" },
+      { key: "Public_Outcome1", header: "Description", sortable: true, width: "400px", accessor: (row) => <ExpandableDescription text={row.Public_Outcome1 || "-"} /> },
       
     ],
     Hazard: [
       // Core Identifiers
       { key: "Date_Hazard_Identified", header: "Date Identified", sortable: true, width: "180px", accessor: (row) => formatDate(row.Date_Hazard_Identified || row.Occurrence_Date1) },
-      { key: "OccurrenceId", header: "Hazard ID", sortable: true, width: "140px" },
-      { key: "Occurrence_Status", header: "Occurrence Status", sortable: true, width: "160px" },
+      { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px" },
       
       
       // Hazard Information
@@ -351,6 +392,7 @@ export default function DataPage() {
       { key: "Location_of_hazard", header: "Location of Hazard", sortable: true, width: "200px" },
       { key: "Please_fully_describe_the_identified_hazard", header: "Hazard Description", sortable: true, width: "350px" },
       { key: "Do_you_have_further_suggestions_on_how_to_PSO", header: "Prevention Suggestions", sortable: true, width: "300px" },
+      { key: "Public_Outcome1", header: "Description", sortable: true, width: "400px", accessor: (row) => <ExpandableDescription text={row.Public_Outcome1 || "-"} /> },
       
       // System Fields
       { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
@@ -359,21 +401,21 @@ export default function DataPage() {
       // Core Identifiers
       
       { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
-      { key: "OccurrenceId", header: "Complaint ID", sortable: true, width: "140px" },
-      { key: "Occurrence_Status", header: "Occurrence Status", sortable: true, width: "160px" },
+      { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px" },
       // Complaint Details
       { key: "Description_of_Occurrence", header: "Complaint Details", sortable: true, width: "400px" },
+      { key: "Public_Outcome1", header: "Description", sortable: true, width: "400px", accessor: (row) => <ExpandableDescription text={row.Public_Outcome1 || "-"} /> },
       
       // System Fields
       { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
     ],
     All: [
       { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)) },
-      { key: "OccurrenceId", header: "ID", sortable: true, width: "140px" },
-      { key: "Occurrence_Status", header: "Occurrence Status", sortable: true, width: "160px" },
+      { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px" },
       { key: "Occurrence_Date1", header: "Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
       { key: "Location", header: "Location", sortable: true, width: "180px" },
+      { key: "Public_Outcome1", header: "Description", sortable: true, width: "400px", accessor: (row) => <ExpandableDescription text={row.Public_Outcome1 || "-"} /> },
       { key: "Make1", header: "Aircraft Make", sortable: true, width: "120px" },
       { key: "Model", header: "Aircraft Model", sortable: true, width: "120px" },
       { key: "Engine_Details", header: "Engine Make", sortable: true, width: "140px" },
@@ -384,8 +426,6 @@ export default function DataPage() {
       { key: "Highest_Injury", header: "Highest Injury", sortable: true, width: "130px", accessor: (row) => getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury), sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(getHighestInjury(a.Most_serious_injury_to_pilot, a.Passenger_injury, a.Persons_on_the_ground_injury)) - getInjurySeverityRank(getHighestInjury(b.Most_serious_injury_to_pilot, b.Passenger_injury, b.Persons_on_the_ground_injury)) },
       { key: "Accident_or_Incident", header: "Accident/Incident", sortable: true, width: "140px" },
       { key: "Damage_to_aircraft", header: "Damage", sortable: true, width: "120px" },
-      { key: "Description_of_Occurrence", header: "Description", sortable: true, width: "300px" },
-      { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
     ],
   };
   }, []);
@@ -613,37 +653,21 @@ export default function DataPage() {
                   />
                 </div>
 
-                {/* Occurrence Status Filter */}
+                {/* Aircraft Model Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Occurrence Status
+                    Aircraft Model
                   </label>
-                  <select
-                    value={filters.occurrenceStatus}
+                  <input
+                    type="text"
+                    placeholder="e.g., 172, PA-28..."
+                    value={filters.model}
                     onChange={(e) => {
-                      setFilters(prev => ({ ...prev, occurrenceStatus: e.target.value }));
+                      setFilters(prev => ({ ...prev, model: e.target.value }));
                       setCurrentPage(1);
                     }}
-                    className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="">All Statuses</option>
-                    <option value="Open">Open</option>
-                    <option value="Closed">Closed</option>
-                    <option value="sm_review">sm_review</option>
-                    <option value="im_review">im_review</option>
-                    <option value="assigned_for_delegation">assigned_for_delegation</option>
-                    <option value="risk_assessment">risk_assessment</option>
-                    <option value="under_investigation">under_investigation</option>
-                    <option value="outcome_approved">outcome_approved</option>
-                    <option value="unassigned">unassigned</option>
-                    <option value="outcome_sent">outcome_sent</option>
-                    <option value="assigned_for_investigation">assigned_for_investigation</option>
-                    <option value="Awaiting Further Information">Awaiting Further Information</option>
-                    <option value="Awaiting Initial Review">Awaiting Initial Review</option>
-                    <option value="Under Investigation">Under Investigation</option>
-                    <option value="Safety Closure Review">Safety Closure Review</option>
-                    <option value="Under Closure Review">Under Closure Review</option>
-                  </select>
+                    className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
 
                 {/* Engine Make Filter */}
@@ -657,6 +681,23 @@ export default function DataPage() {
                     value={filters.engineMake}
                     onChange={(e) => {
                       setFilters(prev => ({ ...prev, engineMake: e.target.value }));
+                      setCurrentPage(1);
+                    }}
+                    className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Engine Model Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Engine Model
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., 912, IO-360..."
+                    value={filters.engineModel}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, engineModel: e.target.value }));
                       setCurrentPage(1);
                     }}
                     className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -742,8 +783,9 @@ export default function DataPage() {
                       dateTo: "",
                       location: "",
                       make: "",
-                      occurrenceStatus: "",
+                      model: "",
                       engineMake: "",
+                      engineModel: "",
                       state: "",
                       injury: "",
                       damage: ""
