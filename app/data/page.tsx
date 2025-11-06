@@ -353,6 +353,7 @@ export default function DataPage() {
       { key: "Location", header: "Location", sortable: true, width: "180px", category: accidentMeta.Location?.category, priority: accidentMeta.Location?.priority },
       
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
+      { key: "Primary_Cause", header: "Occurrence Category", sortable: true, width: "180px" },
       { key: "Make1", header: "Make", sortable: true, width: "120px" },
       { key: "Model", header: "Model", sortable: true, width: "120px" },
       { key: "Engine_Details", header: "Engine Details", sortable: true, width: "140px" },
@@ -362,7 +363,7 @@ export default function DataPage() {
         //  { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
          { key: "Highest_Injury", header: "Highest Injury", sortable: true, width: "130px", accessor: (row) => getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury), sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(getHighestInjury(a.Most_serious_injury_to_pilot, a.Passenger_injury, a.Persons_on_the_ground_injury)) - getInjurySeverityRank(getHighestInjury(b.Most_serious_injury_to_pilot, b.Passenger_injury, b.Persons_on_the_ground_injury)) },
          { key: "Description_of_damage_to_aircraft", header: "Damage Description", sortable: true, width: "250px" },
-         { key: "Public_Outcome1", header: "Description", sortable: true, width: "400px", accessor: (row) => <ExpandableDescription text={row.Public_Outcome1 || "-"} /> },
+         { key: "PUBLIC_OUTCOME", header: "Description", sortable: true, width: "700px", accessor: (row) => <ExpandableDescription text={row.PUBLIC_OUTCOME || "-"} /> },
     //         { key: "Description_of_Occurrence", header: "Description of Incident/Accident", sortable: true, width: "300px" }
      ],
     Defect: [
@@ -373,12 +374,13 @@ export default function DataPage() {
        { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px", category: defectMeta.OccurrenceId?.category, priority: defectMeta.OccurrenceId?.priority },
       { key: "Location", header: "Location", sortable: true, width: "180px" },
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
+      { key: "Primary_Cause", header: "Occurrence Category", sortable: true, width: "180px" },
       { key: "Make1", header: "Make", sortable: true, width: "120px" },
       { key: "Model", header: "Model", sortable: true, width: "120px" },
       { key: "Engine_Details", header: "Engine Details", sortable: true, width: "140px" },
       { key: "Engine_model", header: "Engine Model", sortable: true, width: "140px" },
       { key: "Provide_description_of_defect", header: "Defect Description", sortable: true, width: "300px" },
-      { key: "Public_Outcome1", header: "Description", sortable: true, width: "400px", accessor: (row) => <ExpandableDescription text={row.Public_Outcome1 || "-"} /> },
+      { key: "PUBLIC_OUTCOME", header: "Description", sortable: true, width: "600px", accessor: (row) => <ExpandableDescription text={row.PUBLIC_OUTCOME || "-"} /> },
       
     ],
     Hazard: [
@@ -389,10 +391,11 @@ export default function DataPage() {
       
       // Hazard Information
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
+      { key: "Primary_Cause", header: "Occurrence Category", sortable: true, width: "180px" },
       { key: "Location_of_hazard", header: "Location of Hazard", sortable: true, width: "200px" },
       { key: "Please_fully_describe_the_identified_hazard", header: "Hazard Description", sortable: true, width: "350px" },
       { key: "Do_you_have_further_suggestions_on_how_to_PSO", header: "Prevention Suggestions", sortable: true, width: "300px" },
-      { key: "Public_Outcome1", header: "Description", sortable: true, width: "400px", accessor: (row) => <ExpandableDescription text={row.Public_Outcome1 || "-"} /> },
+      { key: "PUBLIC_OUTCOME", header: "Description", sortable: true, width: "600px", accessor: (row) => <ExpandableDescription text={row.PUBLIC_OUTCOME || "-"} /> },
       
       // System Fields
       { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
@@ -402,20 +405,22 @@ export default function DataPage() {
       
       { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
       { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px" },
+      { key: "Primary_Cause", header: "Occurrence Category", sortable: true, width: "180px" },
       // Complaint Details
       { key: "Description_of_Occurrence", header: "Complaint Details", sortable: true, width: "400px" },
-      { key: "Public_Outcome1", header: "Description", sortable: true, width: "400px", accessor: (row) => <ExpandableDescription text={row.Public_Outcome1 || "-"} /> },
+      { key: "PUBLIC_OUTCOME", header: "Description", sortable: true, width: "600px", accessor: (row) => <ExpandableDescription text={row.PUBLIC_OUTCOME || "-"} /> },
       
       // System Fields
       { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
     ],
     All: [
       { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)) },
-      { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px" },
+      { key: "Occurrence_Number", header: "occurrence number", sortable: true, width: "140px" },
       { key: "Occurrence_Date1", header: "Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
       { key: "Location", header: "Location", sortable: true, width: "180px" },
-      { key: "Public_Outcome1", header: "Description", sortable: true, width: "400px", accessor: (row) => <ExpandableDescription text={row.Public_Outcome1 || "-"} /> },
+      { key: "Primary_Cause", header: "Occurrence Category", sortable: true, width: "180px" },
+      { key: "PUBLIC_OUTCOME", header: "Description", sortable: true, width: "600px", accessor: (row) => <ExpandableDescription text={row.PUBLIC_OUTCOME || "-"} /> },
       { key: "Make1", header: "Aircraft Make", sortable: true, width: "120px" },
       { key: "Model", header: "Aircraft Model", sortable: true, width: "120px" },
       { key: "Engine_Details", header: "Engine Make", sortable: true, width: "140px" },
@@ -424,7 +429,7 @@ export default function DataPage() {
       // { key: "Most_serious_injury_to_pilot", header: "Pilot Injury", sortable: true, width: "130px" },
       // { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
       { key: "Highest_Injury", header: "Highest Injury", sortable: true, width: "130px", accessor: (row) => getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury), sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(getHighestInjury(a.Most_serious_injury_to_pilot, a.Passenger_injury, a.Persons_on_the_ground_injury)) - getInjurySeverityRank(getHighestInjury(b.Most_serious_injury_to_pilot, b.Passenger_injury, b.Persons_on_the_ground_injury)) },
-      { key: "Accident_or_Incident", header: "Accident/Incident", sortable: true, width: "140px" },
+      // { key: "Accident_or_Incident", header: "Accident/Incident", sortable: true, width: "140px" },
       { key: "Damage_to_aircraft", header: "Damage", sortable: true, width: "120px" },
     ],
   };
@@ -467,7 +472,7 @@ export default function DataPage() {
         <div className="bg-white rounded-lg shadow p-4 pb-2 mb-6">
           <div className="flex flex-wrap items-center gap-3">
             {/* Type Filter */}
-            <select
+            {/* <select
               value={occurrenceType}
               onChange={(e) => {
                 setOccurrenceType(e.target.value);
@@ -481,7 +486,7 @@ export default function DataPage() {
               <option value="Defect">Defect</option>
               <option value="Hazard">Hazard</option>
               <option value="Complaint">Complaint</option>
-            </select>
+            </select> */}
 
             {/* Client-side Search */}
             <div className="flex-1 min-w-[300px]">

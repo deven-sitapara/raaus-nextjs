@@ -62,6 +62,7 @@ export default function HazardForm() {
   const [hazardDate, setHazardDate] = useState("");
   const [hazardTime, setHazardTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [contactPhoneValid, setContactPhoneValid] = useState(false);
   const [attachments, setAttachments] = useState<FileList | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<HazardFormData | null>(null);
@@ -568,6 +569,7 @@ export default function HazardForm() {
                 required
                 value={contactPhone}
                 onChange={(value) => setContactPhone(value)}
+                onValidationChange={(isValid) => setContactPhoneValid(isValid)}
                 defaultCountry="AU"
               />
             </div>

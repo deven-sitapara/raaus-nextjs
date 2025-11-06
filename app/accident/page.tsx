@@ -117,6 +117,7 @@ const stateOptions = [
 const damageOptions = [
   { value: "", label: "– Please select –" },
   { value: "Destroyed", label: "Destroyed" },
+  { value: "Substantial", label: "Substantial" },
   { value: "Minor", label: "Minor" },
   { value: "Nil", label: "Nil" },
   { value: "Unknown", label: "Unknown" },
@@ -516,9 +517,11 @@ export default function AccidentForm() {
   const [contactPhone, setContactPhone] = useState("");
   const [contactPhoneError, setContactPhoneError] = useState("");
   const [contactPhoneCountry, setContactPhoneCountry] = useState<CountryCode>("AU");
+  const [contactPhoneValid, setContactPhoneValid] = useState(false);
   const [pilotContactPhone, setPilotContactPhone] = useState("");
   const [pilotContactPhoneError, setPilotContactPhoneError] = useState("");
   const [pilotContactPhoneCountry, setPilotContactPhoneCountry] = useState<CountryCode>("AU");
+  const [pilotContactPhoneValid, setPilotContactPhoneValid] = useState(false);
   const [occurrenceDate, setOccurrenceDate] = useState("");
   const [occurrenceDateError, setOccurrenceDateError] = useState("");
   const [occurrenceTime, setOccurrenceTime] = useState("");
@@ -893,6 +896,9 @@ export default function AccidentForm() {
       // Validate contact phone - PhoneInput component handles its own validation
       if (!contactPhone || contactPhone.trim() === "") {
         setContactPhoneError("Contact Phone is required");
+        hasError = true;
+      } else if (!contactPhoneValid) {
+        setContactPhoneError("Please enter a valid phone number for the selected country");
         hasError = true;
       }
     } else if (currentStep === 2) {
@@ -1465,6 +1471,12 @@ export default function AccidentForm() {
                           setContactPhoneError("");
                         }
                       }}
+                      onValidationChange={(isValid, errorMessage) => {
+                        setContactPhoneValid(isValid);
+                        if (!isValid && errorMessage) {
+                          setContactPhoneError(errorMessage);
+                        }
+                      }}
                       onCountryChange={(country) => setContactPhoneCountry(country)}
                       defaultCountry="AU"
                       countries={["AU", "CA", "GB", "US", "NZ", "DE", "FR", "IT", "ES", "NL", "BE", "CH", "SE", "NO", "DK", "FI", "IE", "PT", "AT", "PL", "CZ", "HU", "GR", "TR", "RU", "JP", "KR", "CN", "IN", "BR", "MX", "AR", "ZA", "EG", "NG", "KE", "AE", "SA", "TH", "SG", "MY", "ID", "PH"]}
@@ -1695,6 +1707,12 @@ export default function AccidentForm() {
                           // Clear error when user starts typing
                           if (pilotContactPhoneError) {
                             setPilotContactPhoneError("");
+                          }
+                        }}
+                        onValidationChange={(isValid, errorMessage) => {
+                          setPilotContactPhoneValid(isValid);
+                          if (!isValid && errorMessage) {
+                            setPilotContactPhoneError(errorMessage);
                           }
                         }}
                         onCountryChange={(country) => setPilotContactPhoneCountry(country)}
