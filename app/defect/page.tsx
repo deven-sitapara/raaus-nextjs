@@ -115,6 +115,7 @@ export default function DefectForm() {
   const [defectDate, setDefectDate] = useState("");
   const [defectTime, setDefectTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [contactPhoneValid, setContactPhoneValid] = useState(false);
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [attachments, setAttachments] = useState<FileList | null>(null);
@@ -372,6 +373,11 @@ export default function DefectForm() {
 
     if (!contactPhone) {
       alert("Please provide a contact phone number");
+      return;
+    }
+
+    if (!contactPhoneValid) {
+      alert("Please enter a valid phone number for the selected country");
       return;
     }
 
@@ -852,6 +858,7 @@ export default function DefectForm() {
                 required
                 value={contactPhone}
                 onChange={(value) => setContactPhone(value)}
+                onValidationChange={(isValid) => setContactPhoneValid(isValid)}
                 defaultCountry="AU"
               />
 
