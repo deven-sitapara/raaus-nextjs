@@ -6,17 +6,48 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { PhoneInput } from "@/components/ui/PhoneInput";
-import { DatePicker } from "@/components/ui/DatePicker";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Button } from "@/components/ui/Button";
 import MapPicker from "@/components/ui/MapPicker";
 import { DefectFormData } from "@/types/forms";
-import { validationPatterns, validationMessages, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
-import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
+import {
+  validationPatterns,
+  validationMessages,
+  validateEmail,
+} from "@/lib/validations/patterns";
+import {
+  useFormPersistence,
+  useSpecialStatePersistence,
+  clearFormOnSubmission,
+} from "@/lib/utils/formPersistence";
 import DefectPreview from "@/components/forms/DefectPreview";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import Link from "next/link";
 import "./defect-style.css";
+
+// API Response Types
+interface SubmissionResponse {
+  success: boolean;
+  formType: string;
+  formData: DefectFormData;
+  metadata?: {
+    occurrenceId?: string;
+  };
+  error?: string;
+}
+
+interface MemberValidationResponse {
+  valid: boolean;
+  warning?: string;
+}
+
+interface AircraftLookupResponse {
+  success: boolean;
+  data?: {
+    [key: string]: string | number | boolean;
+  };
+  message?: string;
+}
 
 const roleOptions = [
   { value: "", label: "- Please Select -" },
@@ -100,31 +131,45 @@ const yearOptions = Array.from({ length: currentYear - 1934 }, (_, i) => {
 });
 
 export default function DefectForm() {
+  // Form state management
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submissionData, setSubmissionData] = useState<any>(null);
+  const [submissionData, setSubmissionData] =
+    useState<SubmissionResponse | null>(null);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
-  const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
+
+  // Validation states - Person Reporting
+  const [memberValidationStatus, setMemberValidationStatus] = useState<
+    "valid" | "invalid" | ""
+  >("");
   const [memberValidationMessage, setMemberValidationMessage] = useState("");
   const [isValidatingMember, setIsValidatingMember] = useState(false);
-  
-  // Maintainer validation states
-  const [maintainerValidationStatus, setMaintainerValidationStatus] = useState<"valid" | "invalid" | "">("");
-  const [maintainerValidationMessage, setMaintainerValidationMessage] = useState("");
+
+  // Validation states - Maintainer
+  const [maintainerValidationStatus, setMaintainerValidationStatus] =
+    useState<"valid" | "invalid" | "">("");
+  const [maintainerValidationMessage, setMaintainerValidationMessage] =
+    useState("");
   const [isValidatingMaintainer, setIsValidatingMaintainer] = useState(false);
+
+  // Defect occurrence state
   const [defectDate, setDefectDate] = useState("");
   const [defectTime, setDefectTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactPhoneValid, setContactPhoneValid] = useState(false);
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
+
+  // Form data state
   const [attachments, setAttachments] = useState<FileList | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<DefectFormData | null>(null);
 
-  // Aircraft lookup states
+  // Aircraft lookup state
   const [isLookingUpAircraft, setIsLookingUpAircraft] = useState(false);
-  const [aircraftLookupStatus, setAircraftLookupStatus] = useState<"success" | "error" | "">("");
+  const [aircraftLookupStatus, setAircraftLookupStatus] = useState<
+    "success" | "error" | ""
+  >("");
   const [aircraftLookupMessage, setAircraftLookupMessage] = useState("");
 
   const {
@@ -201,7 +246,11 @@ export default function DefectForm() {
   };
 
   // Validate member number with immediate feedback
-  const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
+  const validateMember = async (
+    memberNumber: string,
+    firstName: string,
+    lastName: string
+  ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
       setMemberValidationStatus("");
@@ -212,20 +261,26 @@ export default function DefectForm() {
     setIsValidatingMember(true);
 
     try {
-      const response = await axios.post("/api/validate-member", {
-        memberNumber,
-        firstName,
-        lastName,
-      });
+      const response = await axios.post<MemberValidationResponse>(
+        "/api/validate-member",
+        {
+          memberNumber,
+          firstName,
+          lastName,
+        }
+      );
 
       if (response.data.valid) {
         setMemberValidationStatus("valid");
         setMemberValidationMessage("✓ Member Number exists in system");
       } else {
         setMemberValidationStatus("invalid");
-        setMemberValidationMessage(response.data.warning || "Member Number not found");
+        setMemberValidationMessage(
+          response.data.warning || "Member Number not found"
+        );
       }
     } catch (error) {
+      console.error("Member validation error:", error);
       setMemberValidationStatus("invalid");
       setMemberValidationMessage("Unable to validate Member Number");
     } finally {
@@ -234,7 +289,11 @@ export default function DefectForm() {
   };
 
   // Validate maintainer member number with immediate feedback
-  const validateMaintainer = async (memberNumber: string, firstName: string, lastName: string) => {
+  const validateMaintainer = async (
+    memberNumber: string,
+    firstName: string,
+    lastName: string
+  ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
       setMaintainerValidationStatus("");
@@ -245,20 +304,26 @@ export default function DefectForm() {
     setIsValidatingMaintainer(true);
 
     try {
-      const response = await axios.post("/api/validate-member", {
-        memberNumber,
-        firstName,
-        lastName,
-      });
+      const response = await axios.post<MemberValidationResponse>(
+        "/api/validate-member",
+        {
+          memberNumber,
+          firstName,
+          lastName,
+        }
+      );
 
       if (response.data.valid) {
         setMaintainerValidationStatus("valid");
         setMaintainerValidationMessage("✓ Member Number exists in system");
       } else {
         setMaintainerValidationStatus("invalid");
-        setMaintainerValidationMessage(response.data.warning || "Member Number not found");
+        setMaintainerValidationMessage(
+          response.data.warning || "Member Number not found"
+        );
       }
     } catch (error) {
+      console.error("Maintainer validation error:", error);
       setMaintainerValidationStatus("invalid");
       setMaintainerValidationMessage("Unable to validate Member Number");
     } finally {
@@ -372,7 +437,8 @@ export default function DefectForm() {
     }
   };
 
-  const handlePreview = (data: DefectFormData) => {
+  // Validate and show preview
+  const handlePreview = (data: DefectFormData): void => {
     // Validate required fields before showing preview
     if (!defectDate || !defectTime) {
       alert("Please provide both defect date and time");
@@ -394,28 +460,31 @@ export default function DefectForm() {
     setShowPreview(true);
   };
 
-  const handleBackToEdit = () => {
+  // Return to edit mode from preview
+  const handleBackToEdit = (): void => {
     setShowPreview(false);
   };
 
-  const onSubmit = async () => {
-    if (!previewData) return;
-    
+  // Submit form data
+  const onSubmit = async (): Promise<void> => {
+    if (!previewData) {
+      console.error("No preview data available for submission");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const data = previewData;
-      
+
       // Validate required fields
       if (!defectDate || !defectTime) {
         alert("Please provide both defect date and time");
-        setIsSubmitting(false);
         return;
       }
 
       if (!contactPhone) {
         alert("Please provide a contact phone number");
-        setIsSubmitting(false);
         return;
       }
 
@@ -423,26 +492,28 @@ export default function DefectForm() {
       const datetime = new Date(`${defectDate}T${defectTime}`);
       if (isNaN(datetime.getTime())) {
         alert("Invalid date or time provided");
-        setIsSubmitting(false);
         return;
       }
 
       // Prepare form data for unified API
       const formData = new FormData();
-      
-      // Add form type and data
-      formData.append('formType', 'defect');
-      
-      const submissionData = {
+
+      // Add form type
+      formData.append("formType", "defect");
+
+      const submissionPayload = {
         // Map to CRM field names for consistency
-        Role: data.role === "Other" && data.customRole?.trim() ? data.customRole.trim() : data.role,
+        Role:
+          data.role === "Other" && data.customRole?.trim()
+            ? data.customRole.trim()
+            : data.role,
         Name1: data.firstName,
         Member_Number: data.memberNumber,
         Reporter_First_Name: data.firstName,
         Reporter_Email: data.email,
         Contact_Phone: contactPhone,
         Last_Name: data.lastName,
-        Occurrence_Date1: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
+        Occurrence_Date1: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss
         Location_of_aircraft_when_defect_was_found: data.locationOfAircraft,
         Location: data.locationOfAircraft,
         // GPS Coordinates
@@ -452,43 +523,46 @@ export default function DefectForm() {
         Description_of_Occurrence: data.defectDescription,
         Defective_component: data.defectiveComponent,
         Provide_description_of_defect: data.defectDescription,
-        
+
         // Maintainer Information
-        Maintainer_Name: data.Maintainer_Name || '',
-        Maintainer_Last_Name: data.Maintainer_Last_Name || '',
+        Maintainer_Name: data.Maintainer_Name || "",
+        Maintainer_Last_Name: data.Maintainer_Last_Name || "",
         Maintainer_Member_Number: data.maintainerMemberNumber,
         Maintainer_Level: data.maintainerLevel,
-        Do_you_have_further_suggestions_on_how_to_PSO: data.preventionSuggestions,
+        Do_you_have_further_suggestions_on_how_to_PSO:
+          data.preventionSuggestions,
         Reporter_Suggestions: data.preventionSuggestions,
-        
+
         // Aircraft Information
-        Registration_number: data.registrationNumberPrefix && data.registrationNumberSuffix ? 
-          `${data.registrationNumberPrefix}-${data.registrationNumberSuffix}` : '',
+        Registration_number:
+          data.registrationNumberPrefix && data.registrationNumberSuffix
+            ? `${data.registrationNumberPrefix}-${data.registrationNumberSuffix}`
+            : "",
         Registration_status: data.registrationStatus,
         Serial_number: data.serialNumber,
         Make: data.make,
         Model: data.model,
         Type1: data.type,
         Year_Built1: data.yearBuilt,
-        
+
         // Engine Details
-        Engine_Details: data.engineMake, // Map engineMake to Engine_Details
+        Engine_Details: data.engineMake,
         Engine_model: data.engineModel,
         Engine_serial: data.engineSerial,
         Total_engine_hours: data.totalEngineHours,
         Total_hours_since_service: data.totalHoursSinceService,
-        
+
         // Propeller Details
         Propeller_make: data.propellerMake,
         Propeller_model: data.propellerModel,
         Propeller_serial: data.propellerSerial,
-        
-        // Legacy aliases for backward compatibility (only non-conflicting keys)
+
+        // Legacy aliases for backward compatibility
         contactPhone: contactPhone,
         dateDefectIdentified: datetime.toISOString().slice(0, 19),
       };
-      
-      formData.append('formData', JSON.stringify(submissionData));
+
+      formData.append("formData", JSON.stringify(submissionPayload));
 
       // Add attachments if any
       if (attachments && attachments.length > 0) {
@@ -498,41 +572,57 @@ export default function DefectForm() {
       }
 
       // Submit to unified API endpoint
-      const response = await axios.post("/api/submit-form", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post<SubmissionResponse>(
+        "/api/submit-form",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       if (response.data.success) {
         setSubmissionData(response.data);
-        clearFormOnSubmission('defect');
+        clearFormOnSubmission("defect");
         setShowPreview(false);
         setSubmitSuccess(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        throw new Error(response.data.error || "Failed to process defect report");
+        throw new Error(
+          response.data.error || "Failed to process defect report"
+        );
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Form submission error:", error);
+
       let errorMessage = "Failed to submit form. Please try again.";
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.data?.data?.[0]?.message) {
-        errorMessage = error.response.data.data[0].message;
-      } else if (error.message) {
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.data?.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response?.data?.data?.[0]?.message) {
+          errorMessage = error.response.data.data[0].message;
+        }
+      } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      
+
       alert(`Submission Error: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const downloadPDF = async () => {
-    if (!submissionData) return;
+  // Download PDF report
+  const downloadPDF = async (): Promise<void> => {
+    if (!submissionData) {
+      console.error("No submission data available for PDF generation");
+      return;
+    }
 
     setIsDownloadingPDF(true);
+
     try {
       const response = await axios.post(
         "/api/generate-pdf",
@@ -546,17 +636,24 @@ export default function DefectForm() {
         }
       );
 
-      // Create a download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Create blob from response
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+
+      // Create and trigger download link
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `Defect_Report_${submissionData.metadata?.occurrenceId || 'submission'}.pdf`);
+      link.download = `RAAus_Defect_Report_${
+        submissionData.metadata?.occurrenceId || Date.now()
+      }.pdf`;
       document.body.appendChild(link);
       link.click();
-      link.remove();
+
+      // Cleanup
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading PDF:", error);
+      console.error("PDF download error:", error);
       alert("Failed to download PDF. Please try again.");
     } finally {
       setIsDownloadingPDF(false);

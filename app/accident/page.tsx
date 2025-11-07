@@ -5,9 +5,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { SelectWithOther } from "@/components/ui/SelectWithOther";
-import SearchableDropdown from "@/components/ui/SearchableDropdown";
 import { PhoneInput } from "@/components/ui/PhoneInput";
-import { DatePicker } from "@/components/ui/DatePicker";
 import { Textarea } from "@/components/ui/Textarea";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
@@ -17,20 +15,90 @@ import LookupField from "@/components/ui/LookupField";
 import { AccidentFormData } from "@/types/forms";
 import aerodromeData from "@/components/forms/aerodrome-codes.json";
 import accountsData from "@/components/forms/accounts-codes.json";
-import { validationPatterns, validationMessages, validateEmail } from "@/lib/validations/patterns";
-import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
+import {
+  validationPatterns,
+  validationMessages,
+  validateEmail,
+} from "@/lib/validations/patterns";
+import {
+  useFormPersistence,
+  useSpecialStatePersistence,
+  clearFormOnSubmission,
+} from "@/lib/utils/formPersistence";
 import AccidentPreview from "@/components/forms/AccidentPreview";
 import axios from "axios";
 import Link from "next/link";
 import "./wizard.css";
 
-// Import CountryCode type for phone country state
-type CountryCode = 
-  | "AU" | "CA" | "GB" | "US" | "NZ" | "DE" | "FR" | "IT" | "ES" | "NL" 
-  | "BE" | "CH" | "SE" | "NO" | "DK" | "FI" | "IE" | "PT" | "AT" | "PL" 
-  | "CZ" | "HU" | "GR" | "TR" | "RU" | "JP" | "KR" | "CN" | "IN" | "BR" 
-  | "MX" | "AR" | "ZA" | "EG" | "NG" | "KE" | "AE" | "SA" | "TH" | "SG" 
-  | "MY" | "ID" | "PH";
+// Types
+type CountryCode =
+  | "AU"
+  | "CA"
+  | "GB"
+  | "US"
+  | "NZ"
+  | "DE"
+  | "FR"
+  | "IT"
+  | "ES"
+  | "NL"
+  | "BE"
+  | "CH"
+  | "SE"
+  | "NO"
+  | "DK"
+  | "FI"
+  | "IE"
+  | "PT"
+  | "AT"
+  | "PL"
+  | "CZ"
+  | "HU"
+  | "GR"
+  | "TR"
+  | "RU"
+  | "JP"
+  | "KR"
+  | "CN"
+  | "IN"
+  | "BR"
+  | "MX"
+  | "AR"
+  | "ZA"
+  | "EG"
+  | "NG"
+  | "KE"
+  | "AE"
+  | "SA"
+  | "TH"
+  | "SG"
+  | "MY"
+  | "ID"
+  | "PH";
+
+// API Response Types
+interface SubmissionResponse {
+  success: boolean;
+  formType: string;
+  formData: AccidentFormData;
+  metadata?: {
+    occurrenceId?: string;
+  };
+  error?: string;
+}
+
+interface MemberValidationResponse {
+  valid: boolean;
+  warning?: string;
+}
+
+interface AircraftLookupResponse {
+  success: boolean;
+  data?: {
+    [key: string]: string | number | boolean;
+  };
+  message?: string;
+}
 
 // Registration prefix options
 const registrationPrefixOptions = [
@@ -476,66 +544,86 @@ const aerodromeOptions = aerodromeData.aerodromes.map(a => ({ id: a.id, name: a.
 const flightTrainingOptions = accountsData.accounts.map(a => ({ id: a.id, name: a.Account_Name }));
 
 export default function AccidentForm() {
-  // Configuration: Set to true to clear form after successful submission
+  // Configuration
   const CLEAR_FORM_ON_SUBMIT = true;
-  
+
+  // Form state management
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submissionData, setSubmissionData] = useState<any>(null);
-
-  // Helper function to convert text to Title Case (First Letter Capital)
-  const toTitleCase = (str: string): string => {
-    if (!str) return str;
-    return str
-      .toLowerCase()
-      .split(' ')
-      .map(word => {
-        if (word.length === 0) return word;
-        return word.charAt(0).toUpperCase() + word.slice(1);
-      })
-      .join(' ');
-  };
+  const [submissionData, setSubmissionData] =
+    useState<SubmissionResponse | null>(null);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
 
-  // Person Reporting validation states
-  const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
+  // Validation states - Person Reporting
+  const [memberValidationStatus, setMemberValidationStatus] = useState<
+    "valid" | "invalid" | ""
+  >("");
   const [memberValidationMessage, setMemberValidationMessage] = useState("");
   const [isValidatingMember, setIsValidatingMember] = useState(false);
 
-  // Pilot in Command validation states
-  const [pilotValidationStatus, setPilotValidationStatus] = useState<"valid" | "invalid" | "">("");
+  // Validation states - Pilot in Command
+  const [pilotValidationStatus, setPilotValidationStatus] = useState<
+    "valid" | "invalid" | ""
+  >("");
   const [pilotValidationMessage, setPilotValidationMessage] = useState("");
   const [isValidatingPilot, setIsValidatingPilot] = useState(false);
 
-  // Maintainer validation states
-  const [maintainerValidationStatus, setMaintainerValidationStatus] = useState<"valid" | "invalid" | "">("");
-  const [maintainerValidationMessage, setMaintainerValidationMessage] = useState("");
+  // Validation states - Maintainer
+  const [maintainerValidationStatus, setMaintainerValidationStatus] =
+    useState<"valid" | "invalid" | "">("");
+  const [maintainerValidationMessage, setMaintainerValidationMessage] =
+    useState("");
   const [isValidatingMaintainer, setIsValidatingMaintainer] = useState(false);
 
-
+  // Phone state - Contact
   const [contactPhone, setContactPhone] = useState("");
   const [contactPhoneError, setContactPhoneError] = useState("");
-  const [contactPhoneCountry, setContactPhoneCountry] = useState<CountryCode>("AU");
+  const [contactPhoneCountry, setContactPhoneCountry] =
+    useState<CountryCode>("AU");
   const [contactPhoneValid, setContactPhoneValid] = useState(false);
+
+  // Phone state - Pilot
   const [pilotContactPhone, setPilotContactPhone] = useState("");
   const [pilotContactPhoneError, setPilotContactPhoneError] = useState("");
-  const [pilotContactPhoneCountry, setPilotContactPhoneCountry] = useState<CountryCode>("AU");
+  const [pilotContactPhoneCountry, setPilotContactPhoneCountry] =
+    useState<CountryCode>("AU");
   const [pilotContactPhoneValid, setPilotContactPhoneValid] = useState(false);
+
+  // Occurrence state
   const [occurrenceDate, setOccurrenceDate] = useState("");
   const [occurrenceDateError, setOccurrenceDateError] = useState("");
   const [occurrenceTime, setOccurrenceTime] = useState("");
   const [occurrenceTimeError, setOccurrenceTimeError] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
+
+  // Form data state
   const [attachments, setAttachments] = useState<FileList | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewData, setPreviewData] = useState<AccidentFormData | null>(null);
+  const [previewData, setPreviewData] = useState<AccidentFormData | null>(
+    null
+  );
 
-  // Aircraft lookup states
+  // Aircraft lookup state
   const [isLookingUpAircraft, setIsLookingUpAircraft] = useState(false);
-  const [aircraftLookupStatus, setAircraftLookupStatus] = useState<"success" | "error" | "">("");
+  const [aircraftLookupStatus, setAircraftLookupStatus] = useState<
+    "success" | "error" | ""
+  >("");
   const [aircraftLookupMessage, setAircraftLookupMessage] = useState("");
+
+  // Helper function to convert text to Title Case
+  const toTitleCase = (str: string): string => {
+    if (!str) return str;
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map((word) => {
+        if (word.length === 0) return word;
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(" ");
+  };
 
   const methods = useForm<AccidentFormData>();
   const {
@@ -681,7 +769,12 @@ export default function AccidentForm() {
   }, [registrationPrefix, registrationSuffix]);
 
   // Validate member number (Person Reporting) with immediate feedback
-  const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
+  // Validate member number with immediate feedback
+  const validateMember = async (
+    memberNumber: string,
+    firstName: string,
+    lastName: string
+  ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
       setMemberValidationStatus("");
@@ -692,20 +785,26 @@ export default function AccidentForm() {
     setIsValidatingMember(true);
 
     try {
-      const response = await axios.post("/api/validate-member", {
-        memberNumber,
-        firstName,
-        lastName,
-      });
+      const response = await axios.post<MemberValidationResponse>(
+        "/api/validate-member",
+        {
+          memberNumber,
+          firstName,
+          lastName,
+        }
+      );
 
       if (response.data.valid) {
         setMemberValidationStatus("valid");
         setMemberValidationMessage("✓ Member Number exists in system");
       } else {
         setMemberValidationStatus("invalid");
-        setMemberValidationMessage(response.data.warning || "Member Number not found");
+        setMemberValidationMessage(
+          response.data.warning || "Member Number not found"
+        );
       }
     } catch (error) {
+      console.error("Member validation error:", error);
       setMemberValidationStatus("invalid");
       setMemberValidationMessage("Unable to validate Member Number");
     } finally {
@@ -714,7 +813,11 @@ export default function AccidentForm() {
   };
 
   // Validate pilot member number (Pilot in Command) with immediate feedback
-  const validatePilot = async (memberNumber: string, firstName: string, lastName: string) => {
+  const validatePilot = async (
+    memberNumber: string,
+    firstName: string,
+    lastName: string
+  ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
       setPilotValidationStatus("");
@@ -725,20 +828,26 @@ export default function AccidentForm() {
     setIsValidatingPilot(true);
 
     try {
-      const response = await axios.post("/api/validate-member", {
-        memberNumber,
-        firstName,
-        lastName,
-      });
+      const response = await axios.post<MemberValidationResponse>(
+        "/api/validate-member",
+        {
+          memberNumber,
+          firstName,
+          lastName,
+        }
+      );
 
       if (response.data.valid) {
         setPilotValidationStatus("valid");
         setPilotValidationMessage("✓ Member Number exists in system");
       } else {
         setPilotValidationStatus("invalid");
-        setPilotValidationMessage(response.data.warning || "Member Number not found");
+        setPilotValidationMessage(
+          response.data.warning || "Member Number not found"
+        );
       }
     } catch (error) {
+      console.error("Pilot validation error:", error);
       setPilotValidationStatus("invalid");
       setPilotValidationMessage("Unable to validate Member Number");
     } finally {
@@ -747,7 +856,11 @@ export default function AccidentForm() {
   };
 
   // Validate maintainer member number with immediate feedback
-  const validateMaintainer = async (memberNumber: string, firstName: string, lastName: string) => {
+  const validateMaintainer = async (
+    memberNumber: string,
+    firstName: string,
+    lastName: string
+  ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
       setMaintainerValidationStatus("");
@@ -758,20 +871,26 @@ export default function AccidentForm() {
     setIsValidatingMaintainer(true);
 
     try {
-      const response = await axios.post("/api/validate-member", {
-        memberNumber,
-        firstName,
-        lastName,
-      });
+      const response = await axios.post<MemberValidationResponse>(
+        "/api/validate-member",
+        {
+          memberNumber,
+          firstName,
+          lastName,
+        }
+      );
 
       if (response.data.valid) {
         setMaintainerValidationStatus("valid");
         setMaintainerValidationMessage("✓ Member Number exists in system");
       } else {
         setMaintainerValidationStatus("invalid");
-        setMaintainerValidationMessage(response.data.warning || "Member Number not found");
+        setMaintainerValidationMessage(
+          response.data.warning || "Member Number not found"
+        );
       }
     } catch (error) {
+      console.error("Maintainer validation error:", error);
       setMaintainerValidationStatus("invalid");
       setMaintainerValidationMessage("Unable to validate Member Number");
     } finally {
@@ -780,7 +899,11 @@ export default function AccidentForm() {
   };
 
   // Aircraft lookup function
-  const lookupAircraft = async (registrationPrefix: string, registrationSuffix: string, signal?: AbortSignal) => {
+  const lookupAircraft = async (
+    registrationPrefix: string,
+    registrationSuffix: string,
+    signal?: AbortSignal
+  ): Promise<void> => {
     // Reset lookup status
     if (!registrationPrefix || !registrationSuffix) {
       setAircraftLookupStatus("");
@@ -789,7 +912,7 @@ export default function AccidentForm() {
     }
 
     // Validate suffix is 4 digits
-    const cleanSuffix = registrationSuffix.replace(/\D/g, '');
+    const cleanSuffix = registrationSuffix.replace(/\D/g, "");
     if (cleanSuffix.length !== 4) {
       setAircraftLookupStatus("error");
       setAircraftLookupMessage("Registration suffix must be exactly 4 digits");
@@ -798,38 +921,43 @@ export default function AccidentForm() {
 
     // Combine prefix and suffix
     const combinedRegistration = `${registrationPrefix}-${cleanSuffix}`;
-    
+
     setIsLookingUpAircraft(true);
     setAircraftLookupStatus("");
     setAircraftLookupMessage("");
 
     try {
-      const response = await axios.post("/api/aircraft-lookup", {
-        aircraftConcat: combinedRegistration,
-      }, {
-        signal, // Pass the AbortSignal to axios
-      });
+      const response = await axios.post<AircraftLookupResponse>(
+        "/api/aircraft-lookup",
+        {
+          aircraftConcat: combinedRegistration,
+        },
+        {
+          signal, // Pass the AbortSignal to axios
+        }
+      );
 
       if (response?.data?.success && response?.data?.data) {
         const aircraftData = response.data.data;
-        
-        // Auto-fill aircraft fields
-        setValue("Serial_number", aircraftData.Serial_Number1 || "");
-        setValue("Make1", aircraftData.Manufacturer || "");
-        setValue("Model", aircraftData.Model || "");
-        setValue("Registration_status", aircraftData.Registration_Type || "");
-        setValue("Type1", aircraftData.Type || "");
-        setValue("Year_Built1", (aircraftData.Year_Built1 || aircraftData.Manufacturer_Date || "").toString());
-        
+
+        // Auto-fill aircraft fields - convert all values to strings for type safety
+        setValue("Serial_number", String(aircraftData.Serial_Number1 || ""));
+        setValue("Make1", String(aircraftData.Manufacturer || ""));
+        setValue("Model", String(aircraftData.Model || ""));
+        // Use type assertion for enum fields to allow API values
+        setValue("Registration_status", (aircraftData.Registration_Type || undefined) as any);
+        setValue("Type1", (aircraftData.Type || undefined) as any);
+        setValue("Year_Built1", String(aircraftData.Year_Built1 || aircraftData.Manufacturer_Date || ""));
+
         // Auto-fill engine fields
-        setValue("Engine_Details", aircraftData.Engine_Details || "");
-        setValue("Engine_model", aircraftData.Engine_model || "");
-        setValue("Engine_serial", aircraftData.Engines_Serial || "");
-        
+        setValue("Engine_Details", String(aircraftData.Engine_Details || ""));
+        setValue("Engine_model", String(aircraftData.Engine_model || ""));
+        setValue("Engine_serial", String(aircraftData.Engines_Serial || ""));
+
         // Auto-fill propeller fields
-        setValue("Propeller_make", aircraftData.Propeller_make || "");
-        setValue("Propeller_model", aircraftData.Propeller_model || "");
-        setValue("Propeller_serial", aircraftData.Propeller_serial || "");
+        setValue("Propeller_make", String(aircraftData.Propeller_make || ""));
+        setValue("Propeller_model", String(aircraftData.Propeller_model || ""));
+        setValue("Propeller_serial", String(aircraftData.Propeller_serial || ""));
 
         let fieldsPopulated = 0;
         const aircraftFields = ["Serial_number", "Make1", "Model", "Registration_status", "Type1", "Year_Built1"];
@@ -968,7 +1096,8 @@ export default function AccidentForm() {
     }
   };
 
-  const handlePreview = (data: AccidentFormData) => {
+  // Validate and show preview
+  const handlePreview = (data: AccidentFormData): void => {
     // Validate required fields before showing preview
     if (!occurrenceDate || !occurrenceTime) {
       alert("Please provide both occurrence date and time");
@@ -985,13 +1114,18 @@ export default function AccidentForm() {
     setShowPreview(true);
   };
 
-  const handleBackToEdit = () => {
+  // Return to edit mode from preview
+  const handleBackToEdit = (): void => {
     setShowPreview(false);
   };
 
-  const onSubmit = async () => {
-    if (!previewData) return;
-    
+  // Submit form data
+  const onSubmit = async (): Promise<void> => {
+    if (!previewData) {
+      console.error("No preview data available for submission");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -1001,43 +1135,85 @@ export default function AccidentForm() {
       const datetime = new Date(`${occurrenceDate}T${occurrenceTime}`);
       if (isNaN(datetime.getTime())) {
         alert("Invalid date or time provided");
-        setIsSubmitting(false);
         return;
       }
 
       // Prepare form data for unified API
       const formData = new FormData();
-      
-      // Add form type and data
-      formData.append('formType', 'accident');
-      
+
+      // Add form type
+      formData.append("formType", "accident");
+
       // Convert "Yes"/"No" strings to boolean for Zoho CRM compatibility
-      const submissionData = {
+      const submissionPayload = {
         ...data,
-        // Use custom values if "Other" is selected, otherwise use the dropdown value
-        role: data.role === "Other" && data.customRole && data.customRole.trim() ? data.customRole.trim() : data.role,
-        Relative_Track: data.Relative_Track === "Other" && data.customRelativeTrack && data.customRelativeTrack.trim() ? data.customRelativeTrack.trim() : data.Relative_Track,
-        Alert_Received: data.Alert_Received === "Other" && data.customAlertReceived && data.customAlertReceived.trim() ? data.customAlertReceived.trim() : data.Alert_Received,
+        // Use custom values if "Other" is selected
+        role:
+          data.role === "Other" &&
+          data.customRole &&
+          data.customRole.trim()
+            ? data.customRole.trim()
+            : data.role,
+        Relative_Track:
+          data.Relative_Track === "Other" &&
+          data.customRelativeTrack &&
+          data.customRelativeTrack.trim()
+            ? data.customRelativeTrack.trim()
+            : data.Relative_Track,
+        Alert_Received:
+          data.Alert_Received === "Other" &&
+          data.customAlertReceived &&
+          data.customAlertReceived.trim()
+            ? data.customAlertReceived.trim()
+            : data.Alert_Received,
         contactPhone: contactPhone,
         pilotContactPhone: pilotContactPhone,
-        occurrenceDate: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
+        occurrenceDate: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss
         // GPS Coordinates
         Latitude: (() => {
           const latValue = latitude ? parseFloat(latitude) : null;
-          return latValue !== null && !isNaN(latValue) ? latValue.toString() : '';
+          return latValue !== null && !isNaN(latValue)
+            ? latValue.toString()
+            : "";
         })(),
         Longitude: (() => {
           const lngValue = longitude ? parseFloat(longitude) : null;
-          return lngValue !== null && !isNaN(lngValue) ? lngValue.toString() : '';
+          return lngValue !== null && !isNaN(lngValue)
+            ? lngValue.toString()
+            : "";
         })(),
         // Convert Yes/No strings to boolean
-        Involve_IFR_or_Air_Transport_Operations: data.Involve_IFR_or_Air_Transport_Operations === "Yes" ? true : data.Involve_IFR_or_Air_Transport_Operations === "No" ? false : data.Involve_IFR_or_Air_Transport_Operations,
-        In_controlled_or_special_use_airspace: data.In_controlled_or_special_use_airspace === "Yes" ? true : data.In_controlled_or_special_use_airspace === "No" ? false : data.In_controlled_or_special_use_airspace,
-        Involve_near_miss_with_another_aircraft: typeof data.Involve_near_miss_with_another_aircraft === 'boolean' ? data.Involve_near_miss_with_another_aircraft : data.Involve_near_miss_with_another_aircraft === "Yes" ? true : data.Involve_near_miss_with_another_aircraft === "No" ? false : data.Involve_near_miss_with_another_aircraft,
-        Bird_or_Animal_Strike: typeof data.Bird_or_Animal_Strike === 'boolean' ? data.Bird_or_Animal_Strike : data.Bird_or_Animal_Strike === "Yes" ? true : data.Bird_or_Animal_Strike === "No" ? false : data.Bird_or_Animal_Strike,
+        Involve_IFR_or_Air_Transport_Operations:
+          data.Involve_IFR_or_Air_Transport_Operations === "Yes"
+            ? true
+            : data.Involve_IFR_or_Air_Transport_Operations === "No"
+              ? false
+              : data.Involve_IFR_or_Air_Transport_Operations,
+        In_controlled_or_special_use_airspace:
+          data.In_controlled_or_special_use_airspace === "Yes"
+            ? true
+            : data.In_controlled_or_special_use_airspace === "No"
+              ? false
+              : data.In_controlled_or_special_use_airspace,
+        Involve_near_miss_with_another_aircraft:
+          typeof data.Involve_near_miss_with_another_aircraft === "boolean"
+            ? data.Involve_near_miss_with_another_aircraft
+            : data.Involve_near_miss_with_another_aircraft === "Yes"
+              ? true
+              : data.Involve_near_miss_with_another_aircraft === "No"
+                ? false
+                : data.Involve_near_miss_with_another_aircraft,
+        Bird_or_Animal_Strike:
+          typeof data.Bird_or_Animal_Strike === "boolean"
+            ? data.Bird_or_Animal_Strike
+            : data.Bird_or_Animal_Strike === "Yes"
+              ? true
+              : data.Bird_or_Animal_Strike === "No"
+                ? false
+                : data.Bird_or_Animal_Strike,
       };
-      
-      formData.append('formData', JSON.stringify(submissionData));
+
+      formData.append("formData", JSON.stringify(submissionPayload));
 
       // Add attachments if any
       if (attachments && attachments.length > 0) {
@@ -1047,46 +1223,62 @@ export default function AccidentForm() {
       }
 
       // Submit to unified API endpoint
-      const response = await axios.post("/api/submit-form", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post<SubmissionResponse>(
+        "/api/submit-form",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       if (response.data.success) {
         setSubmissionData(response.data);
         setShowPreview(false);
         setSubmitSuccess(true);
-        
+
         // Clear form if configured to do so
         if (CLEAR_FORM_ON_SUBMIT) {
           clearAllFormData();
         }
-        
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        throw new Error(response.data.error || "Failed to process accident report");
+        throw new Error(
+          response.data.error || "Failed to process accident report"
+        );
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Form submission error:", error);
+
       let errorMessage = "Failed to submit form. Please try again.";
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.data?.data?.[0]?.message) {
-        errorMessage = error.response.data.data[0].message;
-      } else if (error.message) {
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.data?.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response?.data?.data?.[0]?.message) {
+          errorMessage = error.response.data.data[0].message;
+        }
+      } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      
+
       alert(`Submission Error: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const downloadPDF = async () => {
-    if (!submissionData) return;
+  // Download PDF report
+  const downloadPDF = async (): Promise<void> => {
+    if (!submissionData) {
+      console.error("No submission data available for PDF generation");
+      return;
+    }
 
     setIsDownloadingPDF(true);
+
     try {
       const response = await axios.post(
         "/api/generate-pdf",
@@ -1100,17 +1292,24 @@ export default function AccidentForm() {
         }
       );
 
-      // Create a download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Create blob from response
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+
+      // Create and trigger download link
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `Accident_Report_${submissionData.metadata?.occurrenceId || 'submission'}.pdf`);
+      link.download = `RAAus_Accident_Report_${
+        submissionData.metadata?.occurrenceId || Date.now()
+      }.pdf`;
       document.body.appendChild(link);
       link.click();
-      link.remove();
+
+      // Cleanup
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading PDF:", error);
+      console.error("PDF download error:", error);
       alert("Failed to download PDF. Please try again.");
     } finally {
       setIsDownloadingPDF(false);
