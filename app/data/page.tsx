@@ -5,9 +5,6 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Table, TableColumn } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import axios from "axios";
-import { 
-  getColumnMetadata
-} from "@/lib/utils/columnCategories";
 
 // The record type is flexible to support all form types
 type OccurrenceRecord = Record<string, any>;
@@ -64,7 +61,8 @@ export default function DataPage() {
     engineModel: "",
     state: "",
     injury: "",
-    damage: ""
+    damage: "",
+    occurrenceCategory: ""
   });
   const [showFilters, setShowFilters] = useState(false);
   const [dateFilterMode, setDateFilterMode] = useState<"none" | "range">("none");
@@ -126,10 +124,13 @@ export default function DataPage() {
       if (dateFilterMode === "range" && filters.dateTo) params.append("date_to", filters.dateTo);
       if (filters.location) params.append("location", filters.location);
       if (filters.make) params.append("make", filters.make);
+      if (filters.model) params.append("model", filters.model);
       if (filters.engineMake) params.append("engine_make", filters.engineMake);
+      if (filters.engineModel) params.append("engine_model", filters.engineModel);
       if (filters.state) params.append("state", filters.state);
       if (filters.injury) params.append("injury", filters.injury);
       if (filters.damage) params.append("damage", filters.damage);
+      if (filters.occurrenceCategory) params.append("primary_cause", filters.occurrenceCategory);
       
       const response = await axios.get(`/api/zoho-data?${params}`);
       if (response.data.success) {
@@ -230,6 +231,12 @@ export default function DataPage() {
       );
     }
 
+    if (filters.occurrenceCategory) {
+      filtered = filtered.filter(row => 
+        row.Primary_Cause?.toLowerCase() === filters.occurrenceCategory.toLowerCase()
+      );
+    }
+
     // Apply date range filter only when date filter mode is enabled
     if (dateFilterMode === "range" && (filters.dateFrom || filters.dateTo)) {
       filtered = filtered.filter(row => {
@@ -324,54 +331,27 @@ export default function DataPage() {
 
   /**
    * Column sets based on actual form fields (from forms.ts and form pages)
-   * 
-   * COLUMN CATEGORIZATION SYSTEM:
-   * Categories are automatically applied via getColumnMetadata() from columnCategories.ts
-   * - MANDATORY (Red): Required form fields - always needed for records
-   * - IMPORTANT (Orange): High-priority fields like OccurrenceId, Passenger_injury, PIC info
-   * - OPTIONAL (Yellow): Supplementary fields for detailed analysis
-   * 
-   * Category metadata is used for:
-   * 1. Table header colors (light tint matching category)
-   * 2. Column filter organization (3-section segregated popup)
-   * 3. Priority ordering within each category
    */
   const columnSets: Record<string, TableColumn<OccurrenceRecord>[]> = useMemo(() => {
-    // Get metadata for categorization
-    const accidentMeta = getColumnMetadata('Accident');
-    const defectMeta = getColumnMetadata('Defect');
-    const hazardMeta = getColumnMetadata('Hazard');
-    const complaintMeta = getColumnMetadata('Complaint');
-    const allMeta = getColumnMetadata('All');
-    
     return {
     Accident: [
       // Core Identifiers
-      { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1), category: accidentMeta.Occurrence_Date1?.category, priority: accidentMeta.Occurrence_Date1?.priority },
-   
-      { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px", category: accidentMeta.OccurrenceId?.category, priority: accidentMeta.OccurrenceId?.priority },
-      { key: "Location", header: "Location", sortable: true, width: "180px", category: accidentMeta.Location?.category, priority: accidentMeta.Location?.priority },
-      
+      { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
+      { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px" },
+      { key: "Location", header: "Location", sortable: true, width: "180px" },
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
       { key: "Primary_Cause", header: "Occurrence Category", sortable: true, width: "180px" },
       { key: "Make1", header: "Make", sortable: true, width: "120px" },
       { key: "Model", header: "Model", sortable: true, width: "120px" },
       { key: "Engine_Details", header: "Engine Details", sortable: true, width: "140px" },
       { key: "Engine_model", header: "Engine Model", sortable: true, width: "140px" },
-        // { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury), category: accidentMeta.Passenger_injury?.category, priority: accidentMeta.Passenger_injury?.priority },
-        // { key: "Most_serious_injury_to_pilot", header: "Pilot Injury", sortable: true, width: "130px" },
-        //  { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
-         { key: "Highest_Injury", header: "Highest Injury", sortable: true, width: "130px", accessor: (row) => getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury), sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(getHighestInjury(a.Most_serious_injury_to_pilot, a.Passenger_injury, a.Persons_on_the_ground_injury)) - getInjurySeverityRank(getHighestInjury(b.Most_serious_injury_to_pilot, b.Passenger_injury, b.Persons_on_the_ground_injury)) },
-         { key: "Description_of_damage_to_aircraft", header: "Damage Description", sortable: true, width: "250px" },
-         { key: "PUBLIC_OUTCOME", header: "Description", sortable: true, width: "700px", accessor: (row) => <ExpandableDescription text={row.PUBLIC_OUTCOME || "-"} /> },
-    //         { key: "Description_of_Occurrence", header: "Description of Incident/Accident", sortable: true, width: "300px" }
-     ],
+      { key: "Highest_Injury", header: "Highest Injury", sortable: true, width: "130px", accessor: (row) => getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury), sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(getHighestInjury(a.Most_serious_injury_to_pilot, a.Passenger_injury, a.Persons_on_the_ground_injury)) - getInjurySeverityRank(getHighestInjury(b.Most_serious_injury_to_pilot, b.Passenger_injury, b.Persons_on_the_ground_injury)) },
+      { key: "Description_of_damage_to_aircraft", header: "Damage Description", sortable: true, width: "250px" },
+      { key: "PUBLIC_OUTCOME", header: "Description", sortable: true, width: "700px", accessor: (row) => <ExpandableDescription text={row.PUBLIC_OUTCOME || "-"} /> },
+    ],
     Defect: [
-      // Core Identifiers
-     
-     
-      { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1), category: defectMeta.Occurrence_Date1?.category, priority: defectMeta.Occurrence_Date1?.priority },
-       { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px", category: defectMeta.OccurrenceId?.category, priority: defectMeta.OccurrenceId?.priority },
+      { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
+      { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px" },
       { key: "Location", header: "Location", sortable: true, width: "180px" },
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
       { key: "Primary_Cause", header: "Occurrence Category", sortable: true, width: "180px" },
@@ -381,36 +361,24 @@ export default function DataPage() {
       { key: "Engine_model", header: "Engine Model", sortable: true, width: "140px" },
       { key: "Provide_description_of_defect", header: "Defect Description", sortable: true, width: "300px" },
       { key: "PUBLIC_OUTCOME", header: "Description", sortable: true, width: "600px", accessor: (row) => <ExpandableDescription text={row.PUBLIC_OUTCOME || "-"} /> },
-      
     ],
     Hazard: [
-      // Core Identifiers
       { key: "Date_Hazard_Identified", header: "Date Identified", sortable: true, width: "180px", accessor: (row) => formatDate(row.Date_Hazard_Identified || row.Occurrence_Date1) },
       { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px" },
-      
-      
-      // Hazard Information
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
       { key: "Primary_Cause", header: "Occurrence Category", sortable: true, width: "180px" },
       { key: "Location_of_hazard", header: "Location of Hazard", sortable: true, width: "200px" },
       { key: "Please_fully_describe_the_identified_hazard", header: "Hazard Description", sortable: true, width: "350px" },
       { key: "Do_you_have_further_suggestions_on_how_to_PSO", header: "Prevention Suggestions", sortable: true, width: "300px" },
       { key: "PUBLIC_OUTCOME", header: "Description", sortable: true, width: "600px", accessor: (row) => <ExpandableDescription text={row.PUBLIC_OUTCOME || "-"} /> },
-      
-      // System Fields
       { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
     ],
     Complaint: [
-      // Core Identifiers
-      
       { key: "Occurrence_Date1", header: "Occurrence Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
       { key: "OccurrenceId", header: "occurrence number", sortable: true, width: "140px" },
       { key: "Primary_Cause", header: "Occurrence Category", sortable: true, width: "180px" },
-      // Complaint Details
       { key: "Description_of_Occurrence", header: "Complaint Details", sortable: true, width: "400px" },
       { key: "PUBLIC_OUTCOME", header: "Description", sortable: true, width: "600px", accessor: (row) => <ExpandableDescription text={row.PUBLIC_OUTCOME || "-"} /> },
-      
-      // System Fields
       { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
     ],
     All: [
@@ -425,31 +393,16 @@ export default function DataPage() {
       { key: "Model", header: "Aircraft Model", sortable: true, width: "120px" },
       { key: "Engine_Details", header: "Engine Make", sortable: true, width: "140px" },
       { key: "Engine_model", header: "Engine Model", sortable: true, width: "140px" },
-      // { key: "Passenger_injury", header: "Passenger Injury", sortable: true, width: "140px", sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(a.Passenger_injury) - getInjurySeverityRank(b.Passenger_injury) },
-      // { key: "Most_serious_injury_to_pilot", header: "Pilot Injury", sortable: true, width: "130px" },
-      // { key: "Persons_on_the_ground_injury", header: "Ground Injury", sortable: true, width: "140px" },
       { key: "Highest_Injury", header: "Highest Injury", sortable: true, width: "130px", accessor: (row) => getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury), sortComparator: (a: OccurrenceRecord, b: OccurrenceRecord) => getInjurySeverityRank(getHighestInjury(a.Most_serious_injury_to_pilot, a.Passenger_injury, a.Persons_on_the_ground_injury)) - getInjurySeverityRank(getHighestInjury(b.Most_serious_injury_to_pilot, b.Passenger_injury, b.Persons_on_the_ground_injury)) },
-      // { key: "Accident_or_Incident", header: "Accident/Incident", sortable: true, width: "140px" },
       { key: "Damage_to_aircraft", header: "Damage", sortable: true, width: "120px" },
     ],
   };
   }, []);
 
-  // Determine which columns to show based on filter and apply category metadata
+  // Determine which columns to show based on filter
   const currentColumns = useMemo(() => {
     const formType = occurrenceType || 'All';
-    const baseColumns = columnSets[formType] || columnSets.All;
-    const metadata = getColumnMetadata(formType);
-    
-    // Apply category and priority metadata to each column
-    return baseColumns.map(col => {
-      const meta = metadata[col.key];
-      return {
-        ...col,
-        category: meta?.category || 'optional',
-        priority: meta?.priority || 999
-      };
-    });
+    return columnSets[formType] || columnSets.All;
   }, [occurrenceType, columnSets]);
 
   const handleRowClick = (row: OccurrenceRecord) => {
@@ -460,101 +413,255 @@ export default function DataPage() {
   const totalPages = Math.ceil(totalRecords / perPage);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-10 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Occurrence Management</h1>
-          <p className="text-gray-600 mt-1">View and manage occurrence records from Zoho CRM</p>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Occurrence Management</h1>
+          <p className="text-lg text-gray-600">View and analyze occurrence records</p>
         </div>
 
         {/* Controls Bar */}
-        <div className="bg-white rounded-lg shadow p-4 pb-2 mb-6">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Type Filter */}
-            {/* <select
-              value={occurrenceType}
-              onChange={(e) => {
-                setOccurrenceType(e.target.value);
-                setCurrentPage(1);
-              }}
-              aria-label="Filter by occurrence type"
-              className="h-10 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 bg-white"
-            >
-              <option value="">All Forms</option>
-              <option value="Accident">Accident & Incident</option>
-              <option value="Defect">Defect</option>
-              <option value="Hazard">Hazard</option>
-              <option value="Complaint">Complaint</option>
-            </select> */}
-
-            {/* Client-side Search */}
-            <div className="flex-1 min-w-[300px]">
-              <input
-                type="text"
-                placeholder="Search data in the table ..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
-              />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Enhanced Search Bar */}
+            <div className="flex-1 min-w-[300px] max-w-3xl">
+              <div className="relative h-11">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search by occurrence number, location, make, model..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="w-full h-11 pl-10 pr-10 text-sm bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {searchInput && (
+                  <button
+                    onClick={() => setSearchInput("")}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Filter Toggle Button */}
-            <Button 
-              onClick={() => setShowFilters(!showFilters)}
-              variant="outline"
-              className="mb-2.5"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-              Filters {Object.values(filters).some(v => v) && dateFilterMode === "range" && <span className="ml-1 text-blue-600">●</span>}
-            </Button>
-
-            {/* Per Page Selector */}
-            <select
-              value={perPage}
-              onChange={(e) => {
-                setPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              aria-label="Items per page"
-              className="h-10 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 bg-white"
-            >
-              <option value={10}>10 per page</option>
-              <option value={25}>25 per page</option>
-              <option value={50}>50 per page</option>
-              <option value={100}>100 per page</option>
-            </select>
-
-            {/* Refresh Button */}
-            <Button onClick={fetchData} variant="outline" className="mb-2.5" disabled={loading}>
-              <svg
-                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {/* Action Buttons Container */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Filter Toggle Button */}
+              <Button
+                onClick={() => setShowFilters(!showFilters)}
+                variant="outline"
+                className="!h-11 !m-0 px-4 bg-white border border-gray-300 hover:bg-gray-50 whitespace-nowrap text-sm flex items-center"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-            </Button>
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filters
+                {(Object.values(filters).some(v => v) || dateFilterMode === "range") && (
+                  <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                    {Object.values(filters).filter(v => v).length + (dateFilterMode === "range" ? 1 : 0)}
+                  </span>
+                )}
+              </Button>
+
+              {/* Per Page Selector */}
+              <select
+                value={perPage}
+                onChange={(e) => {
+                  setPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                aria-label="Items per page"
+                className="h-11 px-3 pr-8 py-0 m-0 text-sm bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 whitespace-nowrap appearance-none cursor-pointer leading-[44px] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMS41TDYgNi41TDExIDEuNSIgc3Ryb2tlPSIjNjM2MzYzIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+')] bg-[length:12px] bg-[right_0.75rem_center] bg-no-repeat"
+              >
+                <option value={10}>10 per page</option>
+                <option value={25}>25 per page</option>
+                <option value={50}>50 per page</option>
+                <option value={100}>100 per page</option>
+              </select>
+
+              {/* Refresh Button */}
+              <Button onClick={fetchData} variant="outline" className="!h-11 !m-0 px-4 bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center" disabled={loading} title="Refresh data">
+                <svg
+                  className={`w-5 h-5 ${loading ? "animate-spin" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </Button>
+            </div>
           </div>
 
-          {/* Advanced Filters */}
+          {/* Active Filters Display */}
+          {(Object.entries(filters).some(([_, v]) => v) || dateFilterMode === "range") && (
+            <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-200">
+              <span className="text-sm font-medium text-gray-700">Active filters:</span>
+              
+              {dateFilterMode === "range" && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Date Range
+                  {filters.dateFrom && `: ${filters.dateFrom}`}
+                  {filters.dateTo && ` to ${filters.dateTo}`}
+                </span>
+              )}
+              
+              {filters.location && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Location: {filters.location}
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, location: "" }))}
+                    className="ml-1.5 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              
+              {filters.make && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Make: {filters.make}
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, make: "" }))}
+                    className="ml-1.5 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              
+              {filters.model && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Model: {filters.model}
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, model: "" }))}
+                    className="ml-1.5 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              
+              {filters.engineMake && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Engine Make: {filters.engineMake}
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, engineMake: "" }))}
+                    className="ml-1.5 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              
+              {filters.engineModel && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Engine Model: {filters.engineModel}
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, engineModel: "" }))}
+                    className="ml-1.5 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              
+              {filters.state && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  State: {filters.state}
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, state: "" }))}
+                    className="ml-1.5 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              
+              {filters.injury && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Injury: {filters.injury}
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, injury: "" }))}
+                    className="ml-1.5 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              
+              {filters.damage && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Damage: {filters.damage}
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, damage: "" }))}
+                    className="ml-1.5 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              
+              {filters.occurrenceCategory && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Category: {filters.occurrenceCategory}
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, occurrenceCategory: "" }))}
+                    className="ml-1.5 text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              
+              <button
+                onClick={() => {
+                  setFilters({
+                    dateFrom: "",
+                    dateTo: "",
+                    location: "",
+                    make: "",
+                    model: "",
+                    engineMake: "",
+                    engineModel: "",
+                    state: "",
+                    injury: "",
+                    damage: "",
+                    occurrenceCategory: ""
+                  });
+                  setDateFilterMode("none");
+                  setCurrentPage(1);
+                }}
+                className="ml-2 text-sm font-medium text-blue-600 hover:text-blue-800 underline"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+
+          {/* Advanced Filters Panel */}
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               {/* Date Filter Mode Selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-5">
+                <label className="block text-sm font-semibold text-gray-900 mb-3">
                   Date Filter
                 </label>
                 <div className="flex items-center space-x-6">
-                  <label className="flex items-center">
+                  <label className="flex items-center cursor-pointer">
                     <input
                       type="radio"
                       name="dateFilterMode"
@@ -571,7 +678,7 @@ export default function DataPage() {
                     />
                     <span className="ml-2 text-sm text-gray-700">No date filter</span>
                   </label>
-                  <label className="flex items-center">
+                  <label className="flex items-center cursor-pointer">
                     <input
                       type="radio"
                       name="dateFilterMode"
@@ -777,32 +884,29 @@ export default function DataPage() {
                     <option value="Unknown">Unknown</option>
                   </select>
                 </div>
-              </div>
 
-              {/* Clear Filters Button - Positioned on the right side */}
-              <div className="flex justify-end mt-4">
-                <Button
-                  onClick={() => {
-                    setFilters({
-                      dateFrom: "",
-                      dateTo: "",
-                      location: "",
-                      make: "",
-                      model: "",
-                      engineMake: "",
-                      engineModel: "",
-                      state: "",
-                      injury: "",
-                      damage: ""
-                    });
-                    setDateFilterMode("none");
-                    setCurrentPage(1);
-                  }}
-                  variant="outline"
-                  className="px-4 py-2 text-sm"
-                >
-                  Clear All Filters
-                </Button>
+                {/* Occurrence Category Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Occurrence Category
+                  </label>
+                  <select
+                    value={filters.occurrenceCategory}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, occurrenceCategory: e.target.value }));
+                      setCurrentPage(1);
+                    }}
+                    className="w-full h-9 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">All Categories</option>
+                    <option value="Operational">Operational</option>
+                    <option value="Technical">Technical</option>
+                    <option value="Airspace">Airspace</option>
+                    <option value="Infrastructure">Infrastructure</option>
+                    <option value="Environment">Environment</option>
+                    <option value="Consequential Event">Consequential Event</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
@@ -828,26 +932,39 @@ export default function DataPage() {
           </div>
         )}
 
+        {/* Results Counter */}
+        {!loading && totalRecords > 0 && (
+          <div className="mb-4 text-sm text-gray-600">
+            {searchInput || Object.values(filters).some(v => v) || dateFilterMode === "range" ? (
+              <span>
+                Showing <span className="font-semibold text-gray-900">{filteredData.length}</span> of{" "}
+                <span className="font-semibold text-gray-900">{totalRecords}</span> records (filtered)
+              </span>
+            ) : (
+              <span>
+                Showing <span className="font-semibold text-gray-900">{totalRecords}</span> records
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Table with Synchronized Top and Bottom Scrollbars - Only show when there are records */}
         {totalRecords > 0 && !loading && (
           <>
-            <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               {/* Top Scrollbar - Provides horizontal scroll without going to bottom */}
-              <div className="relative bg-slate-50 border-b border-slate-200">
+              <div className="relative bg-gray-50 border-b border-gray-200">
                 <div
                   ref={topScrollRef}
                   className="overflow-x-auto overflow-y-hidden scrollbar-hide"
-                  style={{ height: '17px' }}
+                  style={{ height: '20px' }}
                 >
                   <div style={{
                     width: currentColumns.length > 0
                       ? `${currentColumns.reduce((acc, col) => acc + parseInt(col.width || '150'), 0)}px`
                       : '100%',
-                    height: '17px'
+                    height: '20px'
                   }} />
-                </div>
-                <div className="absolute top-0 left-4 text-xs text-slate-500 pointer-events-none py-0.5">
-                  {/* ← Scroll horizontally → */}
                 </div>
               </div>
 
@@ -870,47 +987,63 @@ export default function DataPage() {
             </div>
 
             {/* Pagination */}
-            <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-white rounded-lg shadow p-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-700">
-                  {searchInput ? (
-                    <>Showing {filteredData.length} of {totalRecords} records (filtered)</>
-                  ) : (
-                    <>Showing {data.length > 0 ? (currentPage - 1) * perPage + 1 : 0} to {Math.min(currentPage * perPage, totalRecords)} of {totalRecords} records</>
-                  )}
-                </span>
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <div className="text-sm text-gray-700">
+                Page <span className="font-semibold text-gray-900">{currentPage}</span> of{" "}
+                <span className="font-semibold text-gray-900">{totalPages || 1}</span>
               </div>
+              
               <div className="flex items-center gap-2">
                 <Button
                   onClick={() => setCurrentPage(1)}
                   disabled={currentPage === 1 || loading}
                   variant="outline"
+                  className="h-10 px-3 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="First page"
                 >
-                  First
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                  </svg>
                 </Button>
+                
                 <Button
                   onClick={() => setCurrentPage(currentPage - 1)}
                   disabled={currentPage === 1 || loading}
                   variant="outline"
+                  className="h-10 px-3 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Previous page"
                 >
-                  Previous
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
                 </Button>
-                <span className="px-4 py-2 text-sm text-gray-700">
-                  Page {currentPage} of {totalPages || 1}
+                
+                <span className="px-4 py-2 text-sm text-gray-700 bg-gray-50 rounded-lg border border-gray-200">
+                  {currentPage} / {totalPages || 1}
                 </span>
+                
                 <Button
                   onClick={() => setCurrentPage(currentPage + 1)}
                   disabled={!hasMore || loading}
                   variant="outline"
+                  className="h-10 px-3 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Next page"
                 >
-                  Next
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Button>
+                
                 <Button
                   onClick={() => setCurrentPage(totalPages)}
                   disabled={currentPage === totalPages || loading}
                   variant="outline"
+                  className="h-10 px-3 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Last page"
                 >
-                  Last
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  </svg>
                 </Button>
               </div>
             </div>
@@ -919,9 +1052,9 @@ export default function DataPage() {
 
         {/* Show message when no records are available for display */}
         {totalRecords === 0 && !loading && !error && (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <svg
-              className="w-16 h-16 mx-auto mb-4 text-gray-300"
+              className="w-20 h-20 mx-auto mb-6 text-gray-300"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -929,12 +1062,12 @@ export default function DataPage() {
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={1}
-                d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+                strokeWidth={1.5}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Records Available</h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Records Available</h3>
+            <p className="text-gray-600 max-w-md mx-auto">
               There are currently no occurrence records approved for display on the website.
             </p>
           </div>

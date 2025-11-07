@@ -12,6 +12,19 @@ export async function GET(request: NextRequest) {
     const searchQuery = searchParams.get("search") || "";
     const typeFilter = searchParams.get("type") || "";
     
+    // Get filter parameters
+    const dateFrom = searchParams.get("date_from") || "";
+    const dateTo = searchParams.get("date_to") || "";
+    const location = searchParams.get("location") || "";
+    const make = searchParams.get("make") || "";
+    const model = searchParams.get("model") || "";
+    const engineMake = searchParams.get("engine_make") || "";
+    const engineModel = searchParams.get("engine_model") || "";
+    const state = searchParams.get("state") || "";
+    const injury = searchParams.get("injury") || "";
+    const damage = searchParams.get("damage") || "";
+    const primaryCause = searchParams.get("primary_cause") || "";
+    
     // Get access token
     const accessToken = await ZohoAuth.getAccessToken("crm");
     
@@ -20,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Build API URL with pagination
     let url = `${apiDomain}/crm/v2/Occurrence_Management?page=${page}&per_page=${perPage}`;
     
-    // Build criteria for search and/or type filter
+    // Build criteria for search and/or filters
     const criteriaArray: string[] = [];
     
     // Always filter to only show records where Display_on_Website is true
@@ -33,11 +46,51 @@ export async function GET(request: NextRequest) {
     
     if (typeFilter) {
       // Filter by form type using Boolean fields
-      // Each form type has a corresponding Boolean field in Zoho CRM
       criteriaArray.push(`(${typeFilter}:equals:true)`);
     }
     
-    // If we have any criteria, use search endpoint
+    // Add filter criteria
+    if (dateFrom) {
+      criteriaArray.push(`(Occurrence_Date1:>=${dateFrom})`);
+    }
+    
+    if (dateTo) {
+      criteriaArray.push(`(Occurrence_Date1:<=${dateTo})`);
+    }
+    
+    if (location) {
+      criteriaArray.push(`(Location:contains:${location})`);
+    }
+    
+    if (make) {
+      criteriaArray.push(`((Make1:contains:${make})or(Make:contains:${make}))`);
+    }
+    
+    if (model) {
+      criteriaArray.push(`(Model:contains:${model})`);
+    }
+    
+    if (engineMake) {
+      criteriaArray.push(`((Engine_Details:contains:${engineMake})or(Engine_Details:contains:${engineMake}))`);
+    }
+    
+    if (engineModel) {
+      criteriaArray.push(`(Engine_model:contains:${engineModel})`);
+    }
+    
+    if (state) {
+      criteriaArray.push(`(State:equals:${state})`);
+    }
+    
+    if (damage) {
+      criteriaArray.push(`((Damage_to_aircraft:equals:${damage})or(Description_of_damage_to_aircraft:contains:${damage}))`);
+    }
+    
+    if (primaryCause) {
+      criteriaArray.push(`(Primary_Cause:equals:${primaryCause})`);
+    }
+    
+    // If we have criteria, use search endpoint
     if (criteriaArray.length > 0) {
       const criteria = criteriaArray.join("and");
       url = `${apiDomain}/crm/v2/Occurrence_Management/search?criteria=${encodeURIComponent(criteria)}&page=${page}&per_page=${perPage}`;
@@ -76,6 +129,12 @@ function getFallbackMockData(request: NextRequest) {
   const page = parseInt(searchParams.get("page") || "1");
   const perPage = parseInt(searchParams.get("per_page") || "10");
   const typeFilter = searchParams.get("type") || "";
+  const location = searchParams.get("location") || "";
+  const make = searchParams.get("make") || "";
+  const model = searchParams.get("model") || "";
+  const state = searchParams.get("state") || "";
+  const damage = searchParams.get("damage") || "";
+  const primaryCause = searchParams.get("primary_cause") || "";
   
   const mockOccurrenceData = [
   {
@@ -101,6 +160,7 @@ function getFallbackMockData(request: NextRequest) {
     Created_Time: "2024-10-05T15:00:00",
     Display_on_Website: true,
     Public_Outcome1: "Investigation completed. The incident was caused by pilot error during landing. Corrective actions have been implemented including additional training for the pilot.",
+    Primary_Cause: "Operational",
     Accident: true,
     Defect: false,
     Hazard: false,
@@ -129,6 +189,7 @@ function getFallbackMockData(request: NextRequest) {
     Created_Time: "2024-09-28T11:30:00",
     Display_on_Website: true,
     Public_Outcome1: "Minor incident during taxiing. Aircraft struck a runway marker due to poor visibility conditions. No injuries reported. Pilot has been advised on improved situational awareness techniques.",
+    Primary_Cause: "Environment",
     Accident: true,
     Defect: false,
     Hazard: false,
@@ -154,6 +215,7 @@ function getFallbackMockData(request: NextRequest) {
     ATSB_reportable_status: "No",
     Created_Time: "2024-09-15T17:00:00",
     Display_on_Website: true,
+    Primary_Cause: "Technical",
     Accident: false,
     Defect: true,
     Hazard: false,
@@ -178,7 +240,8 @@ function getFallbackMockData(request: NextRequest) {
     Model: "",
     ATSB_reportable_status: "No",
     Created_Time: "2024-08-30T10:00:00",
-    Display_on_Website: false, // This record won't be shown
+    Display_on_Website: false,
+    Primary_Cause: "Airspace",
     Accident: false,
     Defect: false,
     Hazard: true,
@@ -204,6 +267,7 @@ function getFallbackMockData(request: NextRequest) {
     ATSB_reportable_status: "No",
     Created_Time: "2024-08-12T14:15:00",
     Display_on_Website: true,
+    Primary_Cause: "Infrastructure",
     Accident: false,
     Defect: false,
     Hazard: false,
@@ -231,6 +295,7 @@ function getFallbackMockData(request: NextRequest) {
     ATSB_reportable_status: "Yes",
     Created_Time: "2024-07-25T12:00:00",
     Display_on_Website: true,
+    Primary_Cause: "Technical",
     Accident: true,
     Defect: false,
     Hazard: false,
@@ -256,6 +321,7 @@ function getFallbackMockData(request: NextRequest) {
     ATSB_reportable_status: "No",
     Created_Time: "2024-07-10T16:30:00",
     Display_on_Website: true,
+    Primary_Cause: "Consequential Event",
     Accident: false,
     Defect: true,
     Hazard: false,
@@ -280,7 +346,8 @@ function getFallbackMockData(request: NextRequest) {
     Model: "3K",
     ATSB_reportable_status: "No",
     Created_Time: "2024-06-18T09:00:00",
-    Display_on_Website: false, // This record won't be shown
+    Display_on_Website: false,
+    Primary_Cause: "Operational",
     Accident: true,
     Defect: false,
     Hazard: false,
@@ -292,13 +359,50 @@ function getFallbackMockData(request: NextRequest) {
   let filteredData = mockOccurrenceData;
   if (typeFilter) {
     filteredData = mockOccurrenceData.filter((item: any) => {
-      // Check the Boolean field corresponding to the filter type
       return item[typeFilter] === true;
     });
   }
   
   // Always filter to only show records where Display_on_Website is true
   filteredData = filteredData.filter((item: any) => item.Display_on_Website === true);
+  
+  // Apply additional filters
+  if (location) {
+    filteredData = filteredData.filter((item: any) =>
+      item.Location?.toLowerCase().includes(location.toLowerCase())
+    );
+  }
+  
+  if (make) {
+    filteredData = filteredData.filter((item: any) =>
+      item.Make1?.toLowerCase().includes(make.toLowerCase()) ||
+      item.Make?.toLowerCase().includes(make.toLowerCase())
+    );
+  }
+  
+  if (model) {
+    filteredData = filteredData.filter((item: any) =>
+      item.Model?.toLowerCase().includes(model.toLowerCase())
+    );
+  }
+  
+  if (state) {
+    filteredData = filteredData.filter((item: any) =>
+      item.State?.toLowerCase() === state.toLowerCase()
+    );
+  }
+  
+  if (damage) {
+    filteredData = filteredData.filter((item: any) =>
+      item.Damage_to_aircraft?.toLowerCase().includes(damage.toLowerCase())
+    );
+  }
+  
+  if (primaryCause) {
+    filteredData = filteredData.filter((item: any) =>
+      item.Primary_Cause?.toLowerCase() === primaryCause.toLowerCase()
+    );
+  }
 
   const start = (page - 1) * perPage;
   const end = start + perPage;

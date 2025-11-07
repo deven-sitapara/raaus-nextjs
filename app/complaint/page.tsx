@@ -396,7 +396,7 @@ export default function ComplaintForm() {
 
             {/* Person Reporting Section */}
             <div className="mt-8">
-              <div className="flex justify-between items-center mb-8 border-b-2 border-gray-300 pb-4">
+              <div className="flex justify-between items-center mb-6 border-b-2 border-gray-300 pb-4">
                 <h2 className="text-xl font-semibold text-gray-900">
                   Person Reporting
                 </h2>
@@ -414,7 +414,7 @@ export default function ComplaintForm() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
               <Select
                 label="Role"
                 required={!wishToRemainAnonymous}
@@ -446,13 +446,36 @@ export default function ComplaintForm() {
                     onChange: (e) => {
                       // Remove any non-numeric characters
                       e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                      // Clear validation status when user changes the field
-                      setMemberValidationStatus("");
-                      setMemberValidationMessage("");
+                      
+                      // Real-time validation (only if not anonymous)
+                      if (!wishToRemainAnonymous) {
+                        const memberNumber = e.target.value;
+                        const firstName = watch("Name1");
+                        const lastName = watch("Last_Name");
+                        if (memberNumber && firstName && lastName) {
+                          validateMember(memberNumber, firstName, lastName);
+                        } else {
+                          setMemberValidationStatus("");
+                          setMemberValidationMessage("");
+                        }
+                      }
                     },
                   })}
                   error={errors.Member_Number?.message}
                 />
+                {!wishToRemainAnonymous && (
+                  <>
+                    {isValidatingMember && (
+                      <p className="text-sm text-gray-500 mt-1">Validating...</p>
+                    )}
+                    {!isValidatingMember && memberValidationStatus === "valid" && (
+                      <p className="text-sm text-green-600 mt-1 font-medium">{memberValidationMessage}</p>
+                    )}
+                    {!isValidatingMember && memberValidationStatus === "invalid" && (
+                      <p className="text-sm text-red-600 mt-1">{memberValidationMessage}</p>
+                    )}
+                  </>
+                )}
               </div>
 
               <Input
@@ -479,9 +502,16 @@ export default function ComplaintForm() {
                     // Convert to Title Case
                     value = toTitleCase(value);
                     e.target.value = value;
-                    // Clear validation status when user changes the field
-                    setMemberValidationStatus("");
-                    setMemberValidationMessage("");
+                    
+                    // Real-time validation (only if not anonymous)
+                    if (!wishToRemainAnonymous) {
+                      const firstName = value;
+                      const memberNumber = watch("Member_Number");
+                      const lastName = watch("Last_Name");
+                      if (memberNumber && firstName && lastName) {
+                        validateMember(memberNumber, firstName, lastName);
+                      }
+                    }
                   },
                 })}
                 error={errors.Name1?.message}
@@ -511,43 +541,20 @@ export default function ComplaintForm() {
                     // Convert to Title Case
                     value = toTitleCase(value);
                     e.target.value = value;
-                    // Clear validation status when user changes the field
-                    setMemberValidationStatus("");
-                    setMemberValidationMessage("");
+                    
+                    // Real-time validation (only if not anonymous)
+                    if (!wishToRemainAnonymous) {
+                      const lastName = value;
+                      const memberNumber = watch("Member_Number");
+                      const firstName = watch("Name1");
+                      if (memberNumber && firstName && lastName) {
+                        validateMember(memberNumber, firstName, lastName);
+                      }
+                    }
                   },
                 })}
                 error={errors.Last_Name?.message}
               />
-
-              {/* Validate Member Button - Only show when not anonymous */}
-              {!wishToRemainAnonymous && (
-                <div className="md:col-span-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const memberNumber = watch("Member_Number");
-                      const firstName = watch("Name1");
-                      const lastName = watch("Last_Name");
-                      if (memberNumber && firstName && lastName) {
-                        validateMember(memberNumber, firstName, lastName);
-                      } else {
-                        setMemberValidationStatus("invalid");
-                        setMemberValidationMessage("Please fill in all fields (Member Number, First Name, and Last Name)");
-                      }
-                    }}
-                    disabled={isValidatingMember}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isValidatingMember ? "Validating..." : "Validate Member"}
-                  </button>
-                  {!isValidatingMember && memberValidationStatus === "valid" && (
-                    <p className="text-sm text-green-600 mt-2 font-medium">{memberValidationMessage}</p>
-                  )}
-                  {!isValidatingMember && memberValidationStatus === "invalid" && (
-                    <p className="text-sm text-red-600 mt-2">{memberValidationMessage}</p>
-                  )}
-                </div>
-              )}
 
               <Input
                 label="Email"
@@ -576,11 +583,10 @@ export default function ComplaintForm() {
                 defaultCountry="AU"
               />
             </div>
-            </div>
+          </div>
           </div>
 
           {/* Complaint Information Section */}
-
           <div className="bg-white rounded-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Complaint Information</h2>
 
@@ -674,7 +680,7 @@ export default function ComplaintForm() {
           </div>
 
           {/* Submit Button */}
-w          <div className="flex justify-end space-x-4 mr-8 mb-8">
+          <div className="flex justify-end space-x-4 mr-8 mb-8">
             <Button type="button" variant="outline" onClick={() => (window.location.href = "/")}>
               Cancel
             </Button>
@@ -682,9 +688,8 @@ w          <div className="flex justify-end space-x-4 mr-8 mb-8">
               Review & Submit
             </Button>
           </div>
-
-          </form>
-        </div>
+        </form>
       </div>
-    );
-  }
+    </div>
+  );
+}
