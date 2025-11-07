@@ -396,7 +396,7 @@ export default function ComplaintForm() {
 
             {/* Person Reporting Section */}
             <div className="mt-8">
-              <div className="flex justify-between items-center mb-8 border-b-2 border-gray-300 pb-4">
+              <div className="flex justify-between items-center mb-6 border-b-2 border-gray-300 pb-4">
                 <h2 className="text-xl font-semibold text-gray-900">
                   Person Reporting
                 </h2>
@@ -414,7 +414,7 @@ export default function ComplaintForm() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
               <Select
                 label="Role"
                 required={!wishToRemainAnonymous}
@@ -521,7 +521,7 @@ export default function ComplaintForm() {
 
               {/* Validate Member Button - Only show when not anonymous */}
               {!wishToRemainAnonymous && (
-                <div className="md:col-span-3">
+                <div className="md:col-span-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -576,11 +576,10 @@ export default function ComplaintForm() {
                 defaultCountry="AU"
               />
             </div>
-            </div>
+          </div>
           </div>
 
           {/* Complaint Information Section */}
-
           <div className="bg-white rounded-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Complaint Information</h2>
 
@@ -674,7 +673,7 @@ export default function ComplaintForm() {
           </div>
 
           {/* Submit Button */}
-w          <div className="flex justify-end space-x-4 mr-8 mb-8">
+          <div className="flex justify-end space-x-4 mr-8 mb-8">
             <Button type="button" variant="outline" onClick={() => (window.location.href = "/")}>
               Cancel
             </Button>
@@ -682,9 +681,8 @@ w          <div className="flex justify-end space-x-4 mr-8 mb-8">
               Review & Submit
             </Button>
           </div>
-
-          </form>
-        </div>
+        </form>
       </div>
-    );
-  }
+    </div>
+  );
+}

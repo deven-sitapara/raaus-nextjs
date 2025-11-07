@@ -49,14 +49,7 @@ p[class*="description"],
 .select-field,
 .textarea-field,
 .checkbox-field,
-.file-upload-field,
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="number"],
-input[type="password"],
-select,
-textarea {
+.file-upload-field {
   margin-bottom: 10px !important;
 }
 

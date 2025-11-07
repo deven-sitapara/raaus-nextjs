@@ -652,9 +652,10 @@ export default function DefectForm() {
         <form onSubmit={handleSubmit(handlePreview)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white defect-form">
           {/* Person Reporting Section */}
           <div className="rounded-lg p-8 pt-10">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6 border-b-2 border-gray-300 pb-4">
-              Person Reporting
-
+            <div className="flex justify-between items-center mb-6 border-b-2 border-gray-300 pb-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Person Reporting
+              </h2>
               <Button
                 type="button"
                 variant="outline"
@@ -663,11 +664,11 @@ export default function DefectForm() {
                   clearSpecialState();
                   setAttachments(null);
                 }}
-                className="bg-red-50 float-right inline -top-6 relative text-red-600 border-red-200 hover:bg-red-100"
+                className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
               >
                 Clear Form
               </Button>
-            </h2>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
               <div>
@@ -817,7 +818,7 @@ export default function DefectForm() {
               />
 
               {/* Validate Member Button */}
-              <div className="md:col-span-3">
+              <div className="md:col-span-2">
                 <button
                   type="button"
                   onClick={() => {

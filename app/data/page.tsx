@@ -425,38 +425,40 @@ export default function DataPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Enhanced Search Bar */}
-            <div className="flex-1 min-w-[300px] max-w-3xl relative h-11">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Search by occurrence number, location, make, model..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full h-full pl-10 pr-10 text-sm bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-              />
-              {searchInput && (
-                <button
-                  onClick={() => setSearchInput("")}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <div className="flex-1 min-w-[300px] max-w-3xl">
+              <div className="relative h-11">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                </button>
-              )}
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search by occurrence number, location, make, model..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="w-full h-11 pl-10 pr-10 text-sm bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {searchInput && (
+                  <button
+                    onClick={() => setSearchInput("")}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Action Buttons Container */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {/* Filter Toggle Button */}
-              <Button 
+              <Button
                 onClick={() => setShowFilters(!showFilters)}
                 variant="outline"
-                className="h-11 px-4 bg-white border border-gray-300 hover:bg-gray-50 whitespace-nowrap text-sm"
+                className="!h-11 !m-0 px-4 bg-white border border-gray-300 hover:bg-gray-50 whitespace-nowrap text-sm flex items-center"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -477,7 +479,7 @@ export default function DataPage() {
                   setCurrentPage(1);
                 }}
                 aria-label="Items per page"
-                className="h-11 px-3 text-sm bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 whitespace-nowrap appearance-none cursor-pointer"
+                className="h-11 px-3 pr-8 py-0 m-0 text-sm bg-white border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 whitespace-nowrap appearance-none cursor-pointer leading-[44px] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMS41TDYgNi41TDExIDEuNSIgc3Ryb2tlPSIjNjM2MzYzIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+')] bg-[length:12px] bg-[right_0.75rem_center] bg-no-repeat"
               >
                 <option value={10}>10 per page</option>
                 <option value={25}>25 per page</option>
@@ -486,7 +488,7 @@ export default function DataPage() {
               </select>
 
               {/* Refresh Button */}
-              <Button onClick={fetchData} variant="outline" className="h-11 px-4 bg-white border border-gray-300 hover:bg-gray-50" disabled={loading} title="Refresh data">
+              <Button onClick={fetchData} variant="outline" className="!h-11 !m-0 px-4 bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center" disabled={loading} title="Refresh data">
                 <svg
                   className={`w-5 h-5 ${loading ? "animate-spin" : ""}`}
                   fill="none"
