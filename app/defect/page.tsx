@@ -167,13 +167,19 @@ export default function DefectForm() {
 
   // Auto-lookup aircraft when both prefix and suffix are provided
   useEffect(() => {
+    // AbortController to cancel previous requests
+    const abortController = new AbortController();
+    
     if (registrationPrefix && registrationSuffix) {
       // Debounce the lookup to avoid excessive API calls
       const timeoutId = setTimeout(() => {
-        lookupAircraft(registrationPrefix, registrationSuffix);
+        lookupAircraft(registrationPrefix, registrationSuffix, abortController.signal);
       }, 500);
       
-      return () => clearTimeout(timeoutId);
+      return () => {
+        clearTimeout(timeoutId);
+        abortController.abort(); // Cancel any pending request
+      };
     } else {
       // Clear aircraft lookup status when fields are empty
       setAircraftLookupStatus("");
@@ -261,7 +267,7 @@ export default function DefectForm() {
   };
 
   // Aircraft lookup function
-  const lookupAircraft = async (registrationPrefix: string, registrationSuffix: string) => {
+  const lookupAircraft = async (registrationPrefix: string, registrationSuffix: string, signal?: AbortSignal) => {
     // Reset lookup status
     if (!registrationPrefix || !registrationSuffix) {
       setAircraftLookupStatus("");
@@ -287,6 +293,8 @@ export default function DefectForm() {
     try {
       const response = await axios.post("/api/aircraft-lookup", {
         aircraftConcat: combinedRegistration,
+      }, {
+        signal: signal
       });
 
       if (response.data.success && response.data.data) {
@@ -744,13 +752,29 @@ export default function DefectForm() {
                     onChange: (e) => {
                       // Remove any non-numeric characters
                       e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                      // Clear validation status when user changes the field
-                      setMemberValidationStatus("");
-                      setMemberValidationMessage("");
+                      // Real-time validation - validate when all 3 fields are filled
+                      const memberNumber = e.target.value;
+                      const firstName = watch("firstName");
+                      const lastName = watch("lastName");
+                      if (memberNumber && firstName && lastName) {
+                        validateMember(memberNumber, firstName, lastName);
+                      } else {
+                        setMemberValidationStatus("");
+                        setMemberValidationMessage("");
+                      }
                     },
                   })}
                   error={errors.memberNumber?.message}
                 />
+                {isValidatingMember && (
+                  <p className="text-sm text-gray-500 mt-1">Validating...</p>
+                )}
+                {!isValidatingMember && memberValidationStatus === "valid" && (
+                  <p className="text-sm text-green-600 mt-1 font-medium">{memberValidationMessage}</p>
+                )}
+                {!isValidatingMember && memberValidationStatus === "invalid" && (
+                  <p className="text-sm text-red-600 mt-1">{memberValidationMessage}</p>
+                )}
               </div>
 
               <Input
@@ -777,9 +801,14 @@ export default function DefectForm() {
                     // Convert to Title Case
                     value = toTitleCase(value);
                     e.target.value = value;
-                    // Clear validation status when user changes the field
-                    setMemberValidationStatus("");
-                    setMemberValidationMessage("");
+                    
+                    // Real-time validation - validate when all 3 fields are filled
+                    const firstName = value;
+                    const memberNumber = watch("memberNumber");
+                    const lastName = watch("lastName");
+                    if (memberNumber && firstName && lastName) {
+                      validateMember(memberNumber, firstName, lastName);
+                    }
                   },
                 })}
                 error={errors.firstName?.message}
@@ -809,42 +838,20 @@ export default function DefectForm() {
                     // Convert to Title Case
                     value = toTitleCase(value);
                     e.target.value = value;
-                    // Clear validation status when user changes the field
-                    setMemberValidationStatus("");
-                    setMemberValidationMessage("");
+                    
+                    // Real-time validation - validate when all 3 fields are filled
+                    const lastName = value;
+                    const memberNumber = watch("memberNumber");
+                    const firstName = watch("firstName");
+                    if (memberNumber && firstName && lastName) {
+                      validateMember(memberNumber, firstName, lastName);
+                    }
                   },
                 })}
                 error={errors.lastName?.message}
               />
 
-              {/* Validate Member Button */}
-              <div className="md:col-span-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const memberNumber = watch("memberNumber");
-                    const firstName = watch("firstName");
-                    const lastName = watch("lastName");
-                    if (memberNumber && firstName && lastName) {
-                      validateMember(memberNumber, firstName, lastName);
-                    } else {
-                      setMemberValidationStatus("invalid");
-                      setMemberValidationMessage("Please fill in all fields (Member Number, First Name, and Last Name)");
-                    }
-                  }}
-                  disabled={isValidatingMember}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isValidatingMember ? "Validating..." : "Validate Member"}
-                </button>
-                {!isValidatingMember && memberValidationStatus === "valid" && (
-                  <p className="text-sm text-green-600 mt-2 font-medium">{memberValidationMessage}</p>
-                )}
-                {!isValidatingMember && memberValidationStatus === "invalid" && (
-                  <p className="text-sm text-red-600 mt-2">{memberValidationMessage}</p>
-                )}
-              </div>
-
+              {/* Email field */}
               <Input
                 label="Email"
                 type="email"

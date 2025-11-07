@@ -457,13 +457,29 @@ export default function HazardForm() {
                     onChange: (e) => {
                       // Remove any non-numeric characters
                       e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                      // Clear validation status when user changes the field
-                      setMemberValidationStatus("");
-                      setMemberValidationMessage("");
+                      // Real-time validation - validate when all 3 fields are filled
+                      const memberNumber = e.target.value;
+                      const firstName = watch("Name1");
+                      const lastName = watch("Last_Name");
+                      if (memberNumber && firstName && lastName) {
+                        validateMember(memberNumber, firstName, lastName);
+                      } else {
+                        setMemberValidationStatus("");
+                        setMemberValidationMessage("");
+                      }
                     },
                   })}
                   error={errors.Member_Number?.message}
                 />
+                {isValidatingMember && (
+                  <p className="text-sm text-gray-500 mt-1">Validating...</p>
+                )}
+                {!isValidatingMember && memberValidationStatus === "valid" && (
+                  <p className="text-sm text-green-600 mt-1 font-medium">{memberValidationMessage}</p>
+                )}
+                {!isValidatingMember && memberValidationStatus === "invalid" && (
+                  <p className="text-sm text-red-600 mt-1">{memberValidationMessage}</p>
+                )}
               </div>
 
               <Input
@@ -490,9 +506,14 @@ export default function HazardForm() {
                     // Convert to Title Case
                     value = toTitleCase(value);
                     e.target.value = value;
-                    // Clear validation status when user changes the field
-                    setMemberValidationStatus("");
-                    setMemberValidationMessage("");
+                    
+                    // Real-time validation - validate when all 3 fields are filled
+                    const firstName = value;
+                    const memberNumber = watch("Member_Number");
+                    const lastName = watch("Last_Name");
+                    if (memberNumber && firstName && lastName) {
+                      validateMember(memberNumber, firstName, lastName);
+                    }
                   },
                 })}
                 error={errors.Name1?.message}
@@ -522,41 +543,18 @@ export default function HazardForm() {
                     // Convert to Title Case
                     value = toTitleCase(value);
                     e.target.value = value;
-                    // Clear validation status when user changes the field
-                    setMemberValidationStatus("");
-                    setMemberValidationMessage("");
+                    
+                    // Real-time validation - validate when all 3 fields are filled
+                    const lastName = value;
+                    const memberNumber = watch("Member_Number");
+                    const firstName = watch("Name1");
+                    if (memberNumber && firstName && lastName) {
+                      validateMember(memberNumber, firstName, lastName);
+                    }
                   },
                 })}
                 error={errors.Last_Name?.message}
               />
-
-              {/* Validate Member Button */}
-              <div className="md:col-span-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const memberNumber = watch("Member_Number");
-                    const firstName = watch("Name1");
-                    const lastName = watch("Last_Name");
-                    if (memberNumber && firstName && lastName) {
-                      validateMember(memberNumber, firstName, lastName);
-                    } else {
-                      setMemberValidationStatus("invalid");
-                      setMemberValidationMessage("Please fill in all fields (Member Number, First Name, and Last Name)");
-                    }
-                  }}
-                  disabled={isValidatingMember}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isValidatingMember ? "Validating..." : "Validate Member"}
-                </button>
-                {!isValidatingMember && memberValidationStatus === "valid" && (
-                  <p className="text-sm text-green-600 mt-2 font-medium">{memberValidationMessage}</p>
-                )}
-                {!isValidatingMember && memberValidationStatus === "invalid" && (
-                  <p className="text-sm text-red-600 mt-2">{memberValidationMessage}</p>
-                )}
-              </div>
 
               <Input
                 label="Email"
