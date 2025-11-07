@@ -31,34 +31,6 @@ export interface TableProps<T = any> {
 
 type SortDirection = "asc" | "desc" | null;
 
-// Helper to get category background color for headers
-const getCategoryBgClass = (category?: ColumnCategory): string => {
-  switch (category) {
-    case 'mandatory':
-      return 'bg-red-50';
-    case 'important':
-      return 'bg-orange-50';
-    case 'optional':
-      return 'bg-yellow-50';
-    default:
-      return 'bg-slate-50';
-  }
-}
-
-// Helper to get border color for headers
-const getCategoryBorderClass = (category?: ColumnCategory): string => {
-  switch (category) {
-    case 'mandatory':
-      return 'border-b-[3px] border-red-500';
-    case 'important':
-      return 'border-b-[3px] border-orange-500';
-    case 'optional':
-      return 'border-b-[3px] border-yellow-500';
-    default:
-      return 'border-b-2 border-slate-300';
-  }
-};
-
 export function Table<T = any>({
   columns,
   data,
@@ -71,8 +43,8 @@ export function Table<T = any>({
   bordered = true,
   compact = false,
 }: TableProps<T>) {
-  const [sortKey, setSortKey] = React.useState<string | null>("Passenger_injury");
-  const [sortDirection, setSortDirection] = React.useState<SortDirection>("asc");
+  const [sortKey, setSortKey] = React.useState<string | null>(null);
+  const [sortDirection, setSortDirection] = React.useState<SortDirection>(null);
 
   // Handle column sorting
   const handleSort = (columnKey: string) => {
@@ -196,32 +168,29 @@ export function Table<T = any>({
   return (
     <table
       className={cn(
-        "w-full border-collapse bg-white",
-        bordered && "border border-slate-200",
+        "w-full border-collapse bg-white text-sm",
         className
       )}
     >
-      <thead className="sticky top-0 z-10">
+      <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
           <tr>
-            {columns.map((column) => (
+            {columns.map((column, index) => (
               <th
                 key={column.key}
                 onClick={() => column.sortable && handleSort(column.key)}
                 className={cn(
-                  "px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider",
-                  getCategoryBgClass(column.category),
-                  getCategoryBorderClass(column.category),
-                  compact && "px-4 py-2",
-                  column.sortable && "cursor-pointer select-none transition-colors",
+                  "px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider whitespace-nowrap",
+                  index !== columns.length - 1 && "border-r border-gray-200",
+                  column.sortable && "cursor-pointer hover:bg-gray-100 transition-colors select-none",
                   column.align === "center" && "text-center",
                   column.align === "right" && "text-right"
                 )}
-                style={{ width: column.width }}
+                style={{ width: column.width, minWidth: column.width }}
               >
-                <div className="flex items-center gap-2">
-                  <span>{column.header}</span>
+                <div className="flex items-center gap-2 justify-start">
+                  <span className="truncate">{column.header}</span>
                   {column.sortable && (
-                    <span className="text-gray-400">
+                    <span className="flex-shrink-0 text-gray-400 ml-1">
                       {sortKey === column.key ? (
                         sortDirection === "asc" ? (
                           <svg
@@ -261,7 +230,7 @@ export function Table<T = any>({
             <tr>
               <td
                 colSpan={columns.length}
-                className="px-6 py-12 text-center"
+                className="px-6 py-12 text-center border-b border-gray-200"
               >
                 <div className="flex flex-col items-center justify-center gap-3">
                   <svg
@@ -284,7 +253,7 @@ export function Table<T = any>({
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  <span className="text-slate-600 font-medium">Loading data...</span>
+                  <span className="text-gray-600 font-medium">Loading data...</span>
                 </div>
               </td>
             </tr>
@@ -292,13 +261,13 @@ export function Table<T = any>({
             <tr>
               <td
                 colSpan={columns.length}
-                className="px-6 py-12 text-center"
+                className="px-6 py-12 text-center border-b border-gray-200"
               >
                 <div className="flex flex-col items-center gap-3">
-                  <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span className="text-slate-500 font-medium">{emptyMessage}</span>
+                  <span className="text-gray-500 font-medium">{emptyMessage}</span>
                 </div>
               </td>
             </tr>
@@ -308,21 +277,23 @@ export function Table<T = any>({
                 key={rowIndex}
                 onClick={() => onRowClick?.(row)}
                 className={cn(
-                  bordered && "border-b border-slate-200",
-                  striped && rowIndex % 2 === 1 && "bg-slate-50/50",
-                  hoverable && "hover:bg-blue-50/50 transition-all duration-150",
-                  onRowClick && "cursor-pointer hover:shadow-sm"
+                  "border-b border-gray-200 transition-colors",
+                  striped && rowIndex % 2 === 0 && "bg-white",
+                  striped && rowIndex % 2 === 1 && "bg-gray-50",
+                  hoverable && "hover:bg-blue-50 transition-all duration-100",
+                  onRowClick && "cursor-pointer"
                 )}
               >
-                {columns.map((column) => (
+                {columns.map((column, colIndex) => (
                   <td
                     key={column.key}
                     className={cn(
-                      "px-6 py-4 text-sm text-slate-800 max-w-xs",
-                      compact && "px-4 py-2",
+                      "px-6 py-4 text-sm text-gray-700",
+                      colIndex !== columns.length - 1 && "border-r border-gray-200",
                       column.align === "center" && "text-center",
                       column.align === "right" && "text-right"
                     )}
+                    style={{ width: column.width, minWidth: column.width }}
                   >
                     <TruncatedCell content={getCellContent(row, column)} />
                   </td>
