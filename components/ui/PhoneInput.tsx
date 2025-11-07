@@ -134,7 +134,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       };
     };
 
-    const validatePhone = (phoneValue: string, country: CountryCode) => {
+    const validatePhone = React.useCallback((phoneValue: string, country: CountryCode) => {
       if (!phoneValue || phoneValue.trim() === "") {
         const errorMsg = required ? "Phone number is required" : "";
         setInternalError(errorMsg);
@@ -187,7 +187,20 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       setInternalError("");
       onValidationChange?.(true, "");
       return true;
-    };
+    }, [required, onValidationChange]);
+
+    // Validate phone when value or country changes
+    React.useEffect(() => {
+      if (value && value.trim() !== "") {
+        validatePhone(value, selectedCountry);
+      } else if (required) {
+        // If field is required and empty, mark as invalid
+        onValidationChange?.(false, "Phone number is required");
+      } else {
+        // If not required and empty, mark as valid
+        onValidationChange?.(true, "");
+      }
+    }, [value, selectedCountry, required, validatePhone, onValidationChange]);
 
     const handleCountryChange = (country: CountryCode) => {
       setSelectedCountry(country);

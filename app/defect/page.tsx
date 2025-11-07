@@ -743,29 +743,13 @@ export default function DefectForm() {
                     onChange: (e) => {
                       // Remove any non-numeric characters
                       e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                      
-                      const memberNumber = e.target.value;
-                      const firstName = watch("firstName");
-                      const lastName = watch("lastName");
-                      if (memberNumber && firstName && lastName) {
-                        validateMember(memberNumber, firstName, lastName);
-                      } else {
-                        setMemberValidationStatus("");
-                        setMemberValidationMessage("");
-                      }
+                      // Clear validation status when user changes the field
+                      setMemberValidationStatus("");
+                      setMemberValidationMessage("");
                     },
                   })}
                   error={errors.memberNumber?.message}
                 />
-                {isValidatingMember && (
-                  <p className="text-sm text-gray-500 mt-1">Validating...</p>
-                )}
-                {!isValidatingMember && memberValidationStatus === "valid" && (
-                  <p className="text-sm text-green-600 mt-1 font-medium">{memberValidationMessage}</p>
-                )}
-                {!isValidatingMember && memberValidationStatus === "invalid" && (
-                  <p className="text-sm text-red-600 mt-1">{memberValidationMessage}</p>
-                )}
               </div>
 
               <Input
@@ -792,13 +776,9 @@ export default function DefectForm() {
                     // Convert to Title Case
                     value = toTitleCase(value);
                     e.target.value = value;
-                    
-                    const firstName = value;
-                    const memberNumber = watch("memberNumber");
-                    const lastName = watch("lastName");
-                    if (memberNumber && firstName && lastName) {
-                      validateMember(memberNumber, firstName, lastName);
-                    }
+                    // Clear validation status when user changes the field
+                    setMemberValidationStatus("");
+                    setMemberValidationMessage("");
                   },
                 })}
                 error={errors.firstName?.message}
@@ -828,17 +808,41 @@ export default function DefectForm() {
                     // Convert to Title Case
                     value = toTitleCase(value);
                     e.target.value = value;
-                    
-                    const lastName = value;
-                    const memberNumber = watch("memberNumber");
-                    const firstName = watch("firstName");
-                    if (memberNumber && firstName && lastName) {
-                      validateMember(memberNumber, firstName, lastName);
-                    }
+                    // Clear validation status when user changes the field
+                    setMemberValidationStatus("");
+                    setMemberValidationMessage("");
                   },
                 })}
                 error={errors.lastName?.message}
               />
+
+              {/* Validate Member Button */}
+              <div className="md:col-span-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const memberNumber = watch("memberNumber");
+                    const firstName = watch("firstName");
+                    const lastName = watch("lastName");
+                    if (memberNumber && firstName && lastName) {
+                      validateMember(memberNumber, firstName, lastName);
+                    } else {
+                      setMemberValidationStatus("invalid");
+                      setMemberValidationMessage("Please fill in all fields (Member Number, First Name, and Last Name)");
+                    }
+                  }}
+                  disabled={isValidatingMember}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isValidatingMember ? "Validating..." : "Validate Member"}
+                </button>
+                {!isValidatingMember && memberValidationStatus === "valid" && (
+                  <p className="text-sm text-green-600 mt-2 font-medium">{memberValidationMessage}</p>
+                )}
+                {!isValidatingMember && memberValidationStatus === "invalid" && (
+                  <p className="text-sm text-red-600 mt-2">{memberValidationMessage}</p>
+                )}
+              </div>
 
               <Input
                 label="Email"
@@ -1072,12 +1076,15 @@ export default function DefectForm() {
                       // Convert to Title Case
                       e.target.value = toTitleCase(e.target.value);
                       
-                      // Trigger member validation if all fields are present
+                      // Trigger instant validation if all fields are present
                       const firstName = e.target.value.trim();
                       const lastName = watch("Maintainer_Last_Name");
                       const memberNumber = watch("maintainerMemberNumber");
                       if (memberNumber && firstName && lastName) {
                         validateMaintainer(memberNumber, firstName, lastName);
+                      } else {
+                        setMaintainerValidationStatus("");
+                        setMaintainerValidationMessage("");
                       }
                     }
                   })}
@@ -1104,12 +1111,15 @@ export default function DefectForm() {
                       // Convert to Title Case
                       e.target.value = toTitleCase(e.target.value);
                       
-                      // Trigger member validation if all fields are present
+                      // Trigger instant validation if all fields are present
                       const firstName = watch("Maintainer_Name");
                       const lastName = e.target.value.trim();
                       const memberNumber = watch("maintainerMemberNumber");
                       if (memberNumber && firstName && lastName) {
                         validateMaintainer(memberNumber, firstName as string, lastName);
+                      } else {
+                        setMaintainerValidationStatus("");
+                        setMaintainerValidationMessage("");
                       }
                     }
                   })}
@@ -1145,11 +1155,16 @@ export default function DefectForm() {
                       onChange: (e) => {
                         // Remove any non-numeric characters
                         e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                        
+                        // Trigger instant validation if all fields are present
                         const memberNumber = e.target.value;
                         const firstName = watch("Maintainer_Name");
                         const lastName = watch("Maintainer_Last_Name");
                         if (memberNumber && firstName && lastName) {
                           validateMaintainer(memberNumber, firstName as string, lastName as string);
+                        } else {
+                          setMaintainerValidationStatus("");
+                          setMaintainerValidationMessage("");
                         }
                       }
                     })}
@@ -1160,7 +1175,7 @@ export default function DefectForm() {
                   )}
                   {maintainerValidationMessage && (
                     <p className={`mt-1 text-sm ${
-                      maintainerValidationStatus === "valid" ? "text-green-600" : "text-red-600"
+                      maintainerValidationStatus === "valid" ? "text-green-600 font-medium" : "text-red-600"
                     }`}>
                       {maintainerValidationMessage}
                     </p>
