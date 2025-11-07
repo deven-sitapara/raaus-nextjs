@@ -37,32 +37,32 @@ export const PDF_LAYOUTS = {
   COMPACT: {
     headerFontSize: 18,
     sectionFontSize: 12,
-    labelFontSize: 8,
-    valueFontSize: 9,
-    headerHeight: 50,
-    sectionSpacing: 8,
-    fieldSpacing: 12, // Reduced for better single-page fit
-    fieldPairSpacing: 12,
-    fullWidthFieldSpacing: 20, // Reduced minimum for compaction
-    topMargin: 35,
-    bottomMargin: 80, // Increased slightly for footer space
-    initialY: 65,
-  } as PDFLayoutConfig,
-  
-  // For complex forms (Accident) - Multi-page layout (use COMPACT if forcing single-page)
-  STANDARD: {
-    headerFontSize: 20,
-    sectionFontSize: 14,
     labelFontSize: 9,
     valueFontSize: 10,
-    headerHeight: 60,
-    sectionSpacing: 10,
+    headerHeight: 55,
+    sectionSpacing: 12,
     fieldSpacing: 16,
     fieldPairSpacing: 16,
-    fullWidthFieldSpacing: 30, // Reduced minimum
+    fullWidthFieldSpacing: 24,
+    topMargin: 35,
+    bottomMargin: 85,
+    initialY: 70,
+  } as PDFLayoutConfig,
+
+  // For complex forms (Accident) - Multi-page layout with enhanced styling
+  STANDARD: {
+    headerFontSize: 22,
+    sectionFontSize: 13,
+    labelFontSize: 9,
+    valueFontSize: 10,
+    headerHeight: 65,
+    sectionSpacing: 14,
+    fieldSpacing: 15,
+    fieldPairSpacing: 15,
+    fullWidthFieldSpacing: 25,
     topMargin: 40,
-    bottomMargin: 80,
-    initialY: 80,
+    bottomMargin: 85,
+    initialY: 85,
   } as PDFLayoutConfig,
 };
 
@@ -104,17 +104,22 @@ export class PDFGenerator {
   }
 
   /**
-   * Add header with logo, centered title, and submission time
+   * Add header with logo, centered title, and submission time - enhanced design
    */
   protected addHeader(title: string, submissionDate?: string): void {
-    // Header background
+    // Header background with gradient effect (simulate with two rectangles)
     this.doc
       .rect(0, 0, this.doc.page.width, this.config.headerHeight)
       .fill(this.primaryColor);
 
-    // Add white background rectangle for logo
+    // Subtle bottom border for depth
     this.doc
-      .rect(10, 8, 100, 34)
+      .rect(0, this.config.headerHeight - 3, this.doc.page.width, 3)
+      .fill('#1e3a8a'); // Darker blue
+
+    // Add white background rectangle for logo with rounded corners effect
+    this.doc
+      .rect(12, 10, 100, 35)
       .fill('#ffffff');
 
     // Add logo at top left (on top of white background)
@@ -123,7 +128,7 @@ export class PDFGenerator {
       if (fs.existsSync(logoPath)) {
         const svgContent = fs.readFileSync(logoPath, 'utf8');
         // Position logo with constrained dimensions to prevent stretching
-        SVGtoPDF(this.doc, svgContent, 12, 10, {
+        SVGtoPDF(this.doc, svgContent, 14, 12, {
           width: 95,
           height: 30,
           preserveAspectRatio: 'xMidYMid meet'
@@ -133,25 +138,25 @@ export class PDFGenerator {
       console.warn('Failed to load logo:', error);
     }
 
-    // Centered title
-    const titleY = (this.config.headerHeight - this.config.headerFontSize) / 2;
+    // Centered title with better positioning
+    const titleY = (this.config.headerHeight - this.config.headerFontSize) / 2 + 2;
     this.doc
       .fontSize(this.config.headerFontSize)
       .fillColor('#ffffff')
       .font('Helvetica-Bold')
       .text(title, 0, titleY, {
-        width: this.doc.page.width, 
+        width: this.doc.page.width,
         align: 'center'
       });
 
     // Add submission time at top right below header (if provided)
     if (submissionDate) {
       this.doc
-        .fontSize(9)
+        .fontSize(8.5)
         .fillColor(this.secondaryColor)
         .font('Helvetica')
-        .text(submissionDate, this.doc.page.width - 200, this.config.headerHeight + 10, {
-          width: 150,
+        .text(`Submitted: ${submissionDate}`, this.doc.page.width - 210, this.config.headerHeight + 8, {
+          width: 160,
           align: 'right'
         });
     }
@@ -210,141 +215,211 @@ export class PDFGenerator {
   }
 
   /**
-   * Add section heading
+   * Add section heading with enhanced styling
    */
   protected addSection(title: string): void {
-    const spaceNeeded = this.config.sectionFontSize + this.config.sectionSpacing * 2 + 2; // Approx
+    const sectionHeight = this.config.sectionFontSize + 18; // Increased padding
+    const spaceNeeded = sectionHeight + this.config.sectionSpacing + 8;
     this.checkPageBreak(spaceNeeded);
-    
+
     this.yPosition += this.config.sectionSpacing;
-    
+
+    // Draw section background box with gradient effect
+    const boxY = this.yPosition;
+    const boxHeight = sectionHeight;
+
+    // Background box
+    this.doc
+      .rect(55, boxY, this.doc.page.width - 110, boxHeight)
+      .fill('#dbeafe'); // Lighter blue background
+
+    // Left accent border (thicker for more prominence)
+    this.doc
+      .rect(55, boxY, 5, boxHeight)
+      .fill(this.primaryColor);
+
+    // Right subtle border
+    this.doc
+      .rect(this.doc.page.width - 60, boxY, 5, boxHeight)
+      .fill('#e0e7ff');
+
+    // Section title text with better positioning (BLACK TEXT)
     this.doc
       .fontSize(this.config.sectionFontSize)
-      .fillColor(this.primaryColor)
+      .fillColor('#000000') // BLACK text
       .font('Helvetica-Bold')
-      .text(title, 50, this.yPosition);
-    
-    this.yPosition += this.config.sectionFontSize + 2;
-    
-    // Underline
-    this.doc
-      .moveTo(50, this.yPosition)
-      .lineTo(this.doc.page.width - 50, this.yPosition)
-      .strokeColor(this.primaryColor)
-      .lineWidth(1.5)
-      .stroke();
-    
-    this.yPosition += this.config.sectionSpacing;
+      .text(title, 70, boxY + 10, {
+        width: this.doc.page.width - 140
+      });
+
+    this.yPosition += boxHeight + 10;
     this.hasContent = true;
   }
 
   /**
-   * Add a field with label and value
+   * Add a field with label and value - enhanced with better styling
    */
   protected addField(label: string, value: any, fullWidth: boolean = false): void {
     const displayValue = this.formatValue(value) || 'N/A';
-    
+
     // Set fonts for accurate calculation
     this.doc.font('Helvetica-Bold').fontSize(this.config.labelFontSize);
-    const labelHeight = this.doc.heightOfString(label + ':', {
-      width: fullWidth ? this.doc.page.width - 100 : 250
-    });
-    
+    const labelWidth = fullWidth ? this.doc.page.width - 130 : 240;
+    const valueWidth = fullWidth ? this.doc.page.width - 130 : 240;
+
+    const labelHeight = this.doc.heightOfString(label + ':', { width: labelWidth });
+
     this.doc.font('Helvetica').fontSize(this.config.valueFontSize);
     const valueHeight = this.doc.heightOfString(displayValue, {
-      width: fullWidth ? this.doc.page.width - 100 : 250,
+      width: valueWidth,
       paragraphGap: 0,
-      lineGap: 0,
+      lineGap: 2.5,
     });
-    
-    const totalHeight = fullWidth 
-      ? labelHeight + 2 + valueHeight 
-      : Math.max(labelHeight, valueHeight);
-    const spaceNeeded = totalHeight + (fullWidth ? this.config.fullWidthFieldSpacing : this.config.fieldSpacing);
-    
+
+    const padding = 10;
+    const boxHeight = fullWidth
+      ? labelHeight + valueHeight + padding * 3 + 3
+      : Math.max(labelHeight, valueHeight) + padding * 2 + 2;
+
+    const spaceNeeded = boxHeight + (fullWidth ? 10 : 6);
+
     this.checkPageBreak(spaceNeeded);
-    
-    // If totalHeight > available page space, warn (could truncate displayValue here if needed)
-    const available = this.doc.page.height - this.config.bottomMargin - this.yPosition;
-    if (totalHeight > available) {
-      console.warn(`Field "${label}" is too long for remaining space; may cause overflow. Consider truncating.`);
-      // Optional: Truncate displayValue to fit, but for now, let PDFKit handle (may still overflow if extreme)
-    }
-    
-    // Add label
+
+    const boxX = 55;
+    const boxWidth = this.doc.page.width - 110;
+
+    // Draw subtle background box for the field with slight border radius effect
+    this.doc
+      .rect(boxX, this.yPosition, boxWidth, boxHeight)
+      .fill('#f8fafc'); // Very light gray background
+
+    // Add subtle border
+    this.doc
+      .rect(boxX, this.yPosition, boxWidth, boxHeight)
+      .strokeColor('#d1d5db')
+      .lineWidth(0.5)
+      .stroke();
+
+    // Add label (BLACK TEXT - no blue accent bar)
+    const labelY = this.yPosition + padding;
     this.doc
       .fontSize(this.config.labelFontSize)
-      .fillColor(this.secondaryColor)
+      .fillColor('#000000') // BLACK text
       .font('Helvetica-Bold')
-      .text(label + ':', 50, this.yPosition, { 
-        width: fullWidth ? this.doc.page.width - 100 : 250,
+      .text(label + ':', boxX + 10, labelY, {
+        width: labelWidth - 10,
         continued: false
       });
-    
+
     // Add value
-    const valueY = fullWidth ? this.yPosition + labelHeight + 2 : this.yPosition;
-    const valueX = fullWidth ? 50 : 310;
+    const valueY = fullWidth ? labelY + labelHeight + 5 : labelY;
+    const valueX = fullWidth ? boxX + 10 : boxX + 260;
     this.doc
       .fontSize(this.config.valueFontSize)
       .fillColor(this.textColor)
       .font('Helvetica')
       .text(displayValue, valueX, valueY, {
-        width: fullWidth ? this.doc.page.width - 100 : 250,
+        width: valueWidth - 20,
         paragraphGap: 0,
-        lineGap: 0
+        lineGap: 2.5,
+        align: 'left'
       });
-    
-    this.yPosition += totalHeight + (fullWidth ? this.config.fullWidthFieldSpacing - valueHeight : this.config.fieldSpacing - valueHeight); // Advance dynamically
+
+    this.yPosition += boxHeight + (fullWidth ? 10 : 6);
     this.hasContent = true;
   }
 
   /**
-   * Add two fields side by side
+   * Add two fields side by side - enhanced with card-style boxes
    */
   protected addFieldPair(label1: string, value1: any, label2: string, value2: any): void {
     const displayValue1 = this.formatValue(value1) || 'N/A';
     const displayValue2 = this.formatValue(value2) || 'N/A';
 
     // Calculate heights for pair
+    const labelWidth = 110;
+    const valueWidth = 120;
+    const padding = 10;
+
     this.doc.font('Helvetica-Bold').fontSize(this.config.labelFontSize);
-    const labelHeight1 = this.doc.heightOfString(label1 + ':', {width: 120});
-    const labelHeight2 = this.doc.heightOfString(label2 + ':', {width: 120});
+    const labelHeight1 = this.doc.heightOfString(label1 + ':', { width: labelWidth });
+    const labelHeight2 = this.doc.heightOfString(label2 + ':', { width: labelWidth });
 
     this.doc.font('Helvetica').fontSize(this.config.valueFontSize);
-    const valueHeight1 = this.doc.heightOfString(displayValue1, {width: 120, paragraphGap: 0, lineGap: 0});
-    const valueHeight2 = this.doc.heightOfString(displayValue2, {width: 120, paragraphGap: 0, lineGap: 0});
+    const valueHeight1 = this.doc.heightOfString(displayValue1, { width: valueWidth, paragraphGap: 0, lineGap: 2.5 });
+    const valueHeight2 = this.doc.heightOfString(displayValue2, { width: valueWidth, paragraphGap: 0, lineGap: 2.5 });
 
-    const totalHeight = Math.max(labelHeight1, valueHeight1, labelHeight2, valueHeight2);
-    const spaceNeeded = totalHeight + this.config.fieldPairSpacing;
+    const contentHeight = Math.max(
+      labelHeight1 + valueHeight1,
+      labelHeight2 + valueHeight2
+    );
+    const boxHeight = contentHeight + padding * 2 + 3;
+    const spaceNeeded = boxHeight + 6;
 
     this.checkPageBreak(spaceNeeded);
-    
-    // Left field
+
+    const boxWidth = (this.doc.page.width - 125) / 2; // Split evenly with gap
+    const box1X = 55;
+    const box2X = box1X + boxWidth + 12; // 12px gap between boxes
+
+    // Left field box
     this.doc
-      .fontSize(this.config.labelFontSize)
-      .fillColor(this.secondaryColor)
-      .font('Helvetica-Bold')
-      .text(label1 + ':', 50, this.yPosition, { width: 120 });
+      .rect(box1X, this.yPosition, boxWidth, boxHeight)
+      .fill('#f8fafc');
 
     this.doc
-      .fontSize(this.config.valueFontSize)
-      .fillColor(this.textColor)
-      .font('Helvetica')
-      .text(displayValue1, 175, this.yPosition, { width: 120, paragraphGap: 0, lineGap: 0 });
-    
-    // Right field
+      .rect(box1X, this.yPosition, boxWidth, boxHeight)
+      .strokeColor('#d1d5db')
+      .lineWidth(0.5)
+      .stroke();
+
+    // Left field label (BLACK TEXT - no accent bar)
     this.doc
       .fontSize(this.config.labelFontSize)
-      .fillColor(this.secondaryColor)
+      .fillColor('#000000') // BLACK text
       .font('Helvetica-Bold')
-      .text(label2 + ':', 310, this.yPosition, { width: 120 });
-    
+      .text(label1 + ':', box1X + 10, this.yPosition + padding, { width: labelWidth - 5 });
+
+    // Left field value
     this.doc
       .fontSize(this.config.valueFontSize)
       .fillColor(this.textColor)
       .font('Helvetica')
-      .text(displayValue2, 435, this.yPosition, { width: 120, paragraphGap: 0, lineGap: 0 });
-    
+      .text(displayValue1, box1X + 10, this.yPosition + padding + labelHeight1 + 3, {
+        width: boxWidth - 20,
+        paragraphGap: 0,
+        lineGap: 2.5
+      });
+
+    // Right field box
+    this.doc
+      .rect(box2X, this.yPosition, boxWidth, boxHeight)
+      .fill('#f8fafc');
+
+    this.doc
+      .rect(box2X, this.yPosition, boxWidth, boxHeight)
+      .strokeColor('#d1d5db')
+      .lineWidth(0.5)
+      .stroke();
+
+    // Right field label (BLACK TEXT - no accent bar)
+    this.doc
+      .fontSize(this.config.labelFontSize)
+      .fillColor('#000000') // BLACK text
+      .font('Helvetica-Bold')
+      .text(label2 + ':', box2X + 10, this.yPosition + padding, { width: labelWidth - 5 });
+
+    // Right field value
+    this.doc
+      .fontSize(this.config.valueFontSize)
+      .fillColor(this.textColor)
+      .font('Helvetica')
+      .text(displayValue2, box2X + 10, this.yPosition + padding + labelHeight2 + 3, {
+        width: boxWidth - 20,
+        paragraphGap: 0,
+        lineGap: 2.5
+      });
+
     this.yPosition += spaceNeeded;
     this.hasContent = true;
   }
@@ -354,13 +429,13 @@ export class PDFGenerator {
    */
   protected formatValue(value: any): string {
     if (value === null || value === undefined || value === '') {
-      return 'N/A';
+      return '-';
     }
-    
+
     if (typeof value === 'boolean') {
       return value ? 'Yes' : 'No';
     }
-    
+
     if (typeof value === 'object' && value instanceof Date) {
       return value.toLocaleString('en-AU', {
         year: 'numeric',
@@ -370,7 +445,7 @@ export class PDFGenerator {
         minute: '2-digit',
       });
     }
-    
+
     return String(value);
   }
 

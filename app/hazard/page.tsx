@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { PhoneInput } from "@/components/ui/PhoneInput";
-import { DatePicker } from "@/components/ui/DatePicker";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Button } from "@/components/ui/Button";
 import MapPicker from "@/components/ui/MapPicker";
@@ -18,6 +17,22 @@ import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission }
 import HazardPreview from "@/components/forms/HazardPreview";
 import axios from "axios";
 import Link from "next/link";
+
+// API Response Types
+interface SubmissionResponse {
+  success: boolean;
+  formType: string;
+  formData: HazardFormData;
+  metadata?: {
+    occurrenceId?: string;
+  };
+  error?: string;
+}
+
+interface MemberValidationResponse {
+  valid: boolean;
+  warning?: string;
+}
 
 const roleOptions = [
   { value: "", label: "- Please Select -" },
@@ -52,20 +67,29 @@ const stateOptions = [
 const aerodromeOptions = aerodromeData.aerodromes.map(a => ({ id: a.id, name: a.Name }));
 
 export default function HazardForm() {
+  // Form state management
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submissionData, setSubmissionData] = useState<any>(null);
+  const [submissionData, setSubmissionData] = useState<SubmissionResponse | null>(null);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+
+  // Member validation state
   const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
   const [memberValidationMessage, setMemberValidationMessage] = useState("");
   const [isValidatingMember, setIsValidatingMember] = useState(false);
+
+  // Hazard date/time and contact state
   const [hazardDate, setHazardDate] = useState("");
   const [hazardTime, setHazardTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactPhoneValid, setContactPhoneValid] = useState(false);
   const [attachments, setAttachments] = useState<FileList | null>(null);
+
+  // Preview state
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<HazardFormData | null>(null);
+
+  // Location state
   const [selectedAerodrome, setSelectedAerodrome] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
@@ -120,7 +144,11 @@ export default function HazardForm() {
   };
 
   // Validate member number with immediate feedback
-  const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
+  const validateMember = async (
+    memberNumber: string,
+    firstName: string,
+    lastName: string
+  ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
       setMemberValidationStatus("");
@@ -131,20 +159,26 @@ export default function HazardForm() {
     setIsValidatingMember(true);
 
     try {
-      const response = await axios.post("/api/validate-member", {
-        memberNumber,
-        firstName,
-        lastName,
-      });
+      const response = await axios.post<MemberValidationResponse>(
+        "/api/validate-member",
+        {
+          memberNumber,
+          firstName,
+          lastName,
+        }
+      );
 
       if (response.data.valid) {
         setMemberValidationStatus("valid");
         setMemberValidationMessage("✓ Member Number exists in system");
       } else {
         setMemberValidationStatus("invalid");
-        setMemberValidationMessage(response.data.warning || "Member Number not found");
+        setMemberValidationMessage(
+          response.data.warning || "Member Number not found"
+        );
       }
     } catch (error) {
+      console.error("Member validation error:", error);
       setMemberValidationStatus("invalid");
       setMemberValidationMessage("Unable to validate Member Number");
     } finally {
@@ -152,7 +186,7 @@ export default function HazardForm() {
     }
   };
 
-  const handlePreview = (data: HazardFormData) => {
+  const handlePreview = (data: HazardFormData): void => {
     // Validate required fields before showing preview
     if (!hazardDate || !hazardTime) {
       alert("Please provide both hazard date and time");
@@ -174,13 +208,16 @@ export default function HazardForm() {
     setShowPreview(true);
   };
 
-  const handleBackToEdit = () => {
+  const handleBackToEdit = (): void => {
     setShowPreview(false);
   };
 
-  const onSubmit = async () => {
-    if (!previewData) return;
-    
+  const onSubmit = async (): Promise<void> => {
+    if (!previewData) {
+      console.error("No preview data available for submission");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -233,41 +270,54 @@ export default function HazardForm() {
       }
 
       // Submit to unified API endpoint
-      const response = await axios.post("/api/submit-form", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post<SubmissionResponse>(
+        "/api/submit-form",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       if (response.data.success) {
-        setSubmissionData(response.data);
-        clearFormOnSubmission('hazard');
+        clearFormOnSubmission("hazard");
         setShowPreview(false);
         setSubmitSuccess(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setSubmissionData(response.data);
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         throw new Error(response.data.error || "Failed to process hazard report");
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Form submission error:", error);
+
       let errorMessage = "Failed to submit form. Please try again.";
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.data?.data?.[0]?.message) {
-        errorMessage = error.response.data.data[0].message;
-      } else if (error.message) {
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.data?.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response?.data?.data?.[0]?.message) {
+          errorMessage = error.response.data.data[0].message;
+        }
+      } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      
+
       alert(`Submission Error: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const downloadPDF = async () => {
-    if (!submissionData) return;
+  const downloadPDF = async (): Promise<void> => {
+    if (!submissionData) {
+      console.error("No submission data available for PDF generation");
+      return;
+    }
 
     setIsDownloadingPDF(true);
+
     try {
       const response = await axios.post(
         "/api/generate-pdf",
@@ -281,17 +331,24 @@ export default function HazardForm() {
         }
       );
 
-      // Create a download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Create blob from response
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+
+      // Create and trigger download link
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `Hazard_Report_${submissionData.metadata?.occurrenceId || 'submission'}.pdf`);
+      link.download = `RAAus_Hazard_Report_${
+        submissionData.metadata?.occurrenceId || Date.now()
+      }.pdf`;
       document.body.appendChild(link);
       link.click();
-      link.remove();
+
+      // Cleanup
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading PDF:", error);
+      console.error("PDF download error:", error);
       alert("Failed to download PDF. Please try again.");
     } finally {
       setIsDownloadingPDF(false);
@@ -443,9 +500,14 @@ export default function HazardForm() {
                   type="text"
                   placeholder="123456"
                   maxLength={6}
-                  onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                     // Only allow numbers (0-9)
-                    if (!/[0-9]/.test(e.key)) {
+                    if (
+                      e.key.length === 1 &&
+                      !/[0-9]/.test(e.key) &&
+                      !e.ctrlKey &&
+                      !e.metaKey
+                    ) {
                       e.preventDefault();
                     }
                   }}
@@ -488,9 +550,14 @@ export default function HazardForm() {
                 placeholder="John"
                 required
                 maxLength={30}
-                onKeyPress={(e) => {
-                  // Only allow letters (a-z, A-Z) and spaces
-                  if (!/[a-zA-Z ]/.test(e.key)) {
+                onKeyDown={(e) => {
+                  // Only allow letters and spaces
+                  if (
+                    e.key.length === 1 &&
+                    !/[a-zA-Z ]/.test(e.key) &&
+                    !e.ctrlKey &&
+                    !e.metaKey
+                  ) {
                     e.preventDefault();
                   }
                 }}
@@ -525,9 +592,14 @@ export default function HazardForm() {
                 placeholder="Doe"
                 required
                 maxLength={30}
-                onKeyPress={(e) => {
-                  // Only allow letters (a-z, A-Z) and spaces
-                  if (!/[a-zA-Z ]/.test(e.key)) {
+                onKeyDown={(e) => {
+                  // Only allow letters and spaces
+                  if (
+                    e.key.length === 1 &&
+                    !/[a-zA-Z ]/.test(e.key) &&
+                    !e.ctrlKey &&
+                    !e.metaKey
+                  ) {
                     e.preventDefault();
                   }
                 }}

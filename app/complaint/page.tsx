@@ -1,21 +1,36 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { PhoneInput } from "@/components/ui/PhoneInput";
-import { DatePicker } from "@/components/ui/DatePicker";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 import { ComplaintFormData } from "@/types/forms";
-import { validationPatterns, validationMessages, validateEmail, validatePhoneNumber, getPhoneValidationMessage } from "@/lib/validations/patterns";
+import { validationPatterns, validationMessages, validateEmail } from "@/lib/validations/patterns";
 import { useFormPersistence, useSpecialStatePersistence, clearFormOnSubmission } from "@/lib/utils/formPersistence";
 import ComplaintPreview from "@/components/forms/ComplaintPreview";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import Link from "next/link";
+
+// Types for API responses
+interface SubmissionResponse {
+  success: boolean;
+  formType: string;
+  formData: ComplaintFormData;
+  metadata?: {
+    occurrenceId?: string;
+  };
+  error?: string;
+}
+
+interface MemberValidationResponse {
+  valid: boolean;
+  warning?: string;
+}
 
 const roleOptions = [
   { value: "", label: "- Please Select -" },
@@ -35,19 +50,25 @@ const roleOptions = [
 ];
 
 export default function ComplaintForm() {
-  const [currentStep, setCurrentStep] = useState(0);
+  // Form state management
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submissionData, setSubmissionData] = useState<any>(null);
+  const [submissionData, setSubmissionData] = useState<SubmissionResponse | null>(null);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+
+  // Member validation state
   const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
   const [memberValidationMessage, setMemberValidationMessage] = useState("");
   const [isValidatingMember, setIsValidatingMember] = useState(false);
+
+  // Form data state
   const [occurrenceDate, setOccurrenceDate] = useState("");
   const [occurrenceTime, setOccurrenceTime] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactPhoneValid, setContactPhoneValid] = useState(false);
   const [attachments, setAttachments] = useState<FileList | null>(null);
+
+  // Preview state
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<ComplaintFormData | null>(null);
 
@@ -87,16 +108,20 @@ export default function ComplaintForm() {
     if (!str) return str;
     return str
       .toLowerCase()
-      .split(' ')
-      .map(word => {
+      .split(" ")
+      .map((word) => {
         if (word.length === 0) return word;
         return word.charAt(0).toUpperCase() + word.slice(1);
       })
-      .join(' ');
+      .join(" ");
   };
 
   // Validate member number with immediate feedback
-  const validateMember = async (memberNumber: string, firstName: string, lastName: string) => {
+  const validateMember = async (
+    memberNumber: string,
+    firstName: string,
+    lastName: string
+  ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
       setMemberValidationStatus("");
@@ -107,20 +132,26 @@ export default function ComplaintForm() {
     setIsValidatingMember(true);
 
     try {
-      const response = await axios.post("/api/validate-member", {
-        memberNumber,
-        firstName,
-        lastName,
-      });
+      const response = await axios.post<MemberValidationResponse>(
+        "/api/validate-member",
+        {
+          memberNumber,
+          firstName,
+          lastName,
+        }
+      );
 
       if (response.data.valid) {
         setMemberValidationStatus("valid");
         setMemberValidationMessage("✓ Member Number exists in system");
       } else {
         setMemberValidationStatus("invalid");
-        setMemberValidationMessage(response.data.warning || "Member Number not found");
+        setMemberValidationMessage(
+          response.data.warning || "Member Number not found"
+        );
       }
     } catch (error) {
+      console.error("Member validation error:", error);
       setMemberValidationStatus("invalid");
       setMemberValidationMessage("Unable to validate Member Number");
     } finally {
@@ -128,7 +159,8 @@ export default function ComplaintForm() {
     }
   };
 
-  const handlePreview = (data: ComplaintFormData) => {
+  // Validate and show preview
+  const handlePreview = (data: ComplaintFormData): void => {
     // Validate required fields before showing preview
     if (!occurrenceDate || !occurrenceTime) {
       alert("Please provide both occurrence date and time");
@@ -152,13 +184,18 @@ export default function ComplaintForm() {
     setShowPreview(true);
   };
 
-  const handleBackToEdit = () => {
+  // Return to edit mode from preview
+  const handleBackToEdit = (): void => {
     setShowPreview(false);
   };
 
-  const onSubmit = async () => {
-    if (!previewData) return;
-    
+  // Submit form data
+  const onSubmit = async (): Promise<void> => {
+    if (!previewData) {
+      console.error("No preview data available for submission");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -168,30 +205,24 @@ export default function ComplaintForm() {
       const datetime = new Date(`${occurrenceDate}T${occurrenceTime}`);
       if (isNaN(datetime.getTime())) {
         alert("Invalid date or time provided");
-        setIsSubmitting(false);
         return;
       }
 
       // Prepare form data for unified API
       const formData = new FormData();
-      
-      // Add form type and data
-      formData.append('formType', 'complaint');
-      
-      const submissionData = {
+
+      // Add form type
+      formData.append("formType", "complaint");
+
+      // Prepare submission data
+      const submissionPayload = {
         ...data,
-        Role: data.Role,
-        Name1: data.Name1,
-        Last_Name: data.Last_Name,
-        Member_Number: data.Member_Number,
-        Reporter_Email: data.Reporter_Email,
-        Contact_Phone: wishToRemainAnonymous ? '' : contactPhone,
-        Occurrence_Date1: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss format
-        Description_of_Occurrence: data.Description_of_Occurrence,
+        Contact_Phone: wishToRemainAnonymous ? "" : contactPhone,
+        Occurrence_Date1: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss
         wishToRemainAnonymous: data.wishToRemainAnonymous,
       };
-      
-      formData.append('formData', JSON.stringify(submissionData));
+
+      formData.append("formData", JSON.stringify(submissionPayload));
 
       // Add attachments if any
       if (attachments && attachments.length > 0) {
@@ -201,68 +232,87 @@ export default function ComplaintForm() {
       }
 
       // Submit to unified API endpoint
-      const response = await axios.post("/api/submit-form", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post<SubmissionResponse>(
+        "/api/submit-form",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       if (response.data.success) {
-        clearFormOnSubmission('complaint');
+        clearFormOnSubmission("complaint");
         setShowPreview(false);
         setSubmitSuccess(true);
         setSubmissionData(response.data);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         throw new Error(response.data.error || "Failed to process complaint");
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Form submission error:", error);
+
       let errorMessage = "Failed to submit form. Please try again.";
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.data?.data?.[0]?.message) {
-        errorMessage = error.response.data.data[0].message;
-      } else if (error.message) {
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.data?.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response?.data?.data?.[0]?.message) {
+          errorMessage = error.response.data.data[0].message;
+        }
+      } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      
+
       alert(`Submission Error: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const downloadPDF = async () => {
-    if (!submissionData) return;
-    
+  // Download PDF report
+  const downloadPDF = async (): Promise<void> => {
+    if (!submissionData) {
+      console.error("No submission data available for PDF generation");
+      return;
+    }
+
     setIsDownloadingPDF(true);
-    
+
     try {
-      const response = await axios.post("/api/generate-pdf", {
-        formType: submissionData.formType,
-        formData: submissionData.formData,
-        metadata: submissionData.metadata,
-      }, {
-        responseType: 'blob',
-      });
+      const response = await axios.post(
+        "/api/generate-pdf",
+        {
+          formType: submissionData.formType,
+          formData: submissionData.formData,
+          metadata: submissionData.metadata,
+        },
+        {
+          responseType: "blob",
+        }
+      );
 
       // Create blob from response
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const blob = new Blob([response.data], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
-      
-      // Create download link
-      const link = document.createElement('a');
+
+      // Create and trigger download link
+      const link = document.createElement("a");
       link.href = url;
-      link.download = `RAAus_Complaint_Report_${submissionData.metadata?.occurrenceId || Date.now()}.pdf`;
+      link.download = `RAAus_Complaint_Report_${
+        submissionData.metadata?.occurrenceId || Date.now()
+      }.pdf`;
       document.body.appendChild(link);
       link.click();
-      
+
       // Cleanup
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (error: any) {
-      console.error('PDF download error:', error);
-      alert('Failed to download PDF. Please try again.');
+    } catch (error) {
+      console.error("PDF download error:", error);
+      alert("Failed to download PDF. Please try again.");
     } finally {
       setIsDownloadingPDF(false);
     }
@@ -284,12 +334,19 @@ export default function ComplaintForm() {
     );
   }
 
+  // Render success screen
   if (submitSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
+          {/* Success Icon */}
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+            <svg
+              className="w-8 h-8 text-green-600"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
               <path
                 fillRule="evenodd"
                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -297,19 +354,29 @@ export default function ComplaintForm() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Complaint Submitted</h2>
+
+          {/* Success Message */}
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Complaint Submitted
+          </h2>
           <p className="text-gray-600 mb-6">
-            Your complaint has been successfully submitted to RAAus. You will receive a confirmation email shortly.
+            Your complaint has been successfully submitted to RAAus. You will
+            receive a confirmation email shortly.
           </p>
+
+          {/* Occurrence ID */}
           {submissionData?.metadata?.occurrenceId && (
             <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p className="text-sm text-blue-800">
-                <strong>Occurrence ID:</strong> {submissionData.metadata.occurrenceId}
+                <strong>Occurrence ID:</strong>{" "}
+                {submissionData.metadata.occurrenceId}
               </p>
             </div>
           )}
+
+          {/* Action Buttons */}
           <div className="space-y-3">
-            <Button 
+            <Button
               onClick={downloadPDF}
               disabled={isDownloadingPDF}
               className="w-full"
@@ -317,22 +384,54 @@ export default function ComplaintForm() {
             >
               {isDownloadingPDF ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Generating PDF...
                 </>
               ) : (
                 <>
-                  <svg className="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    className="w-5 h-5 mr-2 inline"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                   Download PDF Copy
                 </>
               )}
             </Button>
-            <Button onClick={() => (window.location.href = "/")} variant="outline" className="w-full">
+            <Button
+              onClick={() => (window.location.href = "/")}
+              variant="outline"
+              className="w-full"
+            >
               Return to Home
             </Button>
           </div>
@@ -345,13 +444,25 @@ export default function ComplaintForm() {
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-4xl mx-auto">
 
-        {/* Breadcrumb Style */}
+        {/* Breadcrumb */}
         <div className="mb-6 lg:mb-0 relative lg:-left-10 xl:-left-32 -mt-2">
-          <nav className="flex items-center text-md text-gray-600" aria-label="Breadcrumb">
+          <nav
+            className="flex items-center text-md text-gray-600"
+            aria-label="Breadcrumb"
+          >
             <ol className="inline-flex items-center space-x-1 md:space-x-3">
               <li className="inline-flex items-center">
-                <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800">
-                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <Link
+                  href="/"
+                  className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                >
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
                     <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
                   </svg>
                   Home
@@ -366,11 +477,18 @@ export default function ComplaintForm() {
           </nav>
         </div>
 
+        {/* Page Title */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 text-center w-full mb-6">Lodge a New Complaint</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">
+            Lodge a New Complaint
+          </h1>
         </div>
 
-        <form onSubmit={handleSubmit(handlePreview)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white ">
+        {/* Main Form */}
+        <form
+          onSubmit={handleSubmit(handlePreview)}
+          className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white"
+        >
           {/* Anonymous Checkbox and Person Reporting Section */}
           <div className="rounded-lg p-8 pt-10">
             {/* Anonymous Checkbox */}
@@ -415,183 +533,224 @@ export default function ComplaintForm() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
-              <Select
-                label="Role"
-                required={!wishToRemainAnonymous}
-                options={roleOptions}
-                {...register("Role", { 
-                  required: wishToRemainAnonymous ? false : "Role is required"
-                })}
-                error={errors.Role?.message}
-              />
+                <Select
+                  label="Role"
+                  required={!wishToRemainAnonymous}
+                  options={roleOptions}
+                  {...register("Role", {
+                    required: wishToRemainAnonymous
+                      ? false
+                      : "Role is required",
+                  })}
+                  error={errors.Role?.message}
+                />
 
-              <div>
+                <div>
+                  <Input
+                    label="Member Number"
+                    type="text"
+                    placeholder="123456"
+                    maxLength={6}
+                    helpText="Must be exactly 6 digits"
+                    onKeyDown={(e) => {
+                      // Only allow numbers (0-9)
+                      if (
+                        e.key.length === 1 &&
+                        !/[0-9]/.test(e.key) &&
+                        !e.ctrlKey &&
+                        !e.metaKey
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    {...register("Member_Number", {
+                      required: wishToRemainAnonymous
+                        ? false
+                        : "Member Number is required",
+                      pattern: wishToRemainAnonymous
+                        ? undefined
+                        : {
+                            value: validationPatterns.memberNumber,
+                            message: validationMessages.memberNumber,
+                          },
+                      onChange: (e) => {
+                        // Remove any non-numeric characters
+                        e.target.value = e.target.value.replace(/[^0-9]/g, "");
+
+                        // Real-time validation (only if not anonymous)
+                        if (!wishToRemainAnonymous) {
+                          const memberNumber = e.target.value;
+                          const firstName = watch("Name1");
+                          const lastName = watch("Last_Name");
+                          if (memberNumber && firstName && lastName) {
+                            validateMember(memberNumber, firstName, lastName);
+                          } else {
+                            setMemberValidationStatus("");
+                            setMemberValidationMessage("");
+                          }
+                        }
+                      },
+                    })}
+                    error={errors.Member_Number?.message}
+                  />
+                  {!wishToRemainAnonymous && (
+                    <>
+                      {isValidatingMember && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          Validating...
+                        </p>
+                      )}
+                      {!isValidatingMember &&
+                        memberValidationStatus === "valid" && (
+                          <p className="text-sm text-green-600 mt-1 font-medium">
+                            {memberValidationMessage}
+                          </p>
+                        )}
+                      {!isValidatingMember &&
+                        memberValidationStatus === "invalid" && (
+                          <p className="text-sm text-red-600 mt-1">
+                            {memberValidationMessage}
+                          </p>
+                        )}
+                    </>
+                  )}
+                </div>
+
                 <Input
-                  label="Member Number"
+                  label="First Name"
                   type="text"
-                  placeholder="123456"
-                  maxLength={6}
-                  onKeyPress={(e) => {
-                    // Only allow numbers (0-9)
-                    if (!/[0-9]/.test(e.key)) {
+                  placeholder="John"
+                  required={!wishToRemainAnonymous}
+                  maxLength={30}
+                  onKeyDown={(e) => {
+                    // Only allow letters and spaces
+                    if (
+                      e.key.length === 1 &&
+                      !/[a-zA-Z ]/.test(e.key) &&
+                      !e.ctrlKey &&
+                      !e.metaKey
+                    ) {
                       e.preventDefault();
                     }
                   }}
-                  {...register("Member_Number", {
-                    required: wishToRemainAnonymous ? false : "Member Number is required",
-                    pattern: wishToRemainAnonymous ? undefined : {
-                      value: validationPatterns.memberNumber,
-                      message: validationMessages.memberNumber,
-                    },
+                  {...register("Name1", {
+                    required: wishToRemainAnonymous
+                      ? false
+                      : "First name is required",
+                    pattern: wishToRemainAnonymous
+                      ? undefined
+                      : {
+                          value: validationPatterns.name,
+                          message: validationMessages.name,
+                        },
                     onChange: (e) => {
-                      // Remove any non-numeric characters
-                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                      
+                      // Remove non-letter/space characters and convert to Title Case
+                      let value = e.target.value.replace(/[^a-zA-Z ]/g, "");
+                      value = toTitleCase(value);
+                      e.target.value = value;
+
                       // Real-time validation (only if not anonymous)
                       if (!wishToRemainAnonymous) {
-                        const memberNumber = e.target.value;
-                        const firstName = watch("Name1");
+                        const firstName = value;
+                        const memberNumber = watch("Member_Number");
                         const lastName = watch("Last_Name");
                         if (memberNumber && firstName && lastName) {
                           validateMember(memberNumber, firstName, lastName);
-                        } else {
-                          setMemberValidationStatus("");
-                          setMemberValidationMessage("");
                         }
                       }
                     },
                   })}
-                  error={errors.Member_Number?.message}
+                  error={errors.Name1?.message}
                 />
-                {!wishToRemainAnonymous && (
-                  <>
-                    {isValidatingMember && (
-                      <p className="text-sm text-gray-500 mt-1">Validating...</p>
-                    )}
-                    {!isValidatingMember && memberValidationStatus === "valid" && (
-                      <p className="text-sm text-green-600 mt-1 font-medium">{memberValidationMessage}</p>
-                    )}
-                    {!isValidatingMember && memberValidationStatus === "invalid" && (
-                      <p className="text-sm text-red-600 mt-1">{memberValidationMessage}</p>
-                    )}
-                  </>
-                )}
+
+                <Input
+                  label="Last Name"
+                  type="text"
+                  placeholder="Doe"
+                  required={!wishToRemainAnonymous}
+                  maxLength={30}
+                  onKeyDown={(e) => {
+                    // Only allow letters and spaces
+                    if (
+                      e.key.length === 1 &&
+                      !/[a-zA-Z ]/.test(e.key) &&
+                      !e.ctrlKey &&
+                      !e.metaKey
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  {...register("Last_Name", {
+                    required: wishToRemainAnonymous
+                      ? false
+                      : "Last name is required",
+                    pattern: wishToRemainAnonymous
+                      ? undefined
+                      : {
+                          value: validationPatterns.name,
+                          message: validationMessages.name,
+                        },
+                    onChange: (e) => {
+                      // Remove non-letter/space characters and convert to Title Case
+                      let value = e.target.value.replace(/[^a-zA-Z ]/g, "");
+                      value = toTitleCase(value);
+                      e.target.value = value;
+
+                      // Real-time validation (only if not anonymous)
+                      if (!wishToRemainAnonymous) {
+                        const lastName = value;
+                        const memberNumber = watch("Member_Number");
+                        const firstName = watch("Name1");
+                        if (memberNumber && firstName && lastName) {
+                          validateMember(memberNumber, firstName, lastName);
+                        }
+                      }
+                    },
+                  })}
+                  error={errors.Last_Name?.message}
+                />
+
+                <Input
+                  label="Email"
+                  type="email"
+                  placeholder="example@domain.com"
+                  required={!wishToRemainAnonymous}
+                  {...register("Reporter_Email", {
+                    required: wishToRemainAnonymous ? false : "Email is required",
+                    validate: wishToRemainAnonymous
+                      ? undefined
+                      : (value) => {
+                          if (!value || !validateEmail(value)) {
+                            return "Please enter a valid email address (e.g., user@example.com)";
+                          }
+                          return true;
+                        },
+                  })}
+                  error={errors.Reporter_Email?.message}
+                />
+
+                <PhoneInput
+                  label="Contact Phone"
+                  placeholder="0412 345 678"
+                  required={!wishToRemainAnonymous}
+                  value={contactPhone}
+                  onChange={(value) => setContactPhone(value)}
+                  onValidationChange={(isValid) => setContactPhoneValid(isValid)}
+                  defaultCountry="AU"
+                />
               </div>
-
-              <Input
-                label="First Name"
-                type="text"
-                placeholder="John"
-                required={!wishToRemainAnonymous}
-                maxLength={30}
-                onKeyPress={(e) => {
-                  // Only allow letters (a-z, A-Z) and spaces
-                  if (!/[a-zA-Z ]/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-                {...register("Name1", {
-                  required: wishToRemainAnonymous ? false : "First name is required",
-                  pattern: wishToRemainAnonymous ? undefined : {
-                    value: validationPatterns.name,
-                    message: validationMessages.name,
-                  },
-                  onChange: (e) => {
-                    // Remove any non-letter/space characters
-                    let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
-                    // Convert to Title Case
-                    value = toTitleCase(value);
-                    e.target.value = value;
-                    
-                    // Real-time validation (only if not anonymous)
-                    if (!wishToRemainAnonymous) {
-                      const firstName = value;
-                      const memberNumber = watch("Member_Number");
-                      const lastName = watch("Last_Name");
-                      if (memberNumber && firstName && lastName) {
-                        validateMember(memberNumber, firstName, lastName);
-                      }
-                    }
-                  },
-                })}
-                error={errors.Name1?.message}
-              />
-
-              <Input
-                label="Last Name"
-                type="text"
-                placeholder="Doe"
-                required={!wishToRemainAnonymous}
-                maxLength={30}
-                onKeyPress={(e) => {
-                  // Only allow letters (a-z, A-Z) and spaces
-                  if (!/[a-zA-Z ]/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-                {...register("Last_Name", {
-                  required: wishToRemainAnonymous ? false : "Last name is required",
-                  pattern: wishToRemainAnonymous ? undefined : {
-                    value: validationPatterns.name,
-                    message: validationMessages.name,
-                  },
-                  onChange: (e) => {
-                    // Remove any non-letter/space characters
-                    let value = e.target.value.replace(/[^a-zA-Z ]/g, '');
-                    // Convert to Title Case
-                    value = toTitleCase(value);
-                    e.target.value = value;
-                    
-                    // Real-time validation (only if not anonymous)
-                    if (!wishToRemainAnonymous) {
-                      const lastName = value;
-                      const memberNumber = watch("Member_Number");
-                      const firstName = watch("Name1");
-                      if (memberNumber && firstName && lastName) {
-                        validateMember(memberNumber, firstName, lastName);
-                      }
-                    }
-                  },
-                })}
-                error={errors.Last_Name?.message}
-              />
-
-              <Input
-                label="Email"
-                type="email"
-                placeholder="example@domain.com"
-                required={!wishToRemainAnonymous}
-                {...register("Reporter_Email", {
-                  required: wishToRemainAnonymous ? false : "Email is required",
-                  validate: wishToRemainAnonymous ? undefined : (value) => {
-                    if (!value || !validateEmail(value)) {
-                      return "Please enter a valid email address (e.g., user@example.com)";
-                    }
-                    return true;
-                  },
-                })}
-                error={errors.Reporter_Email?.message}
-              />
-
-              <PhoneInput
-                label="Contact Phone"
-                placeholder="0412 345 678"
-                required={!wishToRemainAnonymous}
-                value={contactPhone}
-                onChange={(value) => setContactPhone(value)}
-                onValidationChange={(isValid) => setContactPhoneValid(isValid)}
-                defaultCountry="AU"
-              />
             </div>
-          </div>
           </div>
 
           {/* Complaint Information Section */}
           <div className="bg-white rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Complaint Information</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Complaint Information
+            </h2>
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Occurrence Date */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Occurrence Date <span className="text-red-500">*</span>
@@ -601,25 +760,28 @@ export default function ComplaintForm() {
                     value={occurrenceDate}
                     onChange={(e) => {
                       const selectedDateStr = e.target.value;
-                      const selectedDate = new Date(selectedDateStr + 'T00:00:00');
+                      const selectedDate = new Date(
+                        selectedDateStr + "T00:00:00"
+                      );
                       const today = new Date();
                       today.setHours(0, 0, 0, 0);
-                      
+
                       // Only block if selected date is AFTER today
                       if (selectedDate.getTime() > today.getTime()) {
                         alert("Occurrence date cannot be in the future");
                         return;
                       }
-                      
+
                       setOccurrenceDate(selectedDateStr);
                     }}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     min="1900-01-01"
-                    max={new Date().toISOString().split('T')[0]}
+                    max={new Date().toISOString().split("T")[0]}
                     required
                   />
                 </div>
 
+                {/* Occurrence Time */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Occurrence Time <span className="text-red-500">*</span>
@@ -629,27 +791,32 @@ export default function ComplaintForm() {
                     value={occurrenceTime}
                     onChange={(e) => {
                       const selectedTime = e.target.value;
-                      
+
                       // If today's date is selected, validate time is not in the future
                       if (occurrenceDate) {
-                        const selectedDate = new Date(occurrenceDate + 'T00:00:00');
+                        const selectedDate = new Date(
+                          occurrenceDate + "T00:00:00"
+                        );
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
-                        
+
                         // If occurrence date is today
                         if (selectedDate.getTime() === today.getTime()) {
-                          const [hours, minutes] = selectedTime.split(':');
+                          const [hours, minutes] = selectedTime.split(":");
                           const currentHours = new Date().getHours();
                           const currentMinutes = new Date().getMinutes();
-                          
-                          if (parseInt(hours) > currentHours || 
-                              (parseInt(hours) === currentHours && parseInt(minutes) > currentMinutes)) {
+
+                          if (
+                            parseInt(hours) > currentHours ||
+                            (parseInt(hours) === currentHours &&
+                              parseInt(minutes) > currentMinutes)
+                          ) {
                             alert("Occurrence time cannot be in the future");
                             return;
                           }
                         }
                       }
-                      
+
                       setOccurrenceTime(e.target.value);
                     }}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -658,16 +825,20 @@ export default function ComplaintForm() {
                 </div>
               </div>
 
+              {/* Complaint Details */}
               <Textarea
                 label="Complaint Details"
                 required
                 rows={6}
-                {...register("Description_of_Occurrence", { required: "Complaint details are required" })}
+                {...register("Description_of_Occurrence", {
+                  required: "Complaint details are required",
+                })}
                 error={errors.Description_of_Occurrence?.message}
               />
 
-              <div className="divider-h-6 h-6 w-full"></div>
+              <div className="h-6 w-full" />
 
+              {/* File Attachments */}
               <FileUpload
                 label="Attachments"
                 description="Upload photos and videos as evidence. Additionally include engine, propeller and airframe maintenance inspection documentation from logbooks as it pertains to the report."
@@ -679,14 +850,16 @@ export default function ComplaintForm() {
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* Form Action Buttons */}
           <div className="flex justify-end space-x-4 mr-8 mb-8">
-            <Button type="button" variant="outline" onClick={() => (window.location.href = "/")}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => (window.location.href = "/")}
+            >
               Cancel
             </Button>
-            <Button type="submit">
-              Review & Submit
-            </Button>
+            <Button type="submit">Review & Submit</Button>
           </div>
         </form>
       </div>

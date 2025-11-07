@@ -20,151 +20,295 @@ export class AccidentPDFGenerator extends PDFGenerator {
     return account?.Account_Name;
   }
 
+  // Helper to check if value has actual data (not null, undefined, empty string, or N/A)
+  private hasValue(value: any): boolean {
+    if (value === null || value === undefined || value === '' || value === 'N/A') {
+      return false;
+    }
+    if (Array.isArray(value) && value.length === 0) {
+      return false;
+    }
+    return true;
+  }
+
   async generate(data: AccidentFormData, metadata?: any): Promise<Buffer> {
     // Add header with submission date
     const reportType = data.Accident_or_Incident || data.Is_this_occurrence_an_Accident_or_an_Incident || 'Accident/Incident';
     const submissionDate = metadata?.timestamp ? formatDate(metadata.timestamp) : undefined;
     this.addHeader(`${reportType} Report`, submissionDate);
 
-    // Person Reporting Section
-    this.addSection('Person Reporting');
-    this.addFieldPair('Role', data.role, 'Member Number', data.Member_Number || data.memberNumber);
-    this.addFieldPair('First Name', data.Name1 || data.firstName, 'Last Name', data.Last_Name || data.lastName);
-    this.addFieldPair('Email', data.Reporter_Email || data.emailAddress, 'Contact Phone', data.Contact_Phone || data.contactPhone);
+    // ========== REPORTER INFORMATION ==========
+    // Only show section if there's at least some reporter data
+    if (this.hasValue(data.role) || this.hasValue(data.Member_Number || data.memberNumber) ||
+        this.hasValue(data.Name1 || data.firstName) || this.hasValue(data.Last_Name || data.lastName) ||
+        this.hasValue(data.Reporter_Email || data.emailAddress) || this.hasValue(data.Contact_Phone || data.contactPhone)) {
+      this.addSection('Person Reporting');
 
-    // Pilot in Command Section (if different from reporter)
-    if (data.role !== 'Pilot in Command' && (data.PIC_Name || data.PIC_Last_Name)) {
+      if (this.hasValue(data.role) || this.hasValue(data.Member_Number || data.memberNumber)) {
+        this.addFieldPair('Role', data.role, 'Member Number', data.Member_Number || data.memberNumber);
+      }
+      if (this.hasValue(data.Name1 || data.firstName) || this.hasValue(data.Last_Name || data.lastName)) {
+        this.addFieldPair('First Name', data.Name1 || data.firstName, 'Last Name', data.Last_Name || data.lastName);
+      }
+      if (this.hasValue(data.Reporter_Email || data.emailAddress) || this.hasValue(data.Contact_Phone || data.contactPhone)) {
+        this.addFieldPair('Email', data.Reporter_Email || data.emailAddress, 'Contact Phone', data.Contact_Phone || data.contactPhone);
+      }
+    }
+
+    // ========== PILOT IN COMMAND ==========
+    if (data.role !== 'Pilot in Command' && (this.hasValue(data.PIC_Name) || this.hasValue(data.PIC_Last_Name) ||
+        this.hasValue(data.PIC_Member_Number) || this.hasValue(data.Date_of_Birth) ||
+        this.hasValue(data.PIC_Email) || this.hasValue(data.PIC_Contact_Phone || data.pilotContactPhone))) {
       this.addSection('Pilot in Command');
-      this.addFieldPair('First Name', data.PIC_Name, 'Last Name', data.PIC_Last_Name);
-      this.addFieldPair('Member Number', data.PIC_Member_Number, 'Date of Birth', formatDateOnly(data.Date_of_Birth));
-      this.addFieldPair('Email', data.PIC_Email, 'Contact Phone', data.PIC_Contact_Phone || data.pilotContactPhone);
+
+      if (this.hasValue(data.PIC_Name) || this.hasValue(data.PIC_Last_Name)) {
+        this.addFieldPair('First Name', data.PIC_Name, 'Last Name', data.PIC_Last_Name);
+      }
+      if (this.hasValue(data.PIC_Member_Number) || this.hasValue(data.Date_of_Birth)) {
+        this.addFieldPair('Member Number', data.PIC_Member_Number, 'Date of Birth', formatDateOnly(data.Date_of_Birth));
+      }
+      if (this.hasValue(data.PIC_Email) || this.hasValue(data.PIC_Contact_Phone || data.pilotContactPhone)) {
+        this.addFieldPair('Email', data.PIC_Email, 'Contact Phone', data.PIC_Contact_Phone || data.pilotContactPhone);
+      }
     }
 
-    // Flying Hours Section
-    this.addSection('Flying Hours');
-    this.addFieldPair('Total Flying Hours', data.Total_flying_hours, 'Hours Last 90 Days', data.Hours_last_90_days);
-    this.addFieldPair('Hours on Type', data.Hours_on_type, 'Hours on Type (90 Days)', data.Hours_on_type_last_90_days);
+    // ========== FLYING EXPERIENCE ==========
+    if (this.hasValue(data.Total_flying_hours) || this.hasValue(data.Hours_last_90_days) ||
+        this.hasValue(data.Hours_on_type) || this.hasValue(data.Hours_on_type_last_90_days)) {
+      this.addSection('Flying Hours');
 
-    // Occurrence Information Section
-    this.addSection('Occurrence Information');
-    this.addField('Date & Time', formatDate(data.Occurrence_Date1 || data.occurrenceDate));
-    this.addFieldPair('State', data.State || data.state, 'Location', data.Location || data.location);
-    this.addField('Incident/Accident Details', data.Details_of_incident_accident, true);
-    
-    // Damage and Injury
-    this.addFieldPair('Damage to Aircraft', data.Damage_to_aircraft, 'Most Serious Injury to Pilot', data.Most_serious_injury_to_pilot);
-    if (data.Description_of_damage_to_aircraft) {
-      this.addField('Damage Description', data.Description_of_damage_to_aircraft, true);
-    }
-    if (data.Passenger_injury) {
-      this.addFieldPair('Passenger Injury', data.Passenger_injury, 'Persons on Ground Injury', data.Persons_on_the_ground_injury);
+      if (this.hasValue(data.Total_flying_hours) || this.hasValue(data.Hours_last_90_days)) {
+        this.addFieldPair('Total Flying Hours', data.Total_flying_hours, 'Hours Last 90 Days', data.Hours_last_90_days);
+      }
+      if (this.hasValue(data.Hours_on_type) || this.hasValue(data.Hours_on_type_last_90_days)) {
+        this.addFieldPair('Hours on Type', data.Hours_on_type, 'Hours on Type (90 Days)', data.Hours_on_type_last_90_days);
+      }
     }
 
-    // Classification
-    this.addFieldPair('Type', reportType, 'ATSB Status', data.ATSB_reportable_status);
-    
-    if (data.Reporter_Suggestions) {
-      this.addField('Prevention Suggestions', data.Reporter_Suggestions, true);
+    // ========== OCCURRENCE DETAILS ==========
+    if (this.hasValue(data.Occurrence_Date1 || data.occurrenceDate) || this.hasValue(data.State || data.state) ||
+        this.hasValue(data.Location || data.location) || this.hasValue(data.Details_of_incident_accident) ||
+        this.hasValue(data.Latitude) || this.hasValue(data.Longitude)) {
+      this.addSection('Occurrence Information');
+
+      if (this.hasValue(data.Occurrence_Date1 || data.occurrenceDate)) {
+        this.addField('Date & Time', formatDate(data.Occurrence_Date1 || data.occurrenceDate));
+      }
+      if (this.hasValue(data.State || data.state) || this.hasValue(data.Location || data.location)) {
+        this.addFieldPair('State', data.State || data.state, 'Location', data.Location || data.location);
+      }
+      if (this.hasValue(data.Latitude) && this.hasValue(data.Longitude)) {
+        this.addField('GPS Coordinates', `Latitude: ${data.Latitude}, Longitude: ${data.Longitude}`);
+      }
+      if (this.hasValue(data.Details_of_incident_accident)) {
+        this.addField('Incident/Accident Details', data.Details_of_incident_accident, true);
+      }
     }
 
-    // Flight Details Section
-    if (data.Departure_location || data.Destination_location || data.Type_of_operation) {
+    // ========== DAMAGE AND INJURY ASSESSMENT ==========
+    if (this.hasValue(data.Damage_to_aircraft) || this.hasValue(data.Most_serious_injury_to_pilot) ||
+        this.hasValue(data.Description_of_damage_to_aircraft) || this.hasValue(data.Passenger_injury) ||
+        this.hasValue(data.Persons_on_the_ground_injury)) {
+      this.addSection('Damage and Injury Assessment');
+
+      if (this.hasValue(data.Damage_to_aircraft) || this.hasValue(data.Most_serious_injury_to_pilot)) {
+        this.addFieldPair('Damage to Aircraft', data.Damage_to_aircraft, 'Most Serious Injury to Pilot', data.Most_serious_injury_to_pilot);
+      }
+      if (this.hasValue(data.Description_of_damage_to_aircraft)) {
+        this.addField('Damage Description', data.Description_of_damage_to_aircraft, true);
+      }
+      if (this.hasValue(data.Passenger_injury) || this.hasValue(data.Persons_on_the_ground_injury)) {
+        this.addFieldPair('Passenger Injury', data.Passenger_injury, 'Persons on Ground Injury', data.Persons_on_the_ground_injury);
+      }
+    }
+
+    // ========== CLASSIFICATION ==========
+    if (this.hasValue(reportType) || this.hasValue(data.ATSB_reportable_status) || this.hasValue(data.Reporter_Suggestions)) {
+      this.addSection('Occurrence Classification');
+
+      if (this.hasValue(reportType) || this.hasValue(data.ATSB_reportable_status)) {
+        this.addFieldPair('Type', reportType, 'ATSB Status', data.ATSB_reportable_status);
+      }
+      if (this.hasValue(data.Reporter_Suggestions)) {
+        this.addField('Prevention Suggestions', data.Reporter_Suggestions, true);
+      }
+    }
+
+    // ========== FLIGHT DETAILS ==========
+    if (this.hasValue(data.Departure_location) || this.hasValue(data.Destination_location) ||
+        this.hasValue(data.Landing) || this.hasValue(data.Type_of_operation) || this.hasValue(data.Phase_of_flight) ||
+        this.hasValue(data.Lookup_5) || this.hasValue(data.Effect_of_flight) || this.hasValue(data.Flight_Rules)) {
       this.addSection('Flight Details');
-      this.addFieldPair('Departure', data.Departure_location, 'Destination', data.Destination_location);
-      if (data.Landing) {
+
+      if (this.hasValue(data.Departure_location) || this.hasValue(data.Destination_location)) {
+        this.addFieldPair('Departure', data.Departure_location, 'Destination', data.Destination_location);
+      }
+      if (this.hasValue(data.Landing)) {
         this.addField('Landing Location', data.Landing);
       }
-      this.addFieldPair('Type of Operation', data.Type_of_operation, 'Phase of Flight', data.Phase_of_flight);
-      if (data.Lookup_5) {
+      if (this.hasValue(data.Type_of_operation) || this.hasValue(data.Phase_of_flight)) {
+        this.addFieldPair('Type of Operation', data.Type_of_operation, 'Phase of Flight', data.Phase_of_flight);
+      }
+      if (this.hasValue(data.Lookup_5)) {
         this.addField('Flight Training School', this.getAccountName(data.Lookup_5));
       }
-      this.addFieldPair('Effect of Flight', data.Effect_of_flight, 'Flight Rules', data.Flight_Rules);
+      if (this.hasValue(data.Effect_of_flight) || this.hasValue(data.Flight_Rules)) {
+        this.addFieldPair('Effect of Flight', data.Effect_of_flight, 'Flight Rules', data.Flight_Rules);
+      }
     }
 
-    // Airspace Section
-    if (data.Airspace_class || data.Airspace_type || data.Altitude) {
-      this.addSection('Airspace');
-      this.addFieldPair('Airspace Class', data.Airspace_class, 'Airspace Type', data.Airspace_type);
-      this.addFieldPair('Altitude', data.Altitude ? `${data.Altitude}` : undefined, 'Altitude Type', data.Altitude_type);
+    // ========== AIRSPACE INFORMATION ==========
+    if (this.hasValue(data.Airspace_class) || this.hasValue(data.Airspace_type) ||
+        this.hasValue(data.Altitude) || this.hasValue(data.Altitude_type)) {
+      this.addSection('Airspace Information');
+
+      if (this.hasValue(data.Airspace_class) || this.hasValue(data.Airspace_type)) {
+        this.addFieldPair('Airspace Class', data.Airspace_class, 'Airspace Type', data.Airspace_type);
+      }
+      if (this.hasValue(data.Altitude) || this.hasValue(data.Altitude_type)) {
+        this.addFieldPair('Altitude', data.Altitude ? `${data.Altitude} ft` : undefined, 'Altitude Type', data.Altitude_type);
+      }
     }
 
-    // Environment Section
-    if (data.Light_conditions || data.Wind_speed || data.Visibility) {
-      this.addSection('Environment');
-      this.addFieldPair('Light Conditions', data.Light_conditions, 'Visibility', data.Visibility ? `${data.Visibility} NM` : undefined);
-      this.addFieldPair('Wind Speed', data.Wind_speed ? `${data.Wind_speed} knots` : undefined, 'Wind Direction', data.Wind_direction);
-      this.addFieldPair('Wind Gusting', data.Wind_gusting, 'Temperature', data.Temperature ? `${data.Temperature}°C` : undefined);
-      if (data.Visibility_reduced_by) {
+    // ========== ENVIRONMENTAL CONDITIONS ==========
+    if (this.hasValue(data.Light_conditions) || this.hasValue(data.Wind_speed) || this.hasValue(data.Visibility) ||
+        this.hasValue(data.Wind_direction) || this.hasValue(data.Wind_gusting) || this.hasValue(data.Temperature) ||
+        this.hasValue(data.Visibility_reduced_by) || this.hasValue(data.Personal_Locator_Beacon_carried)) {
+      this.addSection('Environmental Conditions');
+
+      if (this.hasValue(data.Light_conditions) || this.hasValue(data.Visibility)) {
+        this.addFieldPair('Light Conditions', data.Light_conditions, 'Visibility', data.Visibility ? `${data.Visibility} NM` : undefined);
+      }
+      if (this.hasValue(data.Wind_speed) || this.hasValue(data.Wind_direction)) {
+        this.addFieldPair('Wind Speed', data.Wind_speed ? `${data.Wind_speed} knots` : undefined, 'Wind Direction', data.Wind_direction);
+      }
+      if (this.hasValue(data.Wind_gusting) || this.hasValue(data.Temperature)) {
+        this.addFieldPair('Wind Gusting', data.Wind_gusting, 'Temperature', data.Temperature ? `${data.Temperature}°C` : undefined);
+      }
+      if (this.hasValue(data.Visibility_reduced_by)) {
         this.addField('Visibility Reduced By', Array.isArray(data.Visibility_reduced_by) ? data.Visibility_reduced_by.join(', ') : data.Visibility_reduced_by);
       }
-      this.addField('PLB Carried', data.Personal_Locator_Beacon_carried);
+      if (this.hasValue(data.Personal_Locator_Beacon_carried)) {
+        this.addField('PLB Carried', data.Personal_Locator_Beacon_carried);
+      }
     }
 
-    // Bird/Animal Strike Section
-    if (data.Bird_or_Animal_Strike) {
-      this.addSection('Bird/Animal Strike');
-      this.addFieldPair('Type of Strike', data.Type_of_strike, 'Size', data.Size);
-      if (data.Species) {
+    // ========== BIRD/ANIMAL STRIKE ==========
+    if (this.hasValue(data.Bird_or_Animal_Strike) && (this.hasValue(data.Type_of_strike) || this.hasValue(data.Size) ||
+        this.hasValue(data.Species) || this.hasValue(data.Number_approx) || this.hasValue(data.Number_struck_approx))) {
+      this.addSection('Bird/Animal Strike Information');
+
+      if (this.hasValue(data.Type_of_strike) || this.hasValue(data.Size)) {
+        this.addFieldPair('Type of Strike', data.Type_of_strike, 'Size', data.Size);
+      }
+      if (this.hasValue(data.Species)) {
         this.addField('Species', data.Species);
       }
-      this.addFieldPair('Number (Approx)', data.Number_approx, 'Number Struck', data.Number_struck_approx);
+      if (this.hasValue(data.Number_approx) || this.hasValue(data.Number_struck_approx)) {
+        this.addFieldPair('Number (Approx)', data.Number_approx, 'Number Struck', data.Number_struck_approx);
+      }
     }
 
-    // Near Collision Section
-    if (data.Involve_near_miss_with_another_aircraft) {
+    // ========== NEAR COLLISION ==========
+    if (this.hasValue(data.Involve_near_miss_with_another_aircraft) && (this.hasValue(data.Second_aircraft_registration) ||
+        this.hasValue(data.Second_Aircraft_Manufacturer) || this.hasValue(data.Second_Aircraft_Model) ||
+        this.hasValue(data.Horizontal_Proximity) || this.hasValue(data.Vertical_Proximity) ||
+        this.hasValue(data.Relative_Track) || this.hasValue(data.Avoidance_manoeuvre_needed) || this.hasValue(data.Alert_Received))) {
       this.addSection('Near Collision with Another Aircraft');
-      this.addFieldPair('Second Aircraft Registration', data.Second_aircraft_registration, 'Manufacturer', data.Second_Aircraft_Manufacturer);
-      this.addField('Model', data.Second_Aircraft_Model);
-      this.addFieldPair('Horizontal Proximity', data.Horizontal_Proximity ? `${data.Horizontal_Proximity} ${data.Horizontal_Proximity_Unit}` : undefined, 
-                       'Vertical Proximity', data.Vertical_Proximity ? `${data.Vertical_Proximity} ${data.Vertical_Proximity_Unit}` : undefined);
-      this.addFieldPair('Relative Track', data.Relative_Track, 'Avoidance Manoeuvre', data.Avoidance_manoeuvre_needed);
-      this.addField('Alert Received', data.Alert_Received);
+
+      if (this.hasValue(data.Second_aircraft_registration) || this.hasValue(data.Second_Aircraft_Manufacturer)) {
+        this.addFieldPair('Second Aircraft Registration', data.Second_aircraft_registration, 'Manufacturer', data.Second_Aircraft_Manufacturer);
+      }
+      if (this.hasValue(data.Second_Aircraft_Model)) {
+        this.addField('Model', data.Second_Aircraft_Model);
+      }
+      if (this.hasValue(data.Horizontal_Proximity) || this.hasValue(data.Vertical_Proximity)) {
+        this.addFieldPair('Horizontal Proximity', data.Horizontal_Proximity ? `${data.Horizontal_Proximity} ${data.Horizontal_Proximity_Unit}` : undefined,
+                         'Vertical Proximity', data.Vertical_Proximity ? `${data.Vertical_Proximity} ${data.Vertical_Proximity_Unit}` : undefined);
+      }
+      if (this.hasValue(data.Relative_Track) || this.hasValue(data.Avoidance_manoeuvre_needed)) {
+        this.addFieldPair('Relative Track', data.Relative_Track, 'Avoidance Manoeuvre', data.Avoidance_manoeuvre_needed);
+      }
+      if (this.hasValue(data.Alert_Received)) {
+        this.addField('Alert Received', data.Alert_Received);
+      }
     }
 
-    // Aircraft Information Section
-    this.addSection('Aircraft Information');
-    const regNumber = data.Registration_number && data.Serial_number1 
-      ? `${data.Registration_number}-${data.Serial_number1}` 
-      : data.Registration_number || 'N/A';
-    this.addField('Registration Number', regNumber);
-    this.addFieldPair('Serial Number', data.Serial_number, 'Registration Status', data.Registration_status);
-    this.addFieldPair('Make', data.Make1, 'Model', data.Model);
-    this.addFieldPair('Type', data.Type1, 'Year Built', data.Year_Built1);
-    if (data.Total_airframe_hours) {
-      this.addField('Total Airframe Hours', data.Total_airframe_hours);
+    // ========== AIRCRAFT DETAILS ==========
+    if (this.hasValue(data.Registration_number) || this.hasValue(data.Serial_number1) || this.hasValue(data.Serial_number) ||
+        this.hasValue(data.Registration_status) || this.hasValue(data.Make1) || this.hasValue(data.Model) ||
+        this.hasValue(data.Type1) || this.hasValue(data.Year_Built1) || this.hasValue(data.Total_airframe_hours)) {
+      this.addSection('Aircraft Information');
+
+      const regNumber = data.Registration_number && data.Serial_number1
+        ? `${data.Registration_number}-${data.Serial_number1}`
+        : data.Registration_number;
+
+      if (this.hasValue(regNumber)) {
+        this.addField('Registration Number', regNumber);
+      }
+      if (this.hasValue(data.Serial_number) || this.hasValue(data.Registration_status)) {
+        this.addFieldPair('Serial Number', data.Serial_number, 'Registration Status', data.Registration_status);
+      }
+      if (this.hasValue(data.Make1) || this.hasValue(data.Model)) {
+        this.addFieldPair('Make', data.Make1, 'Model', data.Model);
+      }
+      if (this.hasValue(data.Type1) || this.hasValue(data.Year_Built1)) {
+        this.addFieldPair('Type', data.Type1, 'Year Built', data.Year_Built1);
+      }
+      if (this.hasValue(data.Total_airframe_hours)) {
+        this.addField('Total Airframe Hours', data.Total_airframe_hours);
+      }
     }
 
-    // Engine Details Section
-    if (data.Engine_Details || data.Engine_model) {
+    // ========== ENGINE DETAILS ==========
+    if (this.hasValue(data.Engine_Details) || this.hasValue(data.Engine_model) || this.hasValue(data.Engine_serial) ||
+        this.hasValue(data.Total_engine_hours) || this.hasValue(data.Total_hours_since_service)) {
       this.addSection('Engine Details');
-      this.addFieldPair('Engine Make', data.Engine_Details, 'Engine Model', data.Engine_model);
-      this.addFieldPair('Engine Serial', data.Engine_serial, 'Total Engine Hours', data.Total_engine_hours);
-      if (data.Total_hours_since_service) {
+
+      if (this.hasValue(data.Engine_Details) || this.hasValue(data.Engine_model)) {
+        this.addFieldPair('Engine Make', data.Engine_Details, 'Engine Model', data.Engine_model);
+      }
+      if (this.hasValue(data.Engine_serial) || this.hasValue(data.Total_engine_hours)) {
+        this.addFieldPair('Engine Serial', data.Engine_serial, 'Total Engine Hours', data.Total_engine_hours);
+      }
+      if (this.hasValue(data.Total_hours_since_service)) {
         this.addField('Hours Since Service', data.Total_hours_since_service);
       }
     }
 
-    // Propeller Details Section
-    if (data.Propeller_make || data.Propeller_model) {
+    // ========== PROPELLER DETAILS ==========
+    if (this.hasValue(data.Propeller_make) || this.hasValue(data.Propeller_model) || this.hasValue(data.Propeller_serial)) {
       this.addSection('Propeller Details');
-      this.addFieldPair('Propeller Make', data.Propeller_make, 'Propeller Model', data.Propeller_model);
-      this.addField('Propeller Serial', data.Propeller_serial);
+
+      if (this.hasValue(data.Propeller_make) || this.hasValue(data.Propeller_model)) {
+        this.addFieldPair('Propeller Make', data.Propeller_make, 'Propeller Model', data.Propeller_model);
+      }
+      if (this.hasValue(data.Propeller_serial)) {
+        this.addField('Propeller Serial', data.Propeller_serial);
+      }
     }
 
-    // Maintainer Information
-    if (data.Maintainer_Name) {
+    // ========== MAINTAINER INFORMATION ==========
+    if (this.hasValue(data.Maintainer_Name) || this.hasValue(data.Maintainer_Member_Number) || this.hasValue(data.Maintainer_Level)) {
       this.addSection('Maintainer Information');
-      this.addFieldPair('Maintainer Name', data.Maintainer_Name, 'Member Number', data.Maintainer_Member_Number);
-      this.addField('Maintainer Level', data.Maintainer_Level);
+
+      if (this.hasValue(data.Maintainer_Name) || this.hasValue(data.Maintainer_Member_Number)) {
+        this.addFieldPair('Maintainer Name', data.Maintainer_Name, 'Member Number', data.Maintainer_Member_Number);
+      }
+      if (this.hasValue(data.Maintainer_Level)) {
+        this.addField('Maintainer Level', data.Maintainer_Level);
+      }
     }
 
-    // Metadata Section
-    if (metadata) {
+    // ========== SUBMISSION INFORMATION ==========
+    if (metadata && (this.hasValue(metadata.occurrenceId) || this.hasValue(metadata.attachmentCount))) {
       this.addSection('Submission Information');
-      if (metadata.occurrenceId) {
+
+      if (this.hasValue(metadata.occurrenceId)) {
         this.addField('Occurrence ID', metadata.occurrenceId);
       }
-      if (metadata.attachmentCount) {
+      if (this.hasValue(metadata.attachmentCount)) {
         this.addField('Attachments', `${metadata.attachmentCount} file(s) uploaded`);
       }
     }
