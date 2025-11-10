@@ -75,3 +75,96 @@ p[class*="description"],
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
 }
+
+/* Underline animation on hover */
+.underline-animation {
+  position: relative;
+  display: inline-block;
+  background: linear-gradient(to right, currentColor 0%, currentColor 100%) bottom;
+  background-size: 0% 2px;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s ease;
+}
+
+.underline-animation:hover {
+  background-size: 100% 2px;
+  cursor: pointer;
+}
+
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --color-gray-50: #f6f7fb;
+  --color-white: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Force input text to be black */
+input,
+textarea,
+select {
+  color: #000000 !important;
+}
+
+/* Global label styling - Black color, 16px font size, 10px margin-bottom */
+label {
+  color: #000000 !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  margin-bottom: 10px !important;
+}
+
+/* Global description styling - Black color, 12px font size */
+.form-description,
+p[class*="description"],
+.step-description {
+  color: #000000 !important;
+  font-size: 12px !important;
+}
+
+/* Global form field spacing - 10px margin-bottom */
+.form-field,
+.input-field,
+.select-field,
+.textarea-field,
+.checkbox-field,
+.file-upload-field {
+  margin-bottom: 10px !important;
+}
+
+/* Form container spacing */
+.space-y-4 > * {
+  margin-bottom: 10px !important;
+}
+
+/* Hide phone input flag image */
+.PhoneInputCountryIcon {
+  display: none !important;
+}
+
+.PhoneInputCountryIconImg {
+  display: none !important;
+}
+
+/* Hide scrollbar while keeping functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}

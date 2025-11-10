@@ -382,7 +382,7 @@ export default function DataPage() {
       { key: "Created_Time", header: "Created", sortable: true, width: "180px", accessor: (row) => formatDate(row.Created_Time) },
     ],
     All: [
-      { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)) },
+      // { key: "Type", header: "Type", sortable: false, width: "120px", accessor: (row) => getTypeBadge(getFormType(row)) },
       { key: "Occurrence_Number", header: "occurrence number", sortable: true, width: "140px" },
       { key: "Occurrence_Date1", header: "Date", sortable: true, width: "180px", accessor: (row) => formatDate(row.Occurrence_Date1) },
       { key: "State", header: "State", sortable: true, width: "80px", align: "center" },
