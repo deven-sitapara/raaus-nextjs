@@ -216,34 +216,58 @@ export class ZohoCRM {
       const member = response.data.data[0];
 
       // Check if names match (case-insensitive and flexible)
-      const crmFirstName = (member.First_Name || member.Name1 || '').trim();
-      const crmLastName = (member.Last_Name || '').trim();
+      let crmFirstName = (member.First_Name || member.Name1 || '').trim();
+      let crmLastName = (member.Last_Name || '').trim();
       const crmFullName = (member.Full_Name || '').trim();
 
-      // Create full name from provided input (normalize whitespace)
-      const normalizeWhitespace = (str: string) => str.replace(/\s+/g, ' ').trim();
-      const providedFullName = normalizeWhitespace(`${firstName} ${lastName}`);
-      const providedFullNameReversed = normalizeWhitespace(`${lastName} ${firstName}`);
+      // If separate fields are empty but Full_Name exists, try to split it
+      if ((!crmFirstName || !crmLastName) && crmFullName) {
+        const nameParts = crmFullName.split(/\s+/);
+        if (nameParts.length >= 2) {
+          crmFirstName = nameParts[0];
+          crmLastName = nameParts.slice(1).join(' ');
+        }
+      }
+
+      // Normalize function to handle whitespace and case
+      const normalize = (str: string) => str.replace(/\s+/g, ' ').trim().toLowerCase();
+
+      // Normalize all names for comparison
+      const normalizedCrmFirstName = normalize(crmFirstName);
+      const normalizedCrmLastName = normalize(crmLastName);
+      const normalizedCrmFullName = normalize(crmFullName);
+      const normalizedCrmCombined = normalize(`${crmFirstName} ${crmLastName}`);
+
+      const normalizedProvidedFirstName = normalize(firstName);
+      const normalizedProvidedLastName = normalize(lastName);
+      const normalizedProvidedFullName = normalize(`${firstName} ${lastName}`);
+      const normalizedProvidedFullNameReversed = normalize(`${lastName} ${firstName}`);
 
       // Check multiple matching strategies
       let nameMatches = false;
 
-      // Strategy 1: Exact match of separate fields (case-insensitive, trimmed)
-      const firstNameMatch = crmFirstName.toLowerCase().trim() === firstName.toLowerCase().trim();
-      const lastNameMatch = crmLastName.toLowerCase().trim() === lastName.toLowerCase().trim();
+      // Strategy 1: Exact match of separate fields
+      const firstNameMatch = normalizedCrmFirstName === normalizedProvidedFirstName;
+      const lastNameMatch = normalizedCrmLastName === normalizedProvidedLastName;
 
       // Strategy 2: Reversed match (user entered first/last swapped)
-      const firstNameReversedMatch = crmFirstName.toLowerCase() === lastName.toLowerCase();
-      const lastNameReversedMatch = crmLastName.toLowerCase() === firstName.toLowerCase();
+      const firstNameReversedMatch = normalizedCrmFirstName === normalizedProvidedLastName;
+      const lastNameReversedMatch = normalizedCrmLastName === normalizedProvidedFirstName;
 
-      // Strategy 3: Full name match (CRM full name vs provided full name)
-      const fullNameMatch = crmFullName.toLowerCase() === providedFullName.toLowerCase();
-      const fullNameReversedMatch = crmFullName.toLowerCase() === providedFullNameReversed.toLowerCase();
+      // Strategy 3: Full name match
+      const fullNameMatch = normalizedCrmFullName === normalizedProvidedFullName;
+      const fullNameReversedMatch = normalizedCrmFullName === normalizedProvidedFullNameReversed;
 
-      // Strategy 4: Flexible matching - check if provided names are contained in CRM names
-      const crmFullNameCombined = `${crmFirstName} ${crmLastName}`.trim().toLowerCase();
-      const flexibleMatch = crmFullNameCombined === providedFullName.toLowerCase() ||
-                           crmFullName.toLowerCase() === providedFullName.toLowerCase();
+      // Strategy 4: Combined name match
+      const combinedMatch = normalizedCrmCombined === normalizedProvidedFullName;
+      const combinedReversedMatch = normalizedCrmCombined === normalizedProvidedFullNameReversed;
+
+      // Strategy 5: Partial match - check if names are contained (for nicknames or variations)
+      const crmHasFirstName = normalizedCrmFullName.includes(normalizedProvidedFirstName) ||
+                             normalizedCrmCombined.includes(normalizedProvidedFirstName);
+      const crmHasLastName = normalizedCrmFullName.includes(normalizedProvidedLastName) ||
+                            normalizedCrmCombined.includes(normalizedProvidedLastName);
+      const partialMatch = crmHasFirstName && crmHasLastName;
 
       if (firstNameMatch && lastNameMatch) {
         nameMatches = true;
@@ -253,14 +277,18 @@ export class ZohoCRM {
         nameMatches = true;
       } else if (fullNameReversedMatch) {
         nameMatches = true;
-      } else if (flexibleMatch) {
+      } else if (combinedMatch) {
+        nameMatches = true;
+      } else if (combinedReversedMatch) {
+        nameMatches = true;
+      } else if (partialMatch) {
         nameMatches = true;
       }
 
       if (!nameMatches) {
         // Provide helpful error message with the name from CRM
-        const crmName = `${crmFirstName} ${crmLastName}`.trim() || crmFullName || 'Unknown';
-        console.log(`Name mismatch - CRM: "${crmName}", Provided: "${providedFullName}"`);
+        const crmName = crmFullName || `${crmFirstName} ${crmLastName}`.trim() || 'Unknown';
+        console.log(`Name mismatch - CRM First: "${crmFirstName}", CRM Last: "${crmLastName}", CRM Full: "${crmFullName}", Provided: "${normalizedProvidedFullName}"`);
         return {
           valid: false,
           warning: `Member Number ${memberNumber} exists but name doesn't match. CRM has: "${crmName}"`,

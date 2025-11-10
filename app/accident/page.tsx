@@ -1137,7 +1137,8 @@ export default function AccidentForm() {
         "Wind_gusting",
         "Personal_Locator_Beacon_carried",
         "Involve_IFR_or_Air_Transport_Operations",
-        "In_controlled_or_special_use_airspace"
+        "In_controlled_or_special_use_airspace",
+        "Level_2_Maintainer_L2"
       ];
       
       // Remove description field from validation if damage is "Nil"
