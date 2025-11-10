@@ -45,7 +45,11 @@ export class AccidentPDFGenerator extends PDFGenerator {
       this.addSection('Person Reporting');
 
       if (this.hasValue(data.role) || this.hasValue(data.Member_Number || data.memberNumber)) {
-        this.addFieldPair('Role', data.role, 'Member Number', data.Member_Number || data.memberNumber);
+        const roleDisplay = data.role === 'Other' && data.customRole ? `Other - ${data.customRole}` : data.role;
+        this.addFieldPair('Role', roleDisplay, 'Member Number', data.Member_Number || data.memberNumber);
+      }
+      if (this.hasValue(data.Reporter)) {
+        this.addField('Reporter Name', data.Reporter);
       }
       if (this.hasValue(data.Name1 || data.firstName) || this.hasValue(data.Last_Name || data.lastName)) {
         this.addFieldPair('First Name', data.Name1 || data.firstName, 'Last Name', data.Last_Name || data.lastName);
@@ -70,6 +74,9 @@ export class AccidentPDFGenerator extends PDFGenerator {
       if (this.hasValue(data.PIC_Email) || this.hasValue(data.PIC_Contact_Phone || data.pilotContactPhone)) {
         this.addFieldPair('Email', data.PIC_Email, 'Contact Phone', data.PIC_Contact_Phone || data.pilotContactPhone);
       }
+      if (this.hasValue(data.Date_5)) {
+        this.addField('Additional Date', formatDate(data.Date_5));
+      }
     }
 
     // ========== FLYING EXPERIENCE ==========
@@ -88,17 +95,27 @@ export class AccidentPDFGenerator extends PDFGenerator {
     // ========== OCCURRENCE DETAILS ==========
     if (this.hasValue(data.Occurrence_Date1 || data.occurrenceDate) || this.hasValue(data.State || data.state) ||
         this.hasValue(data.Location || data.location) || this.hasValue(data.Details_of_incident_accident) ||
-        this.hasValue(data.Latitude) || this.hasValue(data.Longitude)) {
+        this.hasValue(data.Latitude) || this.hasValue(data.Longitude) || this.hasValue(data.Occurrence_Type) ||
+        this.hasValue(data.Occurrence_Date2) || this.hasValue(data.Level_2_Maintainer_L2)) {
       this.addSection('Occurrence Information');
 
       if (this.hasValue(data.Occurrence_Date1 || data.occurrenceDate)) {
         this.addField('Date & Time', formatDate(data.Occurrence_Date1 || data.occurrenceDate));
+      }
+      if (this.hasValue(data.Occurrence_Date2)) {
+        this.addField('Secondary Date & Time', formatDate(data.Occurrence_Date2));
+      }
+      if (this.hasValue(data.Occurrence_Type)) {
+        this.addField('Occurrence Type', data.Occurrence_Type);
       }
       if (this.hasValue(data.State || data.state) || this.hasValue(data.Location || data.location)) {
         this.addFieldPair('State', data.State || data.state, 'Location', data.Location || data.location);
       }
       if (this.hasValue(data.Latitude) && this.hasValue(data.Longitude)) {
         this.addField('GPS Coordinates', `Latitude: ${data.Latitude}, Longitude: ${data.Longitude}`);
+      }
+      if (this.hasValue(data.Level_2_Maintainer_L2)) {
+        this.addField('Level 2 Maintainer', data.Level_2_Maintainer_L2);
       }
       if (this.hasValue(data.Details_of_incident_accident)) {
         this.addField('Incident/Accident Details', data.Details_of_incident_accident, true);
@@ -108,7 +125,7 @@ export class AccidentPDFGenerator extends PDFGenerator {
     // ========== DAMAGE AND INJURY ASSESSMENT ==========
     if (this.hasValue(data.Damage_to_aircraft) || this.hasValue(data.Most_serious_injury_to_pilot) ||
         this.hasValue(data.Description_of_damage_to_aircraft) || this.hasValue(data.Passenger_injury) ||
-        this.hasValue(data.Persons_on_the_ground_injury)) {
+        this.hasValue(data.Persons_on_the_ground_injury) || this.hasValue(data.Passenger_details)) {
       this.addSection('Damage and Injury Assessment');
 
       if (this.hasValue(data.Damage_to_aircraft) || this.hasValue(data.Most_serious_injury_to_pilot)) {
@@ -120,14 +137,28 @@ export class AccidentPDFGenerator extends PDFGenerator {
       if (this.hasValue(data.Passenger_injury) || this.hasValue(data.Persons_on_the_ground_injury)) {
         this.addFieldPair('Passenger Injury', data.Passenger_injury, 'Persons on Ground Injury', data.Persons_on_the_ground_injury);
       }
+      if (this.hasValue(data.Passenger_details)) {
+        this.addField('Passenger Details', data.Passenger_details, true);
+      }
     }
 
     // ========== CLASSIFICATION ==========
-    if (this.hasValue(reportType) || this.hasValue(data.ATSB_reportable_status) || this.hasValue(data.Reporter_Suggestions)) {
+    if (this.hasValue(reportType) || this.hasValue(data.ATSB_reportable_status) || this.hasValue(data.Reporter_Suggestions) ||
+        this.hasValue(data.Classification_level) || this.hasValue(data.Provide_description_of_defect) ||
+        this.hasValue(data.Summary_of_actions_taken_to_be_provided)) {
       this.addSection('Occurrence Classification');
 
       if (this.hasValue(reportType) || this.hasValue(data.ATSB_reportable_status)) {
         this.addFieldPair('Type', reportType, 'ATSB Status', data.ATSB_reportable_status);
+      }
+      if (this.hasValue(data.Classification_level)) {
+        this.addField('Classification Level', data.Classification_level);
+      }
+      if (this.hasValue(data.Provide_description_of_defect)) {
+        this.addField('Defect Description', data.Provide_description_of_defect, true);
+      }
+      if (this.hasValue(data.Summary_of_actions_taken_to_be_provided)) {
+        this.addField('Actions Taken', data.Summary_of_actions_taken_to_be_provided, true);
       }
       if (this.hasValue(data.Reporter_Suggestions)) {
         this.addField('Prevention Suggestions', data.Reporter_Suggestions, true);
@@ -150,7 +181,9 @@ export class AccidentPDFGenerator extends PDFGenerator {
         this.addFieldPair('Type of Operation', data.Type_of_operation, 'Phase of Flight', data.Phase_of_flight);
       }
       if (this.hasValue(data.Lookup_5)) {
-        this.addField('Flight Training School', this.getAccountName(data.Lookup_5));
+        const schoolName = this.getAccountName(data.Lookup_5);
+        const schoolDisplay = data.customFlightSchool ? `Other - ${data.customFlightSchool}` : schoolName;
+        this.addField('Flight Training School', schoolDisplay);
       }
       if (this.hasValue(data.Effect_of_flight) || this.hasValue(data.Flight_Rules)) {
         this.addFieldPair('Effect of Flight', data.Effect_of_flight, 'Flight Rules', data.Flight_Rules);
@@ -159,7 +192,9 @@ export class AccidentPDFGenerator extends PDFGenerator {
 
     // ========== AIRSPACE INFORMATION ==========
     if (this.hasValue(data.Airspace_class) || this.hasValue(data.Airspace_type) ||
-        this.hasValue(data.Altitude) || this.hasValue(data.Altitude_type)) {
+        this.hasValue(data.Altitude) || this.hasValue(data.Altitude_type) ||
+        this.hasValue(data.In_vicinity_of_aerodrome) || this.hasValue(data.Y_Code) ||
+        this.hasValue(data.Involve_IFR_or_Air_Transport_Operations) || this.hasValue(data.In_controlled_or_special_use_airspace)) {
       this.addSection('Airspace Information');
 
       if (this.hasValue(data.Airspace_class) || this.hasValue(data.Airspace_type)) {
@@ -168,12 +203,32 @@ export class AccidentPDFGenerator extends PDFGenerator {
       if (this.hasValue(data.Altitude) || this.hasValue(data.Altitude_type)) {
         this.addFieldPair('Altitude', data.Altitude ? `${data.Altitude} ft` : undefined, 'Altitude Type', data.Altitude_type);
       }
+
+      // Regulatory Flags
+      if (this.hasValue(data.Involve_IFR_or_Air_Transport_Operations)) {
+        this.addField('Involves IFR/Air Transport', data.Involve_IFR_or_Air_Transport_Operations === true || data.Involve_IFR_or_Air_Transport_Operations === 'Yes' ? 'Yes' : 'No');
+      }
+      if (this.hasValue(data.In_controlled_or_special_use_airspace)) {
+        this.addField('In Controlled/Special Airspace', data.In_controlled_or_special_use_airspace === true || data.In_controlled_or_special_use_airspace === 'Yes' ? 'Yes' : 'No');
+      }
+
+      // Aerodrome Vicinity Information
+      const inVicinityOfAerodrome = data.In_vicinity_of_aerodrome;
+      if (this.hasValue(inVicinityOfAerodrome)) {
+        this.addField('In Vicinity of Aerodrome', inVicinityOfAerodrome === true || inVicinityOfAerodrome === 'Yes' ? 'Yes' : 'No');
+
+        if ((inVicinityOfAerodrome === true || inVicinityOfAerodrome === 'Yes') && this.hasValue(data.Y_Code)) {
+          const aerodromeName = this.getAerodromeName(data.Y_Code);
+          this.addField('Vicinity Aerodrome', aerodromeName || data.Y_Code);
+        }
+      }
     }
 
     // ========== ENVIRONMENTAL CONDITIONS ==========
     if (this.hasValue(data.Light_conditions) || this.hasValue(data.Wind_speed) || this.hasValue(data.Visibility) ||
         this.hasValue(data.Wind_direction) || this.hasValue(data.Wind_gusting) || this.hasValue(data.Temperature) ||
-        this.hasValue(data.Visibility_reduced_by) || this.hasValue(data.Personal_Locator_Beacon_carried)) {
+        this.hasValue(data.Visibility_reduced_by) || this.hasValue(data.Personal_Locator_Beacon_carried) ||
+        this.hasValue(data.PLB_Activated)) {
       this.addSection('Environmental Conditions');
 
       if (this.hasValue(data.Light_conditions) || this.hasValue(data.Visibility)) {
@@ -188,8 +243,8 @@ export class AccidentPDFGenerator extends PDFGenerator {
       if (this.hasValue(data.Visibility_reduced_by)) {
         this.addField('Visibility Reduced By', Array.isArray(data.Visibility_reduced_by) ? data.Visibility_reduced_by.join(', ') : data.Visibility_reduced_by);
       }
-      if (this.hasValue(data.Personal_Locator_Beacon_carried)) {
-        this.addField('PLB Carried', data.Personal_Locator_Beacon_carried);
+      if (this.hasValue(data.Personal_Locator_Beacon_carried) || this.hasValue(data.PLB_Activated)) {
+        this.addFieldPair('PLB Carried', data.Personal_Locator_Beacon_carried, 'PLB Activated', data.PLB_Activated);
       }
     }
 
@@ -227,10 +282,12 @@ export class AccidentPDFGenerator extends PDFGenerator {
                          'Vertical Proximity', data.Vertical_Proximity ? `${data.Vertical_Proximity} ${data.Vertical_Proximity_Unit}` : undefined);
       }
       if (this.hasValue(data.Relative_Track) || this.hasValue(data.Avoidance_manoeuvre_needed)) {
-        this.addFieldPair('Relative Track', data.Relative_Track, 'Avoidance Manoeuvre', data.Avoidance_manoeuvre_needed);
+        const relativeTrackDisplay = data.Relative_Track === 'Other' && data.customRelativeTrack ? `Other - ${data.customRelativeTrack}` : data.Relative_Track;
+        this.addFieldPair('Relative Track', relativeTrackDisplay, 'Avoidance Manoeuvre', data.Avoidance_manoeuvre_needed);
       }
       if (this.hasValue(data.Alert_Received)) {
-        this.addField('Alert Received', data.Alert_Received);
+        const alertDisplay = data.Alert_Received === 'Other' && data.customAlertReceived ? `Other - ${data.customAlertReceived}` : data.Alert_Received;
+        this.addField('Alert Received', alertDisplay);
       }
     }
 
@@ -290,26 +347,31 @@ export class AccidentPDFGenerator extends PDFGenerator {
     }
 
     // ========== MAINTAINER INFORMATION ==========
-    if (this.hasValue(data.Maintainer_Name) || this.hasValue(data.Maintainer_Member_Number) || this.hasValue(data.Maintainer_Level)) {
+    if (this.hasValue(data.Maintainer_Name) || this.hasValue(data.Maintainer_Last_Name) ||
+        this.hasValue(data.Maintainer_Member_Number) || this.hasValue(data.Maintainer_Level)) {
       this.addSection('Maintainer Information');
 
-      if (this.hasValue(data.Maintainer_Name) || this.hasValue(data.Maintainer_Member_Number)) {
-        this.addFieldPair('Maintainer Name', data.Maintainer_Name, 'Member Number', data.Maintainer_Member_Number);
+      if (this.hasValue(data.Maintainer_Name) || this.hasValue(data.Maintainer_Last_Name)) {
+        this.addFieldPair('Maintainer First Name', data.Maintainer_Name, 'Maintainer Last Name', data.Maintainer_Last_Name);
       }
-      if (this.hasValue(data.Maintainer_Level)) {
-        this.addField('Maintainer Level', data.Maintainer_Level);
+      if (this.hasValue(data.Maintainer_Member_Number) || this.hasValue(data.Maintainer_Level)) {
+        this.addFieldPair('Member Number', data.Maintainer_Member_Number, 'Maintainer Level', data.Maintainer_Level);
       }
     }
 
     // ========== SUBMISSION INFORMATION ==========
-    if (metadata && (this.hasValue(metadata.occurrenceId) || this.hasValue(metadata.attachmentCount))) {
+    if (metadata && (this.hasValue(metadata.occurrenceId) || this.hasValue(metadata.attachmentCount)) ||
+        this.hasValue(data.atsbAcknowledgement)) {
       this.addSection('Submission Information');
 
-      if (this.hasValue(metadata.occurrenceId)) {
+      if (this.hasValue(metadata?.occurrenceId)) {
         this.addField('Occurrence ID', metadata.occurrenceId);
       }
-      if (this.hasValue(metadata.attachmentCount)) {
+      if (this.hasValue(metadata?.attachmentCount)) {
         this.addField('Attachments', `${metadata.attachmentCount} file(s) uploaded`);
+      }
+      if (this.hasValue(data.atsbAcknowledgement)) {
+        this.addField('ATSB Acknowledgement', data.atsbAcknowledgement ? 'Acknowledged' : 'Not Acknowledged');
       }
     }
 

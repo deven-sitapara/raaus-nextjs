@@ -216,20 +216,21 @@ export class ZohoCRM {
       const member = response.data.data[0];
 
       // Check if names match (case-insensitive and flexible)
-      const crmFirstName = member.First_Name || member.Name1 || '';
-      const crmLastName = member.Last_Name || '';
-      const crmFullName = member.Full_Name || '';
+      const crmFirstName = (member.First_Name || member.Name1 || '').trim();
+      const crmLastName = (member.Last_Name || '').trim();
+      const crmFullName = (member.Full_Name || '').trim();
 
-      // Create full name from provided input
-      const providedFullName = `${firstName} ${lastName}`.trim();
-      const providedFullNameReversed = `${lastName} ${firstName}`.trim();
+      // Create full name from provided input (normalize whitespace)
+      const normalizeWhitespace = (str: string) => str.replace(/\s+/g, ' ').trim();
+      const providedFullName = normalizeWhitespace(`${firstName} ${lastName}`);
+      const providedFullNameReversed = normalizeWhitespace(`${lastName} ${firstName}`);
 
       // Check multiple matching strategies
       let nameMatches = false;
 
-      // Strategy 1: Exact match of separate fields
-      const firstNameMatch = crmFirstName.toLowerCase() === firstName.toLowerCase();
-      const lastNameMatch = crmLastName.toLowerCase() === lastName.toLowerCase();
+      // Strategy 1: Exact match of separate fields (case-insensitive, trimmed)
+      const firstNameMatch = crmFirstName.toLowerCase().trim() === firstName.toLowerCase().trim();
+      const lastNameMatch = crmLastName.toLowerCase().trim() === lastName.toLowerCase().trim();
 
       // Strategy 2: Reversed match (user entered first/last swapped)
       const firstNameReversedMatch = crmFirstName.toLowerCase() === lastName.toLowerCase();
@@ -257,9 +258,12 @@ export class ZohoCRM {
       }
 
       if (!nameMatches) {
+        // Provide helpful error message with the name from CRM
+        const crmName = `${crmFirstName} ${crmLastName}`.trim() || crmFullName || 'Unknown';
+        console.log(`Name mismatch - CRM: "${crmName}", Provided: "${providedFullName}"`);
         return {
           valid: false,
-          warning: `Member Number ${memberNumber} does not match the provided name.`,
+          warning: `Member Number ${memberNumber} exists but name doesn't match. CRM has: "${crmName}"`,
         };
       }
 

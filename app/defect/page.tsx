@@ -210,17 +210,27 @@ export default function DefectForm() {
   const registrationPrefix = watch("registrationNumberPrefix");
   const registrationSuffix = watch("registrationNumberSuffix");
 
+  // Watch member validation fields
+  const reporterMemberNumber = watch("memberNumber");
+  const reporterFirstName = watch("firstName");
+  const reporterLastName = watch("lastName");
+
+  // Watch maintainer validation fields
+  const maintainerMemberNumber = watch("maintainerMemberNumber");
+  const maintainerFirstName = watch("Maintainer_Name");
+  const maintainerLastName = watch("Maintainer_Last_Name");
+
   // Auto-lookup aircraft when both prefix and suffix are provided
   useEffect(() => {
     // AbortController to cancel previous requests
     const abortController = new AbortController();
-    
+
     if (registrationPrefix && registrationSuffix) {
       // Debounce the lookup to avoid excessive API calls
       const timeoutId = setTimeout(() => {
         lookupAircraft(registrationPrefix, registrationSuffix, abortController.signal);
       }, 500);
-      
+
       return () => {
         clearTimeout(timeoutId);
         abortController.abort(); // Cancel any pending request
@@ -231,6 +241,58 @@ export default function DefectForm() {
       setAircraftLookupMessage("");
     }
   }, [registrationPrefix, registrationSuffix]);
+
+  // Debounced validation for reporter member number
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    if (reporterMemberNumber && reporterFirstName && reporterLastName) {
+      // Debounce validation to avoid excessive API calls
+      const timeoutId = setTimeout(() => {
+        validateMember(
+          reporterMemberNumber,
+          reporterFirstName,
+          reporterLastName,
+          abortController.signal
+        );
+      }, 800); // 800ms debounce for better UX
+
+      return () => {
+        clearTimeout(timeoutId);
+        abortController.abort();
+      };
+    } else {
+      // Clear validation status when fields are incomplete
+      setMemberValidationStatus("");
+      setMemberValidationMessage("");
+    }
+  }, [reporterMemberNumber, reporterFirstName, reporterLastName]);
+
+  // Debounced validation for maintainer member number
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    if (maintainerMemberNumber && maintainerFirstName && maintainerLastName) {
+      // Debounce validation to avoid excessive API calls
+      const timeoutId = setTimeout(() => {
+        validateMaintainer(
+          maintainerMemberNumber,
+          maintainerFirstName,
+          maintainerLastName,
+          abortController.signal
+        );
+      }, 800); // 800ms debounce for better UX
+
+      return () => {
+        clearTimeout(timeoutId);
+        abortController.abort();
+      };
+    } else {
+      // Clear validation status when fields are incomplete
+      setMaintainerValidationStatus("");
+      setMaintainerValidationMessage("");
+    }
+  }, [maintainerMemberNumber, maintainerFirstName, maintainerLastName]);
 
   // Helper function to convert text to Title Case
   const toTitleCase = (str: string): string => {
@@ -245,14 +307,22 @@ export default function DefectForm() {
       .join(' ');
   };
 
-  // Validate member number with immediate feedback
+  // Validate member number with immediate feedback (with debounce and cancellation)
   const validateMember = async (
     memberNumber: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    abortSignal?: AbortSignal
   ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
+      setMemberValidationStatus("");
+      setMemberValidationMessage("");
+      return;
+    }
+
+    // Validate member number format (must be exactly 6 digits)
+    if (memberNumber.length !== 6 || !/^\d{6}$/.test(memberNumber)) {
       setMemberValidationStatus("");
       setMemberValidationMessage("");
       return;
@@ -267,6 +337,9 @@ export default function DefectForm() {
           memberNumber,
           firstName,
           lastName,
+        },
+        {
+          signal: abortSignal,
         }
       );
 
@@ -279,7 +352,11 @@ export default function DefectForm() {
           response.data.warning || "Member Number not found"
         );
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Don't show error if request was cancelled
+      if (axios.isCancel(error) || error.name === 'CanceledError') {
+        return;
+      }
       console.error("Member validation error:", error);
       setMemberValidationStatus("invalid");
       setMemberValidationMessage("Unable to validate Member Number");
@@ -288,14 +365,22 @@ export default function DefectForm() {
     }
   };
 
-  // Validate maintainer member number with immediate feedback
+  // Validate maintainer member number with immediate feedback (with debounce and cancellation)
   const validateMaintainer = async (
     memberNumber: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    abortSignal?: AbortSignal
   ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
+      setMaintainerValidationStatus("");
+      setMaintainerValidationMessage("");
+      return;
+    }
+
+    // Validate member number format (must be exactly 6 digits)
+    if (memberNumber.length !== 6 || !/^\d{6}$/.test(memberNumber)) {
       setMaintainerValidationStatus("");
       setMaintainerValidationMessage("");
       return;
@@ -310,6 +395,9 @@ export default function DefectForm() {
           memberNumber,
           firstName,
           lastName,
+        },
+        {
+          signal: abortSignal,
         }
       );
 
@@ -322,7 +410,11 @@ export default function DefectForm() {
           response.data.warning || "Member Number not found"
         );
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Don't show error if request was cancelled
+      if (axios.isCancel(error) || error.name === 'CanceledError') {
+        return;
+      }
       console.error("Maintainer validation error:", error);
       setMaintainerValidationStatus("invalid");
       setMaintainerValidationMessage("Unable to validate Member Number");
@@ -849,16 +941,6 @@ export default function DefectForm() {
                     onChange: (e) => {
                       // Remove any non-numeric characters
                       e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                      // Real-time validation - validate when all 3 fields are filled
-                      const memberNumber = e.target.value;
-                      const firstName = watch("firstName");
-                      const lastName = watch("lastName");
-                      if (memberNumber && firstName && lastName) {
-                        validateMember(memberNumber, firstName, lastName);
-                      } else {
-                        setMemberValidationStatus("");
-                        setMemberValidationMessage("");
-                      }
                     },
                   })}
                   error={errors.memberNumber?.message}
@@ -898,14 +980,6 @@ export default function DefectForm() {
                     // Convert to Title Case
                     value = toTitleCase(value);
                     e.target.value = value;
-                    
-                    // Real-time validation - validate when all 3 fields are filled
-                    const firstName = value;
-                    const memberNumber = watch("memberNumber");
-                    const lastName = watch("lastName");
-                    if (memberNumber && firstName && lastName) {
-                      validateMember(memberNumber, firstName, lastName);
-                    }
                   },
                 })}
                 error={errors.firstName?.message}
@@ -935,14 +1009,6 @@ export default function DefectForm() {
                     // Convert to Title Case
                     value = toTitleCase(value);
                     e.target.value = value;
-                    
-                    // Real-time validation - validate when all 3 fields are filled
-                    const lastName = value;
-                    const memberNumber = watch("memberNumber");
-                    const firstName = watch("firstName");
-                    if (memberNumber && firstName && lastName) {
-                      validateMember(memberNumber, firstName, lastName);
-                    }
                   },
                 })}
                 error={errors.lastName?.message}
@@ -1180,17 +1246,6 @@ export default function DefectForm() {
                     onChange: (e) => {
                       // Convert to Title Case
                       e.target.value = toTitleCase(e.target.value);
-                      
-                      // Trigger instant validation if all fields are present
-                      const firstName = e.target.value.trim();
-                      const lastName = watch("Maintainer_Last_Name");
-                      const memberNumber = watch("maintainerMemberNumber");
-                      if (memberNumber && firstName && lastName) {
-                        validateMaintainer(memberNumber, firstName, lastName);
-                      } else {
-                        setMaintainerValidationStatus("");
-                        setMaintainerValidationMessage("");
-                      }
                     }
                   })}
                   error={errors.Maintainer_Name?.message}
@@ -1215,17 +1270,6 @@ export default function DefectForm() {
                     onChange: (e) => {
                       // Convert to Title Case
                       e.target.value = toTitleCase(e.target.value);
-                      
-                      // Trigger instant validation if all fields are present
-                      const firstName = watch("Maintainer_Name");
-                      const lastName = e.target.value.trim();
-                      const memberNumber = watch("maintainerMemberNumber");
-                      if (memberNumber && firstName && lastName) {
-                        validateMaintainer(memberNumber, firstName as string, lastName);
-                      } else {
-                        setMaintainerValidationStatus("");
-                        setMaintainerValidationMessage("");
-                      }
                     }
                   })}
                   error={errors.Maintainer_Last_Name?.message}
@@ -1260,17 +1304,6 @@ export default function DefectForm() {
                       onChange: (e) => {
                         // Remove any non-numeric characters
                         e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                        
-                        // Trigger instant validation if all fields are present
-                        const memberNumber = e.target.value;
-                        const firstName = watch("Maintainer_Name");
-                        const lastName = watch("Maintainer_Last_Name");
-                        if (memberNumber && firstName && lastName) {
-                          validateMaintainer(memberNumber, firstName as string, lastName as string);
-                        } else {
-                          setMaintainerValidationStatus("");
-                          setMaintainerValidationMessage("");
-                        }
                       }
                     })}
                     error={errors.maintainerMemberNumber?.message}
