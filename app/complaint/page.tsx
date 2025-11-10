@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -103,6 +103,44 @@ export default function ComplaintForm() {
 
   const wishToRemainAnonymous = watch("wishToRemainAnonymous");
 
+  // Watch member validation fields
+  const memberNumber = watch("Member_Number");
+  const firstName = watch("Name1");
+  const lastName = watch("Last_Name");
+
+  // Debounced validation for member number (only if not anonymous)
+  useEffect(() => {
+    // Skip validation if anonymous
+    if (wishToRemainAnonymous) {
+      setMemberValidationStatus("");
+      setMemberValidationMessage("");
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    if (memberNumber && firstName && lastName) {
+      // Debounce validation to avoid excessive API calls
+      const timeoutId = setTimeout(() => {
+        validateMember(
+          memberNumber,
+          firstName,
+          lastName,
+          abortController.signal
+        );
+      }, 800); // 800ms debounce for better UX
+
+      return () => {
+        clearTimeout(timeoutId);
+        abortController.abort();
+      };
+    } else {
+      // Clear validation status when fields are incomplete
+      setMemberValidationStatus("");
+      setMemberValidationMessage("");
+    }
+  }, [memberNumber, firstName, lastName, wishToRemainAnonymous]);
+
   // Helper function to convert text to Title Case
   const toTitleCase = (str: string): string => {
     if (!str) return str;
@@ -116,14 +154,22 @@ export default function ComplaintForm() {
       .join(" ");
   };
 
-  // Validate member number with immediate feedback
+  // Validate member number with immediate feedback (with debounce and cancellation)
   const validateMember = async (
     memberNumber: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    abortSignal?: AbortSignal
   ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
+      setMemberValidationStatus("");
+      setMemberValidationMessage("");
+      return;
+    }
+
+    // Validate member number format (must be exactly 6 digits)
+    if (memberNumber.length !== 6 || !/^\d{6}$/.test(memberNumber)) {
       setMemberValidationStatus("");
       setMemberValidationMessage("");
       return;
@@ -138,6 +184,9 @@ export default function ComplaintForm() {
           memberNumber,
           firstName,
           lastName,
+        },
+        {
+          signal: abortSignal,
         }
       );
 
@@ -150,7 +199,11 @@ export default function ComplaintForm() {
           response.data.warning || "Member Number not found"
         );
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Don't show error if request was cancelled
+      if (axios.isCancel(error) || error.name === 'CanceledError') {
+        return;
+      }
       console.error("Member validation error:", error);
       setMemberValidationStatus("invalid");
       setMemberValidationMessage("Unable to validate Member Number");
@@ -576,19 +629,6 @@ export default function ComplaintForm() {
                       onChange: (e) => {
                         // Remove any non-numeric characters
                         e.target.value = e.target.value.replace(/[^0-9]/g, "");
-
-                        // Real-time validation (only if not anonymous)
-                        if (!wishToRemainAnonymous) {
-                          const memberNumber = e.target.value;
-                          const firstName = watch("Name1");
-                          const lastName = watch("Last_Name");
-                          if (memberNumber && firstName && lastName) {
-                            validateMember(memberNumber, firstName, lastName);
-                          } else {
-                            setMemberValidationStatus("");
-                            setMemberValidationMessage("");
-                          }
-                        }
                       },
                     })}
                     error={errors.Member_Number?.message}
@@ -648,16 +688,6 @@ export default function ComplaintForm() {
                       let value = e.target.value.replace(/[^a-zA-Z ]/g, "");
                       value = toTitleCase(value);
                       e.target.value = value;
-
-                      // Real-time validation (only if not anonymous)
-                      if (!wishToRemainAnonymous) {
-                        const firstName = value;
-                        const memberNumber = watch("Member_Number");
-                        const lastName = watch("Last_Name");
-                        if (memberNumber && firstName && lastName) {
-                          validateMember(memberNumber, firstName, lastName);
-                        }
-                      }
                     },
                   })}
                   error={errors.Name1?.message}
@@ -695,16 +725,6 @@ export default function ComplaintForm() {
                       let value = e.target.value.replace(/[^a-zA-Z ]/g, "");
                       value = toTitleCase(value);
                       e.target.value = value;
-
-                      // Real-time validation (only if not anonymous)
-                      if (!wishToRemainAnonymous) {
-                        const lastName = value;
-                        const memberNumber = watch("Member_Number");
-                        const firstName = watch("Name1");
-                        if (memberNumber && firstName && lastName) {
-                          validateMember(memberNumber, firstName, lastName);
-                        }
-                      }
                     },
                   })}
                   error={errors.Last_Name?.message}

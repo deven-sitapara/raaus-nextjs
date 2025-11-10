@@ -746,17 +746,27 @@ export default function AccidentForm() {
   const registrationPrefix = watch("Registration_number");
   const registrationSuffix = watch("Serial_number1");
 
+  // Watch reporter validation fields
+  const reporterMemberNumber = watch("Member_Number");
+  const reporterFirstName = watch("Name1");
+  const reporterLastName = watch("Last_Name");
+
+  // Watch PIC validation fields
+  const picMemberNumber = watch("PIC_Member_Number");
+  const picFirstName = watch("PIC_Name");
+  const picLastName = watch("PIC_Last_Name");
+
   // Auto-lookup aircraft when both prefix and suffix are provided
   useEffect(() => {
     // AbortController to cancel previous requests
     const abortController = new AbortController();
-    
+
     if (registrationPrefix && registrationSuffix) {
       // Debounce the lookup to avoid excessive API calls
       const timeoutId = setTimeout(() => {
         lookupAircraft(registrationPrefix, registrationSuffix, abortController.signal);
       }, 500);
-      
+
       return () => {
         clearTimeout(timeoutId);
         abortController.abort(); // Cancel any pending request
@@ -768,15 +778,74 @@ export default function AccidentForm() {
     }
   }, [registrationPrefix, registrationSuffix]);
 
-  // Validate member number (Person Reporting) with immediate feedback
-  // Validate member number with immediate feedback
+  // Debounced validation for reporter member number
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    if (reporterMemberNumber && reporterFirstName && reporterLastName) {
+      // Debounce validation to avoid excessive API calls
+      const timeoutId = setTimeout(() => {
+        validateMember(
+          reporterMemberNumber,
+          reporterFirstName,
+          reporterLastName,
+          abortController.signal
+        );
+      }, 800); // 800ms debounce for better UX
+
+      return () => {
+        clearTimeout(timeoutId);
+        abortController.abort();
+      };
+    } else {
+      // Clear validation status when fields are incomplete
+      setMemberValidationStatus("");
+      setMemberValidationMessage("");
+    }
+  }, [reporterMemberNumber, reporterFirstName, reporterLastName]);
+
+  // Debounced validation for PIC member number
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    if (picMemberNumber && picFirstName && picLastName) {
+      // Debounce validation to avoid excessive API calls
+      const timeoutId = setTimeout(() => {
+        validatePilot(
+          picMemberNumber,
+          picFirstName,
+          picLastName,
+          abortController.signal
+        );
+      }, 800); // 800ms debounce for better UX
+
+      return () => {
+        clearTimeout(timeoutId);
+        abortController.abort();
+      };
+    } else {
+      // Clear validation status when fields are incomplete
+      setPilotValidationStatus("");
+      setPilotValidationMessage("");
+    }
+  }, [picMemberNumber, picFirstName, picLastName]);
+
+  // Validate member number (Person Reporting) with immediate feedback (with debounce and cancellation)
   const validateMember = async (
     memberNumber: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    abortSignal?: AbortSignal
   ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
+      setMemberValidationStatus("");
+      setMemberValidationMessage("");
+      return;
+    }
+
+    // Validate member number format (must be exactly 6 digits)
+    if (memberNumber.length !== 6 || !/^\d{6}$/.test(memberNumber)) {
       setMemberValidationStatus("");
       setMemberValidationMessage("");
       return;
@@ -791,6 +860,9 @@ export default function AccidentForm() {
           memberNumber,
           firstName,
           lastName,
+        },
+        {
+          signal: abortSignal,
         }
       );
 
@@ -803,7 +875,11 @@ export default function AccidentForm() {
           response.data.warning || "Member Number not found"
         );
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Don't show error if request was cancelled
+      if (axios.isCancel(error) || error.name === 'CanceledError') {
+        return;
+      }
       console.error("Member validation error:", error);
       setMemberValidationStatus("invalid");
       setMemberValidationMessage("Unable to validate Member Number");
@@ -812,14 +888,22 @@ export default function AccidentForm() {
     }
   };
 
-  // Validate pilot member number (Pilot in Command) with immediate feedback
+  // Validate pilot member number (Pilot in Command) with immediate feedback (with debounce and cancellation)
   const validatePilot = async (
     memberNumber: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    abortSignal?: AbortSignal
   ): Promise<void> => {
     // Reset validation if any field is empty
     if (!memberNumber || !firstName || !lastName) {
+      setPilotValidationStatus("");
+      setPilotValidationMessage("");
+      return;
+    }
+
+    // Validate member number format (must be exactly 6 digits)
+    if (memberNumber.length !== 6 || !/^\d{6}$/.test(memberNumber)) {
       setPilotValidationStatus("");
       setPilotValidationMessage("");
       return;
@@ -834,6 +918,9 @@ export default function AccidentForm() {
           memberNumber,
           firstName,
           lastName,
+        },
+        {
+          signal: abortSignal,
         }
       );
 
@@ -846,7 +933,11 @@ export default function AccidentForm() {
           response.data.warning || "Member Number not found"
         );
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Don't show error if request was cancelled
+      if (axios.isCancel(error) || error.name === 'CanceledError') {
+        return;
+      }
       console.error("Pilot validation error:", error);
       setPilotValidationStatus("invalid");
       setPilotValidationMessage("Unable to validate Member Number");
@@ -3423,7 +3514,7 @@ export default function AccidentForm() {
                           e.preventDefault();
                         }
                       }}
-                      {...register('Serial_number1', { 
+                      {...register('Serial_number1', {
                         required: 'Serial number is required',
                         minLength: { value: 4, message: 'Minimum 4 characters required' },
                         maxLength: { value: 4, message: 'Minimum 4 characters required' },

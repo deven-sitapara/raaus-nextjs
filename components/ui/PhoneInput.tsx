@@ -102,6 +102,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const [isOpen, setIsOpen] = React.useState(false);
     const [internalError, setInternalError] = React.useState<string>("");
     const [focused, setFocused] = React.useState(false);
+    const [touched, setTouched] = React.useState(false);
     const dropdownRef = React.useRef<HTMLDivElement>(null);
 
     // Close dropdown when clicking outside
@@ -189,18 +190,24 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       return true;
     }, [required, onValidationChange]);
 
-    // Validate phone when value or country changes
+    // Validate phone when value or country changes (but only show required error after touched)
     React.useEffect(() => {
       if (value && value.trim() !== "") {
         validatePhone(value, selectedCountry);
-      } else if (required) {
-        // If field is required and empty, mark as invalid
-        onValidationChange?.(false, "Phone number is required");
-      } else {
+      } else if (required && touched) {
+        // Only show required error if field has been touched
+        const errorMsg = "Phone number is required";
+        setInternalError(errorMsg);
+        onValidationChange?.(false, errorMsg);
+      } else if (!required) {
         // If not required and empty, mark as valid
+        setInternalError("");
         onValidationChange?.(true, "");
+      } else {
+        // Required but not touched yet - don't show error but mark as invalid
+        onValidationChange?.(false, "");
       }
-    }, [value, selectedCountry, required, validatePhone, onValidationChange]);
+    }, [value, selectedCountry, required, touched, validatePhone, onValidationChange]);
 
     const handleCountryChange = (country: CountryCode) => {
       setSelectedCountry(country);
@@ -238,8 +245,16 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
 
     const handleBlur = () => {
       setFocused(false);
-      if (value) {
+      setTouched(true); // Mark as touched when user leaves the field
+
+      // Validate on blur
+      if (value && value.trim() !== "") {
         validatePhone(value, selectedCountry);
+      } else if (required) {
+        // Show required error only after field has been touched
+        const errorMsg = "Phone number is required";
+        setInternalError(errorMsg);
+        onValidationChange?.(false, errorMsg);
       }
     };
 
@@ -330,13 +345,13 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           )}
         </div>
 
-        {/* Show error message when validation criteria is not shown */}
-        {!showValidationCriteria && displayError && (
+        {/* Show error message when validation criteria is not shown (only if touched) */}
+        {!showValidationCriteria && touched && displayError && (
           <p className="mt-1 text-sm text-red-600">{displayError}</p>
         )}
-        
-        {/* Show error message when not focused but has error */}
-        {showValidationCriteria && !focused && displayError && (
+
+        {/* Show error message when not focused but has error (only if touched) */}
+        {showValidationCriteria && !focused && touched && displayError && (
           <p className="mt-1 text-sm text-red-600">{displayError}</p>
         )}
         

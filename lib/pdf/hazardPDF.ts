@@ -31,7 +31,8 @@ export class HazardPDFGenerator extends PDFGenerator {
     // Person Reporting Section
     this.addSection('Person Reporting');
     if (this.hasValue(data.role) || this.hasValue(data.Member_Number)) {
-      this.addFieldPair('Role', data.role, 'Member Number', data.Member_Number);
+      const roleDisplay = data.role === 'Other' && data.customRole ? `Other - ${data.customRole}` : data.role;
+      this.addFieldPair('Role', roleDisplay, 'Member Number', data.Member_Number);
     }
     if (this.hasValue(data.Name1) || this.hasValue(data.Last_Name)) {
       this.addFieldPair('First Name', data.Name1, 'Last Name', data.Last_Name);
@@ -45,24 +46,46 @@ export class HazardPDFGenerator extends PDFGenerator {
     if (this.hasValue(data.Date_Hazard_Identified || data.Occurrence_Date1)) {
       this.addField('Date Identified', formatDate(data.Date_Hazard_Identified || data.Occurrence_Date1));
     }
-    if (this.hasValue(data.State) || this.hasValue(data.Location_of_Hazard || data.Location_of_hazard)) {
-      this.addFieldPair('State', data.State, 'Location', data.Location_of_Hazard || data.Location_of_hazard);
+    if (this.hasValue(data.Occurrence_Date2)) {
+      this.addField('Secondary Date & Time', formatDate(data.Occurrence_Date2));
     }
-    if (this.hasValue(data.hazardRelatesToSpecificAerodrome)) {
-      this.addField('Relates to Specific Aerodrome', data.hazardRelatesToSpecificAerodrome);
+    if (this.hasValue(data.Time)) {
+      this.addField('Time', data.Time);
     }
-    if (this.hasValue(data.Y_Code)) {
-      this.addField('Hazard Aerodrome', this.getAerodromeName(data.Y_Code) || data.Y_Code);
+    if (this.hasValue(data.State) || this.hasValue(data.Location_of_Hazard || data.Location_of_hazard || data.Location)) {
+      this.addFieldPair('State', data.State, 'Location', data.Location_of_Hazard || data.Location_of_hazard || data.Location);
     }
+
+    // Aerodrome Information
+    const relatesToAerodrome = data.Hazard_Relates_To_Specific_Aerodrome || data.hazardRelatesToSpecificAerodrome;
+    if (this.hasValue(relatesToAerodrome)) {
+      this.addField('Relates to Specific Aerodrome', relatesToAerodrome);
+
+      if (relatesToAerodrome === 'Yes' && this.hasValue(data.Y_Code)) {
+        const aerodromeName = this.getAerodromeName(data.Y_Code);
+        this.addField('Hazard Aerodrome', aerodromeName || data.Y_Code);
+      }
+    }
+
+    // GPS Coordinates - Show if available
+    const latitude = data.Latitude || data.Location_Latitude;
+    const longitude = data.Longitude || data.Location_Longitude;
+    if (this.hasValue(latitude) || this.hasValue(longitude)) {
+      const gpsDisplay = `Latitude: ${latitude || 'Not provided'}, Longitude: ${longitude || 'Not provided'}`;
+      this.addField('GPS Coordinates', gpsDisplay, true);
+    }
+
+    // Hazard Description
     if (this.hasValue(data.Hazard_Description || data.Please_fully_describe_the_identified_hazard || data.Description_of_Occurrence)) {
       this.addField('Hazard Description', data.Hazard_Description || data.Please_fully_describe_the_identified_hazard || data.Description_of_Occurrence, true);
     }
+
+    // Potential Consequences
     if (this.hasValue(data.Potential_Consequences_of_Hazard)) {
       this.addField('Potential Consequences', data.Potential_Consequences_of_Hazard, true);
     }
-    if (this.hasValue(data.Latitude) && this.hasValue(data.Longitude)) {
-      this.addField('GPS Coordinates', `Latitude: ${data.Latitude}, Longitude: ${data.Longitude}`);
-    }
+
+    // Prevention Suggestions
     if (this.hasValue(data.Do_you_have_further_suggestions_on_how_to_PSO || data.Reporter_Suggestions)) {
       this.addField('Prevention Suggestions', data.Do_you_have_further_suggestions_on_how_to_PSO || data.Reporter_Suggestions, true);
     }

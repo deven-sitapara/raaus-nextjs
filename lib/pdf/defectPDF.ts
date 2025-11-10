@@ -13,50 +13,66 @@ export class DefectPDFGenerator extends PDFGenerator {
 
     // Person Reporting Section
     this.addSection('Person Reporting');
-    this.addFieldPair('Role', data.role, 'Member Number', data.Member_Number || data.memberNumber);
+    const roleDisplay = data.role === 'Other' && data.customRole ? `Other - ${data.customRole}` : data.role;
+    this.addFieldPair('Role', roleDisplay, 'Member Number', data.Member_Number || data.memberNumber);
     this.addFieldPair('First Name', data.Name1 || data.Reporter_First_Name || data.firstName, 'Last Name', data.Last_Name || data.lastName);
     this.addFieldPair('Email', data.Reporter_Email || data.email, 'Contact Phone', data.Contact_Phone || data.contactPhone);
+    if (data.Postcode) {
+      this.addField('Postcode', data.Postcode);
+    }
+
+    // Date of Birth if available
+    if (data.Date_of_Birth) {
+      this.addField('Date of Birth', formatDateOnly(data.Date_of_Birth));
+    }
 
     // Defect Information Section
     this.addSection('Defect Information');
     this.addField('Date Defect Identified', formatDate(data.Occurrence_Date1 || data.dateDefectIdentified));
+    if (data.Occurrence_Date2) {
+      this.addField('Secondary Date & Time', formatDate(data.Occurrence_Date2));
+    }
     this.addFieldPair('State', data.State || data.state, 'Location', data.Location_of_aircraft_when_defect_was_found || data.Location || data.locationOfAircraft);
-    
-    // GPS Coordinates
-    const hasGPS = (data.Latitude && data.Latitude !== '') || (data.Longitude && data.Longitude !== '');
-    if (hasGPS) {
-      const gpsDisplay = `Latitude: ${data.Latitude || 'N/A'}, Longitude: ${data.Longitude || 'N/A'}`;
+    if (data.Storage_conditions) {
+      this.addField('Storage Conditions', data.Storage_conditions, true);
+    }
+
+    // GPS Coordinates - Always show if present
+    if (data.Latitude || data.Longitude) {
+      const gpsDisplay = `Latitude: ${data.Latitude || 'Not provided'}, Longitude: ${data.Longitude || 'Not provided'}`;
       this.addField('GPS Coordinates', gpsDisplay, true);
     }
 
     this.addField('Defective Component', data.Defective_component || data.defectiveComponent, true);
     this.addField('Defect Description', data.Provide_description_of_defect || data.Description_of_Occurrence || data.defectDescription, true);
-    
-    if (data.Damage_to_aircraft) {
-      this.addField('Damage to Aircraft', data.Damage_to_aircraft);
-    }
-    if (data.Part_of_aircraft_damaged) {
-      this.addField('Part Damaged', data.Part_of_aircraft_damaged);
-    }
-    if (data.Description_of_damage_to_aircraft) {
-      this.addField('Damage Description', data.Description_of_damage_to_aircraft, true);
+
+    // Damage Information - Always show
+    this.addField('Damage to Aircraft', data.Damage_to_aircraft || 'No');
+    if (data.Damage_to_aircraft === 'Yes' || data.Part_of_aircraft_damaged || data.Description_of_damage_to_aircraft) {
+      if (data.Part_of_aircraft_damaged) {
+        this.addField('Part Damaged', data.Part_of_aircraft_damaged);
+      }
+      if (data.Description_of_damage_to_aircraft) {
+        this.addField('Damage Description', data.Description_of_damage_to_aircraft, true);
+      }
     }
 
     // Maintainer Information Section
-    const hasMaintainerData = data.Maintainer_Name || data.Maintainer_Last_Name || data.maintainerName || data.maintainerLastName;
+    const hasMaintainerData = data.Maintainer_Name || data.Maintainer_Last_Name || data.maintainerName || data.maintainerLastName ||
+                              data.Maintainer_Member_Number || data.maintainerMemberNumber || data.Maintainer_Level || data.maintainerLevel;
     if (hasMaintainerData) {
       this.addSection('Maintainer Information');
       this.addFieldPair(
-        'Maintainer First Name', 
-        data.Maintainer_Name || data.maintainerName || 'N/A',
+        'Maintainer First Name',
+        data.Maintainer_Name || data.maintainerName,
         'Maintainer Last Name',
-        data.Maintainer_Last_Name || data.maintainerLastName || 'N/A'
+        data.Maintainer_Last_Name || data.maintainerLastName
       );
       this.addFieldPair(
         'Member Number',
-        data.Maintainer_Member_Number || data.maintainerMemberNumber || 'N/A',
+        data.Maintainer_Member_Number || data.maintainerMemberNumber,
         'Maintainer Level',
-        data.Maintainer_Level || data.maintainerLevel || 'N/A'
+        data.Maintainer_Level || data.maintainerLevel
       );
     }
 
@@ -68,14 +84,19 @@ export class DefectPDFGenerator extends PDFGenerator {
 
     // Aircraft Information Section
     this.addSection('Aircraft Information');
-    const regNumber = data.Registration_number || 
-                     (data.registrationNumberPrefix && data.registrationNumberSuffix 
-                       ? `${data.registrationNumberPrefix}-${data.registrationNumberSuffix}` 
-                       : 'N/A');
+    const regNumber = data.Registration_number ||
+                     (data.registrationNumberPrefix && data.registrationNumberSuffix
+                       ? `${data.registrationNumberPrefix}-${data.registrationNumberSuffix}`
+                       : undefined);
     this.addField('Registration Number', regNumber);
     this.addFieldPair('Serial Number', data.Serial_number || data.serialNumber, 'Registration Status', data.Registration_status || data.registrationStatus);
     this.addFieldPair('Make', data.Make || data.make, 'Model', data.Model || data.model);
     this.addFieldPair('Type', data.Type1 || data.type, 'Year Built', data.Year_Built1 || data.yearBuilt);
+
+    // Training Usage
+    if (data.Is_the_aircraft_used_for_training_purposes !== undefined) {
+      this.addField('Used for Training', data.Is_the_aircraft_used_for_training_purposes ? 'Yes' : 'No');
+    }
 
     // Engine Details Section
     const hasEngineData = data.Engine_Details || data.Engine_model || data.Engine_serial || data.Total_engine_hours || data.Total_hours_since_service || 
