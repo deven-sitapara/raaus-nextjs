@@ -28,7 +28,7 @@ export default function Home() {
               href="/accident"
               className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
             >
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-lg font-semibold underline-animation cursor-pointer">
                 Report an accident or incident
               </h2>
             </Link>
@@ -63,7 +63,7 @@ export default function Home() {
               href="/defect"
               className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
             >
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-lg font-semibold underline-animation cursor-pointer">
                 Report a defect
               </h2>
             </Link>
@@ -83,7 +83,7 @@ export default function Home() {
               href="/hazard"
               className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
             >
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-lg font-semibold underline-animation cursor-pointer">
                 Report an identified hazard
               </h2>
             </Link>
@@ -105,7 +105,7 @@ export default function Home() {
               href="/complaint"
               className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
             >
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-lg font-semibold underline-animation cursor-pointer">
                 Report a confidential complaint
               </h2>
             </Link>
