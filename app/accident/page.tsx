@@ -2331,7 +2331,7 @@ export default function AccidentForm() {
                       label="Details of Incident/Accident (Please give a clear and accurate description of what happened)"
                       required
                       rows={3}
-                      maxLength={255}
+                      maxLength={1500}
                       error={errors.Details_of_incident_accident?.message}
                       {...register("Details_of_incident_accident", {
                         required: "This field cannot be blank.",
@@ -2340,7 +2340,7 @@ export default function AccidentForm() {
                           message: validationMessages.minLength
                         },
                         maxLength: {
-                          value: 255,
+                          value: 15000,
                           message: validationMessages.minLength
                         }
                       })}
