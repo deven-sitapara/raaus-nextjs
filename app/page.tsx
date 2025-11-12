@@ -23,15 +23,12 @@ export default function Home() {
 
         {/* Four main reporting options with blue buttons */}
         <div className="grid md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer group">
-            <Link
-              href="/accident"
-              className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
-            >
-              <h2 className="text-lg font-semibold underline-animation cursor-pointer">
+          <Link href="/accident" className="bg-white rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer group block">
+            <div className="bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300">
+              <h2 className="text-lg font-semibold">
                 Report an accident or incident
               </h2>
-            </Link>
+            </div>
             <div className="p-6 group-hover:bg-gray-50 transition-colors duration-300">
               <p className="text-gray-700 text-sm mb-4">
                 Recreational Aviation Australia is required to meet statutory reporting requirements under the{" "}
@@ -56,17 +53,14 @@ export default function Home() {
                 By submitting an accident or incident report I acknowledge that my report will be submitted to the Australian Transport Safety Bureau on my behalf in accordance with requirements under the TSI Act.
               </p>
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-white rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer group">
-            <Link
-              href="/defect"
-              className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
-            >
-              <h2 className="text-lg font-semibold underline-animation cursor-pointer">
+          <Link href="/defect" className="bg-white rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer group block">
+            <div className="bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300">
+              <h2 className="text-lg font-semibold">
                 Report a defect
               </h2>
-            </Link>
+            </div>
             <div className="p-6 group-hover:bg-gray-50 transition-colors duration-300">
               <p className="text-gray-700 text-sm mb-4">
                 Defect reports are raised to identify potential technical issues found in aircraft in order to reduce the chance of recurrence.
@@ -76,17 +70,14 @@ export default function Home() {
                 <em>Transport Safety Investigation Act 2003</em>.
               </p>
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-white rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer group">
-            <Link
-              href="/hazard"
-              className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
-            >
-              <h2 className="text-lg font-semibold underline-animation cursor-pointer">
+          <Link href="/hazard" className="bg-white rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer group block">
+            <div className="bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300">
+              <h2 className="text-lg font-semibold">
                 Report an identified hazard
               </h2>
-            </Link>
+            </div>
             <div className="p-6 group-hover:bg-gray-50 transition-colors duration-300">
               <p className="text-gray-700 text-sm mb-4">
                 Hazards can cause or contribute to unsafe operations of aircraft or aviation safety-related equipment, products and services.
@@ -98,23 +89,20 @@ export default function Home() {
                 Every event is an opportunity to learn valuable safety lessons.
               </p>
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-white rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer group">
-            <Link
-              href="/complaint"
-              className="block bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300"
-            >
-              <h2 className="text-lg font-semibold underline-animation cursor-pointer">
+          <Link href="/complaint" className="bg-white rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer group block">
+            <div className="bg-blue-600 text-white text-center py-4 px-6 group-hover:bg-blue-700 transition-all duration-300">
+              <h2 className="text-lg font-semibold">
                 Report a confidential complaint
               </h2>
-            </Link>
+            </div>
             <div className="p-6 group-hover:bg-gray-50 transition-colors duration-300">
               <p className="text-gray-700 text-sm">
                 Anyone can report a safety concern confidentially to Recreational Aviation Australia. Using our complaints management system we will address reportable safety concerns.
               </p>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Bottom Section */}
