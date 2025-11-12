@@ -1,11 +1,8 @@
 // Common Types
 export type RoleType =
+  | "Aircraft Owner"
+  | "Maintainer"
   | "Pilot in Command"
-  | "Owner"
-  | "L1"
-  | "L2"
-  | "LAME"
-  | "Maintenance Personnel"
   | "Witness"
   | "Other";
 

@@ -6,7 +6,7 @@
 
 | Field Name | Field Type | Required | Validation | Placeholder/Options |
 |------------|------------|----------|------------|---------------------|
-| Role | Select | Yes | - | Options: Pilot in Command, Owner, L1, L2, LAME, Maintenance Personnel, Witness, Other |
+| Role | Select | Yes | - | Options: Aircraft Owner, Maintainer, Pilot in Command, Witness, Other |
 | Member Number | Number | No | Min/Max length: 6 characters | 123456 |
 | First Name | Text | Yes | Regex: `^[a-zA-Z -]{3,16}$` | John |
 | Last Name | Text | Yes | Regex: `^[a-zA-Z -]{3,16}$` | - |
@@ -56,7 +56,7 @@ Use same fields name in our form to map with CRM fields.
 
 | Field Name | Field Type | Required | Validation | Placeholder/Options |
 |------------|------------|----------|------------|---------------------|
-| Role | Select | Yes | - | Options: Pilot in Command, Owner, L1, L2, LAME, Maintenance Personnel, Witness, Other |
+| Role | Select | Yes | - | Options: Aircraft Owner, Maintainer, Pilot in Command, Witness, Other |
 | Member Number | Number | No | Min length: 5, Max length: 6 | 123456 |
 | First Name | Text | Yes | Regex: `^[a-zA-Z -]{3,16}$` | John |
 | Last Name | Text | Yes | - | - |

@@ -156,19 +156,11 @@ const plbOptions = [
 
 const roleOptions = [
   { value: "", label: "- Please Select -" },
-  { value: "Aerodrome Operator", label: "Aerodrome Operator" },
-  { value: "Air Traffic Control", label: "Air Traffic Control" },
   { value: "Aircraft Owner", label: "Aircraft Owner" },
-  { value: "CASA", label: "CASA" },
-  { value: "Crew", label: "Crew" },
-  { value: "LAME", label: "LAME" },
   { value: "Maintainer", label: "Maintainer" },
-  { value: "Operator", label: "Operator" },
-  { value: "Other", label: "Other" },
-  { value: "Owner", label: "Owner" },
   { value: "Pilot in Command", label: "Pilot in Command" },
-  { value: "Rescue/Fire Service", label: "Rescue/Fire Service" },
   { value: "Witness", label: "Witness" },
+  { value: "Other", label: "Other" },
 ];
 
 const stateOptions = [
