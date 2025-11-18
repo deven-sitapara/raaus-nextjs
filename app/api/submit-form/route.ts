@@ -84,6 +84,9 @@ export async function POST(request: NextRequest) {
       throw new Error("CRM record creation returned undefined recordId");
     }
     
+    // Create aircraft edit note if data was modified
+    await createAircraftEditNoteIfNeeded(recordId, data);
+    
     // Fetch occurrence ID and handle WorkDrive operations (including user attachments)
     const result = await handleOccurrenceIdAndWorkDrive(formType, recordId, files);
     
@@ -121,6 +124,83 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Create aircraft edit note if data was modified
+ */
+async function createAircraftEditNoteIfNeeded(recordId: string, data: FormData): Promise<void> {
+  try {
+    // Check if aircraft data was modified based on form type
+    let aircraftModified = false;
+    let aircraftEditNote = '';
+    let aircraftFieldChanges: any[] = [];
+    let formType = '';
+
+    // Type-specific checks for aircraft modifications
+    if ('Aircraft_Data_Modified' in data && data.Aircraft_Data_Modified) {
+      aircraftModified = true;
+      aircraftEditNote = data.Aircraft_Edit_Note as string || '';
+      aircraftFieldChanges = data.Aircraft_Field_Changes as any[] || [];
+      
+      // Determine form type for note title
+      if ('Accident' in data || 'Accident_or_Incident' in data) {
+        formType = 'Accident';
+      } else if ('Defect' in data) {
+        formType = 'Defect';
+      } else if ('Hazard' in data) {
+        formType = 'Hazard';
+      } else if ('Complaint' in data) {
+        formType = 'Complaint';
+      } else {
+        formType = 'Occurrence';
+      }
+    }
+
+    // Create note if aircraft data was modified
+    if (aircraftModified && aircraftEditNote.trim()) {
+      const noteTitle = `Aircraft Data Modified - ${formType} Form`;
+
+      // Build simple note content
+      let noteContent = "User modified prepopulated aircraft data.\n\n";
+
+      // User's reason for modification
+      noteContent += "REASON FOR MODIFICATION:\n\n";
+      noteContent += aircraftEditNote.trim() + "\n\n";
+
+      // Add detailed field changes if available
+      if (aircraftFieldChanges && aircraftFieldChanges.length > 0) {
+        noteContent += "DETAILED FIELD CHANGES:\n\n";
+
+        aircraftFieldChanges.forEach((change, index) => {
+          noteContent += `${index + 1}. ${change.fieldLabel || change.fieldName}:\n`;
+          noteContent += `   Original: "${change.originalValue || '(empty)'}"\n`;
+          noteContent += `   Updated:  "${change.newValue || '(empty)'}"\n\n`;
+        });
+      }
+
+      // Add metadata at the end
+      noteContent += `Modification Timestamp: ${new Date().toISOString()}\n`;
+      noteContent += `Record ID: ${recordId}\n`;
+
+      const noteResult = await ZohoCRM.createNote(
+        "Occurrence_Management",
+        recordId,
+        noteTitle,
+        noteContent
+      );
+
+      if (noteResult.success) {
+        console.log(`Aircraft edit note created successfully with ID: ${noteResult.noteId}`);
+      } else {
+        console.error(`Failed to create aircraft edit note: ${noteResult.error}`);
+        // Don't throw error - note creation failure shouldn't block form submission
+      }
+    }
+  } catch (error: any) {
+    console.error("Error creating aircraft edit note:", error);
+    // Don't throw error - note creation failure shouldn't block form submission
   }
 }
 

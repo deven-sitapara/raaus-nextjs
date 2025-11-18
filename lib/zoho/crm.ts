@@ -152,6 +152,76 @@ export class ZohoCRM {
   }
 
   /**
+   * Create a note attached to a CRM record
+   */
+  static async createNote(
+    parentModule: string,
+    parentRecordId: string,
+    noteTitle: string,
+    noteContent: string
+  ): Promise<{ success: boolean; noteId?: string; error?: string }> {
+    const accessToken = await ZohoAuth.getAccessToken("crm");
+
+    try {
+      const noteData = {
+        Note_Title: noteTitle,
+        Note_Content: noteContent,
+        Parent_Id: parentRecordId,
+        se_module: parentModule,
+      };
+
+      const response = await axios.post<ZohoCRMResponse>(
+        `${this.apiDomain}/crm/v2/Notes`,
+        {
+          data: [noteData],
+        },
+        {
+          headers: {
+            Authorization: `Zoho-oauthtoken ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 15000, // 15 second timeout
+        }
+      );
+
+      if (response.data.data && response.data.data.length > 0) {
+        const firstRecord = response.data.data[0];
+        
+        if (firstRecord.code === "SUCCESS" && firstRecord.details && firstRecord.details.id) {
+          return {
+            success: true,
+            noteId: firstRecord.details.id,
+          };
+        } else {
+          return {
+            success: false,
+            error: firstRecord.message || "Failed to create note",
+          };
+        }
+      } else {
+        return {
+          success: false,
+          error: "No response data from Notes API",
+        };
+      }
+    } catch (error: any) {
+      console.error("Failed to create CRM note:", error);
+      
+      let errorMessage = "Failed to create note";
+      if (error.response?.data?.data?.[0]?.message) {
+        errorMessage = error.response.data.data[0].message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
+
+  /**
    * Helper function to sleep/delay execution
    */
   private static sleep(ms: number): Promise<void> {

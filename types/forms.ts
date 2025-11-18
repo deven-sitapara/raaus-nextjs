@@ -1,3 +1,17 @@
+// Aircraft Field Change Tracking
+export interface AircraftFieldChange {
+  fieldName: string;
+  fieldLabel: string;
+  originalValue: string;
+  newValue: string;
+}
+
+export interface AircraftEditDetails {
+  hasChanges: boolean;
+  changedFields: AircraftFieldChange[];
+  userNote: string;
+}
+
 // Common Types
 export type RoleType =
   | "Aircraft Owner"
@@ -191,6 +205,7 @@ export interface AccidentFormData {
   // Aircraft Edit Tracking
   Aircraft_Data_Modified?: boolean;
   Aircraft_Edit_Note?: string;
+  Aircraft_Field_Changes?: AircraftFieldChange[]; // Detailed field changes
 
   // Legacy field names for backward compatibility
   memberNumber?: string;
@@ -306,6 +321,7 @@ export interface DefectFormData {
   // Aircraft Edit Tracking
   Aircraft_Data_Modified?: boolean;
   Aircraft_Edit_Note?: string;
+  Aircraft_Field_Changes?: AircraftFieldChange[]; // Detailed field changes
 
   // Attachments
   attachments?: File[];
