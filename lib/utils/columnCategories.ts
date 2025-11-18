@@ -150,7 +150,7 @@ export const ACCIDENT_COLUMN_METADATA: Record<string, ColumnMetadata> = {
   
   // Aircraft details
   Serial_number: { category: 'optional', priority: 80, description: 'Serial number' },
-  Year_Built1: { category: 'optional', priority: 81, description: 'Year built' },
+  Year_Built: { category: 'optional', priority: 81, description: 'Year built' },
   Registration_status: { category: 'optional', priority: 82, description: 'Registration status' },
   Total_airframe_hours: { category: 'optional', priority: 83, description: 'Airframe hours' },
   
@@ -218,7 +218,7 @@ export const DEFECT_COLUMN_METADATA: Record<string, ColumnMetadata> = {
   Serial_number: { category: 'optional', priority: 61, description: 'Serial number' },
   Registration_status: { category: 'optional', priority: 62, description: 'Registration status' },
   Type1: { category: 'optional', priority: 63, description: 'Aircraft type' },
-  Year_Built1: { category: 'optional', priority: 64, description: 'Year built' },
+  Year_Built: { category: 'optional', priority: 64, description: 'Year built' },
   Engine_Details: { category: 'optional', priority: 65, description: 'Engine details' },
   Engine_model: { category: 'optional', priority: 66, description: 'Engine model' },
   Engine_serial: { category: 'optional', priority: 67, description: 'Engine serial' },

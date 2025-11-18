@@ -25,6 +25,7 @@ export class ZohoWorkDrive {
             Authorization: `Zoho-oauthtoken ${accessToken}`,
             Accept: "application/vnd.api+json",
           },
+          timeout: 10000, // 10 second timeout
         }
       );
 
@@ -52,6 +53,7 @@ export class ZohoWorkDrive {
               Authorization: `Zoho-oauthtoken ${accessToken}`,
               Accept: "application/vnd.api+json",
             },
+            timeout: 10000, // 10 second timeout
           }
         );
 
@@ -95,6 +97,7 @@ export class ZohoWorkDrive {
               Authorization: `Zoho-oauthtoken ${accessToken}`,
               Accept: "application/vnd.api+json",
             },
+            timeout: 15000, // 15 second timeout for listing files
           }
         );
 
@@ -151,6 +154,7 @@ export class ZohoWorkDrive {
             "Content-Type": "application/vnd.api+json",
             Accept: "application/vnd.api+json",
           },
+          timeout: 10000, // 10 second timeout
         }
       );
 
@@ -180,6 +184,7 @@ export class ZohoWorkDrive {
             Authorization: `Zoho-oauthtoken ${accessToken}`,
             Accept: "application/vnd.api+json",
           },
+          timeout: 10000, // 10 second timeout
         }
       );
 
@@ -333,6 +338,7 @@ export class ZohoWorkDrive {
               Authorization: `Zoho-oauthtoken ${accessToken}`,
               "Content-Type": "application/json",
             },
+            timeout: 10000, // 10 second timeout
           }
         );
 

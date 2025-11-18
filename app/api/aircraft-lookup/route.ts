@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       Manufacturer: getValue(aircraftData, "Manufacturer"),
       Aircraft_Concat: getValue(aircraftData, "Aircraft_Concat"),
       Type: getValue(aircraftData, "Type"),
-      Year_Built1: getValue(aircraftData, "Year_Built1") || getValue(aircraftData, "Manufacturer_Date"),
+      Year_Built: getValue(aircraftData, "Year_Built1") || getValue(aircraftData, "Manufacturer_Date"),
 
       // Additional aircraft fields
       Registration_status: getValue(aircraftData, "Registration_Type"),
@@ -176,7 +176,19 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error("[AIRCRAFT LOOKUP] Error:", error);
+    console.error("[AIRCRAFT LOOKUP] Error:", error.message || error);
+
+    // Handle timeout errors
+    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Request timeout - unable to reach Zoho CRM. Please try again.",
+          timestamp: new Date().toISOString(),
+        },
+        { status: 504 }
+      );
+    }
 
     // Handle Zoho API specific errors
     if (error.response?.status === 401) {

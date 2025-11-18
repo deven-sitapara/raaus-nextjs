@@ -294,7 +294,7 @@ export class AccidentPDFGenerator extends PDFGenerator {
     // ========== AIRCRAFT DETAILS ==========
     if (this.hasValue(data.Registration_number) || this.hasValue(data.Serial_number1) || this.hasValue(data.Serial_number) ||
         this.hasValue(data.Registration_status) || this.hasValue(data.Make1) || this.hasValue(data.Model) ||
-        this.hasValue(data.Type1) || this.hasValue(data.Year_Built1) || this.hasValue(data.Total_airframe_hours)) {
+        this.hasValue(data.Type1) || this.hasValue(data.Year_Built) || this.hasValue(data.Total_airframe_hours)) {
       this.addSection('Aircraft Information');
 
       const regNumber = data.Registration_number && data.Serial_number1
@@ -310,8 +310,8 @@ export class AccidentPDFGenerator extends PDFGenerator {
       if (this.hasValue(data.Make1) || this.hasValue(data.Model)) {
         this.addFieldPair('Make', data.Make1, 'Model', data.Model);
       }
-      if (this.hasValue(data.Type1) || this.hasValue(data.Year_Built1)) {
-        this.addFieldPair('Type', data.Type1, 'Year Built', data.Year_Built1);
+      if (this.hasValue(data.Type1) || this.hasValue(data.Year_Built)) {
+        this.addFieldPair('Type', data.Type1, 'Year Built', data.Year_Built);
       }
       if (this.hasValue(data.Total_airframe_hours)) {
         this.addField('Total Airframe Hours', data.Total_airframe_hours);

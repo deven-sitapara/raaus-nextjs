@@ -195,7 +195,7 @@ export default function DefectPreview({
               <PreviewField label="Make" value={data.make} />
               <PreviewField label="Model" value={data.model} />
               <PreviewField label="Type" value={data.type} />
-              <PreviewField label="Year Built" value={data.yearBuilt} />
+              <PreviewField label="Year Built" value={data.Year_Built} />
             </dl>
           </PreviewSection>
 

@@ -20,8 +20,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error: any) {
+    console.error("Member validation error:", error.message);
+
+    // Provide more specific error messages
+    const isTimeout = error.message?.includes('timeout') || error.code === 'ETIMEDOUT';
+    const errorMessage = isTimeout
+      ? "Connection timeout - unable to reach validation service. Please try again."
+      : "Failed to validate member number. Please try again later.";
+
     return NextResponse.json(
-      { error: "Failed to validate member number" },
+      {
+        error: errorMessage,
+        details: error.message
+      },
       { status: 500 }
     );
   }

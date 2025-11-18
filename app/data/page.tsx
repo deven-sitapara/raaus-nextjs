@@ -157,22 +157,92 @@ export default function DataPage() {
       filtered = filtered.filter(row => {
         // Create an array of searchable values from the row
         const searchableFields = [
+          // Person Information
           row.Name1,
           row.Last_Name,
+          row.Member_Number,
+          row.Role,
+
+          // Occurrence Information
           row.OccurrenceId,
           row.Occurrence_ID,
-          row.Registration_number,
+          row.Occurrence_Number,
+          row.Primary_Cause,
+          row.Occurrence_Type,
+          row.Accident_or_Incident,
+
+          // Date Information
+          row.Occurrence_Date1,
+          row.Date_Hazard_Identified,
+          row.Created_Time,
+          row.Modified_Time,
+          row.Manufacturer_Date,
+
+          // Location Information
           row.Location,
           row.Location_of_hazard,
-          row.Member_Number,
+          row.State,
+          row.Aerodrome,
+
+          // Aircraft Information
+          row.Registration_number,
+          row.Aircraft_Concat,
+          row.Serial_Number1,
           row.Make1,
           row.Make,
+          row.Manufacturer,
           row.Model,
-          row.State,
+          row.Type,
+          row.Aircraft_Type,
+          row.Registration_Type,
+          row.Registration_status,
+          row.Registration_Group,
+          row.Year_Built,
+          row.Year_Built1,
+
+          // Engine Information
           row.Engine_Details,
+          row.Engine_Make,
+          row.Engines_Type,
           row.Engine_model,
+          row.Engines_Model,
+          row.Engines_Serial,
+          row.Engine_Serial,
+
+          // Propeller Information
+          row.Propeller_make,
+          row.Propellers_Make,
+          row.Propeller_model,
+          row.Propellers_Model,
+          row.Propeller_serial,
+          row.Propellers_Serial,
+
+          // Injury Information
+          row.Most_serious_injury_to_pilot,
+          row.Passenger_injury,
+          row.Persons_on_the_ground_injury,
+          getHighestInjury(row.Most_serious_injury_to_pilot, row.Passenger_injury, row.Persons_on_the_ground_injury),
+
+          // Damage Information
+          row.Damage_to_aircraft,
+          row.Description_of_damage_to_aircraft,
+          row.Damage_sustained,
+          row.Damage_description,
+          row.Part_of_aircraft_damaged,
+
+          // Descriptions (form-specific)
+          row.PUBLIC_OUTCOME,
+          row.Provide_description_of_defect,
+          row.Please_fully_describe_the_identified_hazard,
+          row.Do_you_have_further_suggestions_on_how_to_PSO,
+          row.Description_of_Occurrence,
+          row.What_happened,
+          row.Describe_the_occurrence,
+          row.Sequence_of_events,
+          row.Comments,
+          row.Additional_information,
         ];
-        return searchableFields.some(field => 
+        return searchableFields.some(field =>
           field?.toString().toLowerCase().includes(query)
         );
       });

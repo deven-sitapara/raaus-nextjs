@@ -604,6 +604,93 @@ export default function AccidentForm() {
   >("");
   const [aircraftLookupMessage, setAircraftLookupMessage] = useState("");
 
+  // Aircraft data edit tracking state
+  const [originalAircraftData, setOriginalAircraftData] = useState<Record<string, any>>({});
+  const [hasEditedAircraftData, setHasEditedAircraftData] = useState(false);
+  const [aircraftEditNote, setAircraftEditNote] = useState("");
+  const [aircraftEditNoteError, setAircraftEditNoteError] = useState("");
+
+  // Initialize form methods first (needed for watch function)
+  const methods = useForm<AccidentFormData>();
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    trigger,
+    reset,
+    formState: { errors },
+  } = methods;
+
+  // Function to check if aircraft data has been manually edited
+  const checkForAircraftDataEdits = () => {
+    if (Object.keys(originalAircraftData).length === 0) {
+      return; // No original data to compare against
+    }
+
+    const currentValues = {
+      Serial_number: watch("Serial_number") || "",
+      Make1: watch("Make1") || "",
+      Model: watch("Model") || "",
+      Registration_status: watch("Registration_status") || "",
+      Type1: watch("Type1") || "",
+      Year_Built: watch("Year_Built") || "",
+      Engine_Details: watch("Engine_Details") || "",
+      Engine_model: watch("Engine_model") || "",
+      Engine_serial: watch("Engine_serial") || "",
+      Propeller_make: watch("Propeller_make") || "",
+      Propeller_model: watch("Propeller_model") || "",
+      Propeller_serial: watch("Propeller_serial") || "",
+    };
+
+    // Check if any field has been modified
+    const hasChanges = Object.keys(originalAircraftData).some(key => {
+      return String(currentValues[key as keyof typeof currentValues]).trim() !== 
+             String(originalAircraftData[key]).trim();
+    });
+
+    if (hasChanges !== hasEditedAircraftData) {
+      setHasEditedAircraftData(hasChanges);
+      if (!hasChanges) {
+        setAircraftEditNote(""); // Clear note if user reverted changes
+        setAircraftEditNoteError("");
+      }
+    }
+  };
+
+  // Watch aircraft fields for changes
+  const watchedSerial = watch("Serial_number");
+  const watchedMake = watch("Make1");
+  const watchedModel = watch("Model");
+  const watchedRegStatus = watch("Registration_status");
+  const watchedType = watch("Type1");
+  const watchedYear = watch("Year_Built");
+  const watchedEngineDetails = watch("Engine_Details");
+  const watchedEngineModel = watch("Engine_model");
+  const watchedEngineSerial = watch("Engine_serial");
+  const watchedPropellerMake = watch("Propeller_make");
+  const watchedPropellerModel = watch("Propeller_model");
+  const watchedPropellerSerial = watch("Propeller_serial");
+
+  // Check for edits whenever any aircraft field changes
+  useEffect(() => {
+    checkForAircraftDataEdits();
+  }, [
+    watchedSerial,
+    watchedMake,
+    watchedModel,
+    watchedRegStatus,
+    watchedType,
+    watchedYear,
+    watchedEngineDetails,
+    watchedEngineModel,
+    watchedEngineSerial,
+    watchedPropellerMake,
+    watchedPropellerModel,
+    watchedPropellerSerial,
+    originalAircraftData,
+  ]);
+
   // Helper function to convert text to Title Case
   const toTitleCase = (str: string): string => {
     if (!str) return str;
@@ -617,22 +704,11 @@ export default function AccidentForm() {
       .join(" ");
   };
 
-  const methods = useForm<AccidentFormData>();
-  const {
-    register,
-    handleSubmit,
+  // Form persistence for current step
+  useFormPersistence(
+    { formType: 'accident', stepIndex: currentStep, maxSteps: 3 },
     watch,
     setValue,
-    trigger,
-    reset,
-    formState: { errors },
-  } = methods;
-
-  // Form persistence for current step
-  const { clearCurrentForm } = useFormPersistence(
-    { formType: 'accident', stepIndex: currentStep, maxSteps: 3 }, 
-    watch, 
-    setValue, 
     reset
   );
 
@@ -672,35 +748,21 @@ export default function AccidentForm() {
     }
   );
 
-  // Combined clear function for all special state
-  const clearSpecialState = () => {
-    clearStep1SpecialState();
-    clearStep2SpecialState();
-  };
-
   // Comprehensive form clearing function
   const clearAllFormData = () => {
     // Clear sessionStorage
     clearFormOnSubmission('accident', 3);
-    
+
     // Reset React Hook Form
     reset();
-    
-    // Clear special state (phone numbers, dates, etc.)
-    setContactPhone("");
-    setContactPhoneError("");
-    setContactPhoneCountry("AU");
-    setPilotContactPhone("");
-    setPilotContactPhoneError("");
-    setPilotContactPhoneCountry("AU");
-    setOccurrenceDate("");
-    setOccurrenceDateError("");
-    setOccurrenceTime("");
-    setOccurrenceTimeError("");
-    setLatitude("");
-    setLongitude("");
+
+    // Clear step-specific special state
+    clearStep1SpecialState();
+    clearStep2SpecialState();
+
+    // Clear file attachments
     setAttachments(null);
-    
+
     // Clear validation states
     setMemberValidationStatus("");
     setMemberValidationMessage("");
@@ -708,7 +770,17 @@ export default function AccidentForm() {
     setPilotValidationMessage("");
     setMaintainerValidationStatus("");
     setMaintainerValidationMessage("");
-    
+
+    // Clear aircraft lookup status
+    setAircraftLookupStatus("");
+    setAircraftLookupMessage("");
+
+    // Clear aircraft data edit tracking
+    setOriginalAircraftData({});
+    setHasEditedAircraftData(false);
+    setAircraftEditNote("");
+    setAircraftEditNoteError("");
+
     // Reset to step 1
     setCurrentStep(1);
   };
@@ -1023,31 +1095,78 @@ export default function AccidentForm() {
       if (response?.data?.success && response?.data?.data) {
         const aircraftData = response.data.data;
 
+        // Normalize Year_Built to just the 4-digit year for comparison
+        let normalizedYear = "";
+        const rawYearBuilt = String(aircraftData.Year_Built || aircraftData.Manufacturer_Date || "");
+        if (rawYearBuilt && rawYearBuilt.trim() !== "") {
+          const yearMatch = rawYearBuilt.match(/(\d{4})/);
+          if (yearMatch) {
+            const year = yearMatch[1];
+            const yearNum = parseInt(year);
+            if (yearNum >= 1935 && yearNum <= 2025) {
+              normalizedYear = year;
+            }
+          }
+        }
+
+        // Store original aircraft data for edit tracking
+        const originalData = {
+          Serial_number: String(aircraftData.Serial_Number1 || ""),
+          Make1: String(aircraftData.Manufacturer || ""),
+          Model: String(aircraftData.Model || ""),
+          Registration_status: aircraftData.Registration_Type || "",
+          Type1: aircraftData.Type || "",
+          Year_Built: normalizedYear,
+          Engine_Details: String(aircraftData.Engine_Details || ""),
+          Engine_model: String(aircraftData.Engine_model || ""),
+          Engine_serial: String(aircraftData.Engines_Serial || ""),
+          Propeller_make: String(aircraftData.Propeller_make || ""),
+          Propeller_model: String(aircraftData.Propeller_model || ""),
+          Propeller_serial: String(aircraftData.Propeller_serial || ""),
+        };
+
+        setOriginalAircraftData(originalData);
+        setHasEditedAircraftData(false); // Reset edit flag when new data is loaded
+        setAircraftEditNote(""); // Clear any previous edit note
+        setAircraftEditNoteError(""); // Clear any previous error
+
         // Auto-fill aircraft fields - convert all values to strings for type safety
-        setValue("Serial_number", String(aircraftData.Serial_Number1 || ""));
-        setValue("Make1", String(aircraftData.Manufacturer || ""));
-        setValue("Model", String(aircraftData.Model || ""));
+        setValue("Serial_number", originalData.Serial_number || "");
+        setValue("Make1", originalData.Make1 || "");
+        setValue("Model", originalData.Model || "");
         // Use type assertion for enum fields to allow API values
-        setValue("Registration_status", (aircraftData.Registration_Type || undefined) as any);
-        setValue("Type1", (aircraftData.Type || undefined) as any);
-        setValue("Year_Built1", String(aircraftData.Year_Built1 || aircraftData.Manufacturer_Date || ""));
+        setValue("Registration_status", (originalData.Registration_status || undefined) as any);
+        setValue("Type1", (originalData.Type1 || undefined) as any);
+
+        // Year Built - use the already normalized year
+        if (normalizedYear) {
+          setValue("Year_Built", normalizedYear);
+        }
 
         // Auto-fill engine fields
-        setValue("Engine_Details", String(aircraftData.Engine_Details || ""));
-        setValue("Engine_model", String(aircraftData.Engine_model || ""));
-        setValue("Engine_serial", String(aircraftData.Engines_Serial || ""));
+        setValue("Engine_Details", originalData.Engine_Details || "");
+        setValue("Engine_model", originalData.Engine_model || "");
+        setValue("Engine_serial", originalData.Engine_serial || "");
 
         // Auto-fill propeller fields
-        setValue("Propeller_make", String(aircraftData.Propeller_make || ""));
-        setValue("Propeller_model", String(aircraftData.Propeller_model || ""));
-        setValue("Propeller_serial", String(aircraftData.Propeller_serial || ""));
+        setValue("Propeller_make", originalData.Propeller_make || "");
+        setValue("Propeller_model", originalData.Propeller_model || "");
+        setValue("Propeller_serial", originalData.Propeller_serial || "");
 
         let fieldsPopulated = 0;
-        const aircraftFields = ["Serial_number", "Make1", "Model", "Registration_status", "Type1", "Year_Built1"];
+        const aircraftFields = ["Serial_number", "Make1", "Model", "Registration_status", "Type1", "Year_Built"];
         const engineFields = ["Engine_Details", "Engine_model", "Engine_serial"];
         const propellerFields = ["Propeller_make", "Propeller_model", "Propeller_serial"];
         
-        aircraftFields.forEach(field => aircraftData[field.replace("1", "_Number1")] && fieldsPopulated++);
+        aircraftFields.forEach(field => {
+          let apiField = field;
+          if (field === "Serial_number") apiField = "Serial_Number1";
+          else if (field === "Make1") apiField = "Manufacturer";
+          else if (field === "Registration_status") apiField = "Registration_Type";
+          else if (field === "Type1") apiField = "Type";
+          else if (field === "Year_Built") apiField = "Year_Built";
+          if (aircraftData[apiField]) fieldsPopulated++;
+        });
         engineFields.forEach(field => aircraftData[field] && fieldsPopulated++);
         propellerFields.forEach(field => aircraftData[field] && fieldsPopulated++);
 
@@ -1146,6 +1265,32 @@ export default function AccidentForm() {
       if (!occurrenceTime || occurrenceTime.trim() === "") {
         setOccurrenceTimeError("Occurrence Time is required");
         hasError = true;
+      }
+    } else if (currentStep === 3) {
+      // Step 3: Aircraft Information validation
+      fieldsToValidate = [
+        "Registration_number",
+        "Serial_number1", 
+        "Serial_number",
+        "Make1",
+        "Model",
+        "Registration_status",
+        "Type1",
+        "Year_Built",
+        "Engine_Details"
+      ];
+      
+      // Check if aircraft data was edited and note is required
+      if (hasEditedAircraftData) {
+        if (!aircraftEditNote || aircraftEditNote.trim() === "") {
+          setAircraftEditNoteError("Please provide a reason for editing the prepopulated aircraft data");
+          hasError = true;
+        } else if (aircraftEditNote.trim().length < 5) {
+          setAircraftEditNoteError("Reason must be at least 5 characters long");
+          hasError = true;
+        } else {
+          setAircraftEditNoteError(""); // Clear error if validation passes
+        }
       }
     }
 
@@ -1295,6 +1440,9 @@ export default function AccidentForm() {
               : data.Bird_or_Animal_Strike === "No"
                 ? false
                 : data.Bird_or_Animal_Strike,
+        // Aircraft Edit Tracking
+        Aircraft_Data_Modified: hasEditedAircraftData,
+        Aircraft_Edit_Note: hasEditedAircraftData ? aircraftEditNote.trim() : "",
       };
 
       formData.append("formData", JSON.stringify(submissionPayload));
@@ -1538,22 +1686,7 @@ export default function AccidentForm() {
               <div className="space-y-8">
                 {/* Person Reporting Section */}
                 <div className="border-b border-gray-200 pb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Person Reporting
-                  {/* Clear Form Button */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        clearCurrentForm();
-                        clearSpecialState();
-                        // Clear file attachments
-                        setAttachments(null);
-                      }}
-                      className="bg-red-50 !absolute right-4 top-3 text-red-600 border-red-200 hover:bg-red-100 mb-2 inline float-right"
-                    >
-                      Clear Form
-                    </Button>
-                  </h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Person Reporting</h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
                     <SelectWithOther
@@ -2148,7 +2281,18 @@ export default function AccidentForm() {
 
                 {/* Navigation Buttons */}
                 <div className="flex justify-between pt-8 border-t border-gray-200">
-                  <div></div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (confirm('Are you sure you want to clear ALL form data? This will reset all steps.')) {
+                        clearAllFormData();
+                      }
+                    }}
+                    className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 px-6 py-2"
+                  >
+                    Clear All
+                  </Button>
                   <Button
                     type="button"
                     onClick={nextStep}
@@ -3428,14 +3572,28 @@ export default function AccidentForm() {
 
                 {/* Navigation Buttons */}
                 <div className="flex justify-between pt-8 border-t border-gray-200">
-                  <Button
-                    type="button"
-                    onClick={prevStep}
-                    variant="outline"
-                    className="px-8 py-2 bg-gray-200 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-300 hover:border-gray-500 hover:text-gray-900 focus:ring-2 focus:ring-gray-400 transition-all"
-                  >
-                    Previous: Pilot Information
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (confirm('Are you sure you want to clear ALL form data? This will reset all steps.')) {
+                          clearAllFormData();
+                        }
+                      }}
+                      className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 px-6 py-2"
+                    >
+                      Clear All
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={prevStep}
+                      variant="outline"
+                      className="px-8 py-2 bg-gray-200 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-300 hover:border-gray-500 hover:text-gray-900 focus:ring-2 focus:ring-gray-400 transition-all"
+                    >
+                      Previous: Pilot Information
+                    </Button>
+                  </div>
                   <Button
                     type="button"
                     onClick={nextStep}
@@ -3484,6 +3642,53 @@ export default function AccidentForm() {
                       ) : (
                         aircraftLookupMessage
                       )}
+                    </div>
+                  )}
+                  
+                  {/* Aircraft Edit Detection and Note Field */}
+                  {hasEditedAircraftData && (
+                    <div className="mb-6 p-4 rounded-md bg-yellow-50 border border-yellow-200">
+                      <div className="flex items-start">
+                        <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        <div className="flex-1">
+                          <h3 className="text-sm font-semibold text-yellow-800 mb-2">
+                            Aircraft Data Modified
+                          </h3>
+                          <p className="text-sm text-yellow-700 mb-3">
+                            You have modified the prepopulated aircraft data. Please provide a reason for the changes.
+                          </p>
+                          <div>
+                            <label className="block text-sm font-medium text-yellow-800 mb-1">
+                              Reason for Edit <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                              value={aircraftEditNote}
+                              onChange={(e) => {
+                                setAircraftEditNote(e.target.value);
+                                if (e.target.value.trim()) {
+                                  setAircraftEditNoteError("");
+                                }
+                              }}
+                              placeholder="e.g., Wrong aircraft make, Incorrect model number, Updated engine details..."
+                              className={`w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                                aircraftEditNoteError 
+                                  ? 'border-red-500 focus:ring-red-500' 
+                                  : 'border-yellow-300 focus:ring-yellow-500'
+                              }`}
+                              rows={2}
+                              maxLength={250}
+                            />
+                            {aircraftEditNoteError && (
+                              <p className="mt-1 text-sm text-red-600">{aircraftEditNoteError}</p>
+                            )}
+                            <p className="mt-1 text-xs text-yellow-600">
+                              {aircraftEditNote.length}/250 characters
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                   
@@ -3577,8 +3782,8 @@ export default function AccidentForm() {
                       label="Year Built"
                       required
                       options={yearBuiltOptions}
-                      {...register('Year_Built1', { required: 'Year built is required' })}
-                      error={errors.Year_Built1?.message}
+                      {...register('Year_Built', { required: 'Year built is required' })}
+                      error={errors.Year_Built?.message}
                     />
                     
                     <Input
@@ -3833,14 +4038,28 @@ export default function AccidentForm() {
                 </div>
                 
                 <div className="flex justify-between pt-8 border-t border-gray-200">
-                  <Button
-                    type="button"
-                    onClick={prevStep}
-                    variant="outline"
-                    className="px-8 py-2 bg-gray-200 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-300 hover:border-gray-500 hover:text-gray-900 focus:ring-2 focus:ring-gray-400 transition-all"
-                  >
-                    Previous: Occurrence Information
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (confirm('Are you sure you want to clear ALL form data? This will reset all steps.')) {
+                          clearAllFormData();
+                        }
+                      }}
+                      className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 px-6 py-2"
+                    >
+                      Clear All
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={prevStep}
+                      variant="outline"
+                      className="px-8 py-2 bg-gray-200 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-300 hover:border-gray-500 hover:text-gray-900 focus:ring-2 focus:ring-gray-400 transition-all"
+                    >
+                      Previous: Occurrence Information
+                    </Button>
+                  </div>
                   <Button
                     type="submit"
                     disabled={isSubmitting}
