@@ -23,6 +23,7 @@ export class ZohoCRM {
             Authorization: `Zoho-oauthtoken ${accessToken}`,
             "Content-Type": "application/json",
           },
+          timeout: 15000, // 15 second timeout for creating records
         }
       );
 
@@ -81,6 +82,7 @@ export class ZohoCRM {
             Authorization: `Zoho-oauthtoken ${accessToken}`,
             "Content-Type": "application/json",
           },
+          timeout: 15000, // 15 second timeout for updating records
         }
       );
 
@@ -125,6 +127,7 @@ export class ZohoCRM {
             headers: {
               Authorization: `Zoho-oauthtoken ${accessToken}`,
             },
+            timeout: 10000, // 10 second timeout
           }
         );
 

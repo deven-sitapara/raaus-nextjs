@@ -415,7 +415,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Serial_number: accidentData.Serial_number || '',
         Make1: accidentData.Make1 || '',
         Type1: sanitizePick(accidentData.Type1) || '',
-        Year_Built1: accidentData.Year_Built1 || '',
+        Year_Built: accidentData.Year_Built || '',
         Total_airframe_hours: convertToText(accidentData.Total_airframe_hours),
         Total_engine_hours: convertToText(accidentData.Total_engine_hours),
         Total_hours_since_service: convertToText(accidentData.Total_hours_since_service),
@@ -425,6 +425,10 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Propeller_make: accidentData.Propeller_make || '',
         Propeller_model: accidentData.Propeller_model || '',
         Propeller_serial: accidentData.Propeller_serial || '',
+
+        // Aircraft Edit Tracking
+        Aircraft_Data_Modified: convertToYesNoText(accidentData.Aircraft_Data_Modified),
+        Aircraft_Edit_Note: accidentData.Aircraft_Edit_Note || '',
 
         // Operations / Environment
   Type_of_operation: sanitizePick(accidentData.Type_of_operation),
@@ -547,7 +551,7 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         Make1: defectData.Make || defectData.Make1 || defectData.make || '',
         Model: defectData.Model || defectData.model || '',
   Type1: sanitizePick(defectData.Type1 || defectData.type || ''),
-        Year_Built1: defectData.Year_Built1 || defectData.yearBuilt || '',
+        Year_Built: defectData.Year_Built || '',
 
         // Engine Details
         Engine_Details: defectData.Engine_Details || '',

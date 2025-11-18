@@ -99,7 +99,7 @@ export interface AccidentFormData {
   Engine_model?: string;
   Engine_serial?: string;
   Engine_Details?: string;
-  Year_Built1?: string;
+  Year_Built?: string;
   Total_airframe_hours?: string;
   Total_engine_hours?: string;
   Total_hours_since_service?: string;
@@ -188,6 +188,10 @@ export interface AccidentFormData {
   // ATSB Acknowledgement
   atsbAcknowledgement?: boolean;
 
+  // Aircraft Edit Tracking
+  Aircraft_Data_Modified?: boolean;
+  Aircraft_Edit_Note?: string;
+
   // Legacy field names for backward compatibility
   memberNumber?: string;
   contactPhone?: string;
@@ -246,7 +250,6 @@ export interface DefectFormData {
   Make1?: string;
   Model?: string;
   Type1?: AircraftType;
-  Year_Built1?: string;
 
   // Engine Details (as applicable)
   Engine_Details?: string;
@@ -289,7 +292,7 @@ export interface DefectFormData {
   registrationStatus?: RegistrationStatus;
   make?: string;
   model?: string;
-  yearBuilt?: string;
+  Year_Built?: string;
   type?: AircraftType;
   engineMake?: string;
   engineModel?: string;
@@ -299,6 +302,10 @@ export interface DefectFormData {
   propellerMake?: string;
   propellerModel?: string;
   propellerSerial?: string;
+
+  // Aircraft Edit Tracking
+  Aircraft_Data_Modified?: boolean;
+  Aircraft_Edit_Note?: string;
 
   // Attachments
   attachments?: File[];

@@ -91,7 +91,7 @@ export class DefectPDFGenerator extends PDFGenerator {
     this.addField('Registration Number', regNumber);
     this.addFieldPair('Serial Number', data.Serial_number || data.serialNumber, 'Registration Status', data.Registration_status || data.registrationStatus);
     this.addFieldPair('Make', data.Make || data.make, 'Model', data.Model || data.model);
-    this.addFieldPair('Type', data.Type1 || data.type, 'Year Built', data.Year_Built1 || data.yearBuilt);
+    this.addFieldPair('Type', data.Type1 || data.type, 'Year Built', data.Year_Built);
 
     // Training Usage
     if (data.Is_the_aircraft_used_for_training_purposes !== undefined) {

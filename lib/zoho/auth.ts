@@ -46,6 +46,10 @@ export class ZohoAuth {
             client_secret: clientSecret,
             grant_type: "refresh_token",
           },
+          timeout: 10000, // 10 second timeout
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
         }
       );
 
@@ -55,8 +59,11 @@ export class ZohoAuth {
 
       return this.accessToken;
     } catch (error: any) {
-      console.error("Failed to get Zoho access token (single approach):", error);
-      
+      console.error("Failed to get Zoho access token (single approach):", error.message);
+      if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+        console.error("Zoho API connection timeout - check network connectivity");
+      }
+
       // Fallback to service-specific approach
       return this.getServiceSpecificToken(service);
     }
@@ -96,17 +103,24 @@ export class ZohoAuth {
             client_secret: clientSecret,
             grant_type: "refresh_token",
           },
+          timeout: 10000, // 10 second timeout
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
         }
       );
 
       return response.data.access_token;
     } catch (error: any) {
-      console.error(`Failed to get Zoho access token for ${service}:`, error);
+      console.error(`Failed to get Zoho access token for ${service}:`, error.message);
       if (error.response) {
         console.error("Auth response data:", error.response.data);
         console.error("Auth response status:", error.response.status);
       }
-      throw new Error(`Failed to authenticate with Zoho ${service}`);
+      if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+        throw new Error(`Zoho API connection timeout - unable to reach Zoho servers. Please check your network connection.`);
+      }
+      throw new Error(`Failed to authenticate with Zoho ${service}: ${error.message}`);
     }
   }
 

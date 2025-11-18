@@ -431,7 +431,7 @@ export default function AccidentPreview({
                   <PreviewField label="Model" value={data.Model} />
                   <PreviewField label="Registration Status" value={data.Registration_status} />
                   <PreviewField label="Type" value={data.Type1} />
-                  <PreviewField label="Year Built" value={data.Year_Built1} />
+                  <PreviewField label="Year Built" value={data.Year_Built} />
                   <PreviewField label="Total Airframe Hours" value={data.Total_airframe_hours} />
                 </dl>
               </PreviewSection>
