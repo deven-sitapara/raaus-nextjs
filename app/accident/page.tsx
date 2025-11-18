@@ -705,10 +705,10 @@ export default function AccidentForm() {
   };
 
   // Form persistence for current step
-  const { clearCurrentForm } = useFormPersistence(
-    { formType: 'accident', stepIndex: currentStep, maxSteps: 3 }, 
-    watch, 
-    setValue, 
+  useFormPersistence(
+    { formType: 'accident', stepIndex: currentStep, maxSteps: 3 },
+    watch,
+    setValue,
     reset
   );
 
@@ -748,35 +748,21 @@ export default function AccidentForm() {
     }
   );
 
-  // Combined clear function for all special state
-  const clearSpecialState = () => {
-    clearStep1SpecialState();
-    clearStep2SpecialState();
-  };
-
   // Comprehensive form clearing function
   const clearAllFormData = () => {
     // Clear sessionStorage
     clearFormOnSubmission('accident', 3);
-    
+
     // Reset React Hook Form
     reset();
-    
-    // Clear special state (phone numbers, dates, etc.)
-    setContactPhone("");
-    setContactPhoneError("");
-    setContactPhoneCountry("AU");
-    setPilotContactPhone("");
-    setPilotContactPhoneError("");
-    setPilotContactPhoneCountry("AU");
-    setOccurrenceDate("");
-    setOccurrenceDateError("");
-    setOccurrenceTime("");
-    setOccurrenceTimeError("");
-    setLatitude("");
-    setLongitude("");
+
+    // Clear step-specific special state
+    clearStep1SpecialState();
+    clearStep2SpecialState();
+
+    // Clear file attachments
     setAttachments(null);
-    
+
     // Clear validation states
     setMemberValidationStatus("");
     setMemberValidationMessage("");
@@ -784,13 +770,17 @@ export default function AccidentForm() {
     setPilotValidationMessage("");
     setMaintainerValidationStatus("");
     setMaintainerValidationMessage("");
-    
+
+    // Clear aircraft lookup status
+    setAircraftLookupStatus("");
+    setAircraftLookupMessage("");
+
     // Clear aircraft data edit tracking
     setOriginalAircraftData({});
     setHasEditedAircraftData(false);
     setAircraftEditNote("");
     setAircraftEditNoteError("");
-    
+
     // Reset to step 1
     setCurrentStep(1);
   };
@@ -1696,22 +1686,7 @@ export default function AccidentForm() {
               <div className="space-y-8">
                 {/* Person Reporting Section */}
                 <div className="border-b border-gray-200 pb-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Person Reporting
-                  {/* Clear Form Button */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        clearCurrentForm();
-                        clearSpecialState();
-                        // Clear file attachments
-                        setAttachments(null);
-                      }}
-                      className="bg-red-50 !absolute right-4 top-3 text-red-600 border-red-200 hover:bg-red-100 mb-2 inline float-right"
-                    >
-                      Clear Form
-                    </Button>
-                  </h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Person Reporting</h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
                     <SelectWithOther
@@ -2306,7 +2281,18 @@ export default function AccidentForm() {
 
                 {/* Navigation Buttons */}
                 <div className="flex justify-between pt-8 border-t border-gray-200">
-                  <div></div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (confirm('Are you sure you want to clear ALL form data? This will reset all steps.')) {
+                        clearAllFormData();
+                      }
+                    }}
+                    className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 px-6 py-2"
+                  >
+                    Clear All
+                  </Button>
                   <Button
                     type="button"
                     onClick={nextStep}
@@ -3586,14 +3572,28 @@ export default function AccidentForm() {
 
                 {/* Navigation Buttons */}
                 <div className="flex justify-between pt-8 border-t border-gray-200">
-                  <Button
-                    type="button"
-                    onClick={prevStep}
-                    variant="outline"
-                    className="px-8 py-2 bg-gray-200 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-300 hover:border-gray-500 hover:text-gray-900 focus:ring-2 focus:ring-gray-400 transition-all"
-                  >
-                    Previous: Pilot Information
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (confirm('Are you sure you want to clear ALL form data? This will reset all steps.')) {
+                          clearAllFormData();
+                        }
+                      }}
+                      className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 px-6 py-2"
+                    >
+                      Clear All
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={prevStep}
+                      variant="outline"
+                      className="px-8 py-2 bg-gray-200 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-300 hover:border-gray-500 hover:text-gray-900 focus:ring-2 focus:ring-gray-400 transition-all"
+                    >
+                      Previous: Pilot Information
+                    </Button>
+                  </div>
                   <Button
                     type="button"
                     onClick={nextStep}
@@ -4038,14 +4038,28 @@ export default function AccidentForm() {
                 </div>
                 
                 <div className="flex justify-between pt-8 border-t border-gray-200">
-                  <Button
-                    type="button"
-                    onClick={prevStep}
-                    variant="outline"
-                    className="px-8 py-2 bg-gray-200 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-300 hover:border-gray-500 hover:text-gray-900 focus:ring-2 focus:ring-gray-400 transition-all"
-                  >
-                    Previous: Occurrence Information
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (confirm('Are you sure you want to clear ALL form data? This will reset all steps.')) {
+                          clearAllFormData();
+                        }
+                      }}
+                      className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 px-6 py-2"
+                    >
+                      Clear All
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={prevStep}
+                      variant="outline"
+                      className="px-8 py-2 bg-gray-200 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-300 hover:border-gray-500 hover:text-gray-900 focus:ring-2 focus:ring-gray-400 transition-all"
+                    >
+                      Previous: Occurrence Information
+                    </Button>
+                  </div>
                   <Button
                     type="submit"
                     disabled={isSubmitting}

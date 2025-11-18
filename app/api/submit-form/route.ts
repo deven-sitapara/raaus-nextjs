@@ -568,6 +568,10 @@ async function prepareCRMData(formType: string, data: FormData): Promise<Record<
         // Training Usage
   Is_the_aircraft_used_for_training_purposes: convertToYesNoText(defectData.Is_the_aircraft_used_for_training_purposes),
 
+        // Aircraft Edit Tracking
+        Aircraft_Data_Modified: convertToYesNoText(defectData.Aircraft_Data_Modified),
+        Aircraft_Edit_Note: defectData.Aircraft_Edit_Note || '',
+
         // Add defect-specific flag
         Defect: true,
   });

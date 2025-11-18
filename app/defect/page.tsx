@@ -273,6 +273,37 @@ export default function DefectForm() {
     }
   );
 
+  // Comprehensive form clearing function
+  const clearAllFormData = () => {
+    // Clear sessionStorage
+    clearFormOnSubmission('defect');
+
+    // Reset React Hook Form
+    reset();
+
+    // Clear special state (dates, phone, GPS)
+    clearSpecialState();
+
+    // Clear file attachments
+    setAttachments(null);
+
+    // Clear validation states
+    setMemberValidationStatus("");
+    setMemberValidationMessage("");
+    setMaintainerValidationStatus("");
+    setMaintainerValidationMessage("");
+
+    // Clear aircraft lookup status
+    setAircraftLookupStatus("");
+    setAircraftLookupMessage("");
+
+    // Clear aircraft data edit tracking
+    setOriginalAircraftData({});
+    setHasEditedAircraftData(false);
+    setAircraftEditNote("");
+    setAircraftEditNoteError("");
+  };
+
   // Watch registration fields for aircraft lookup
   const registrationPrefix = watch("registrationNumberPrefix");
   const registrationSuffix = watch("registrationNumberSuffix");
@@ -989,27 +1020,10 @@ export default function DefectForm() {
         <form onSubmit={handleSubmit(handlePreview)} className="space-y-6 border border-gray-300 rounded-lg shadow-lg bg-white defect-form">
           {/* Person Reporting Section */}
           <div className="rounded-lg p-8 pt-10">
-            <div className="flex justify-between items-center mb-6 border-b-2 border-gray-300 pb-4">
+            <div className="mb-6 border-b-2 border-gray-300 pb-4">
               <h2 className="text-xl font-semibold text-gray-900">
                 Person Reporting
               </h2>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  clearCurrentForm();
-                  clearSpecialState();
-                  setAttachments(null);
-                  // Clear aircraft edit tracking
-                  setOriginalAircraftData({});
-                  setHasEditedAircraftData(false);
-                  setAircraftEditNote("");
-                  setAircraftEditNoteError("");
-                }}
-                className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-              >
-                Clear Form
-              </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
@@ -1799,13 +1813,27 @@ export default function DefectForm() {
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end space-x-4 px-6 pb-8">
-            <Button type="button" variant="outline" onClick={() => (window.location.href = "/")}>
-              Cancel
+          <div className="flex justify-between px-6 pb-8">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (confirm('Are you sure you want to clear all form data?')) {
+                  clearAllFormData();
+                }
+              }}
+              className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 px-6 py-2"
+            >
+              Clear All
             </Button>
-            <Button type="submit">
-              Review & Submit
-            </Button>
+            <div className="flex space-x-4">
+              <Button type="button" variant="outline" onClick={() => (window.location.href = "/")}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Review & Submit
+              </Button>
+            </div>
           </div>
         </form>
       </div>
