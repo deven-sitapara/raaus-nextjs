@@ -169,6 +169,12 @@ export default function DefectForm() {
   const [hasEditedAircraftData, setHasEditedAircraftData] = useState(false);
   const [aircraftEditNote, setAircraftEditNote] = useState("");
   const [aircraftEditNoteError, setAircraftEditNoteError] = useState("");
+  const [aircraftFieldChanges, setAircraftFieldChanges] = useState<Array<{
+    fieldName: string;
+    fieldLabel: string;
+    originalValue: string;
+    newValue: string;
+  }>>([]);
 
   const {
     register,
@@ -185,6 +191,21 @@ export default function DefectForm() {
       return; // No original data to compare against
     }
 
+    const fieldMap = {
+      serialNumber: "Serial Number",
+      make: "Make",
+      model: "Model", 
+      registrationStatus: "Registration Status",
+      type: "Aircraft Type",
+      Year_Built: "Year Built",
+      engineMake: "Engine Make",
+      engineModel: "Engine Model",
+      engineSerial: "Engine Serial",
+      propellerMake: "Propeller Make",
+      propellerModel: "Propeller Model",
+      propellerSerial: "Propeller Serial",
+    };
+
     const currentValues = {
       serialNumber: watch("serialNumber") || "",
       make: watch("make") || "",
@@ -200,17 +221,35 @@ export default function DefectForm() {
       propellerSerial: watch("propellerSerial") || "",
     };
 
-    // Check if any field has been modified
-    const hasChanges = Object.keys(originalAircraftData).some(key => {
-      return String(currentValues[key as keyof typeof currentValues]).trim() !== 
-             String(originalAircraftData[key]).trim();
-    });
+    // Track detailed field changes
+    const changes = Object.keys(originalAircraftData)
+      .map(key => {
+        const originalValue = String(originalAircraftData[key]).trim();
+        const currentValue = String(currentValues[key as keyof typeof currentValues]).trim();
+        
+        if (originalValue !== currentValue) {
+          return {
+            fieldName: key,
+            fieldLabel: fieldMap[key as keyof typeof fieldMap] || key,
+            originalValue: originalValue || "(empty)",
+            newValue: currentValue || "(empty)",
+          };
+        }
+        return null;
+      })
+      .filter(change => change !== null);
+
+    const hasChanges = changes.length > 0;
+
+    // Update field changes state
+    setAircraftFieldChanges(changes as any);
 
     if (hasChanges !== hasEditedAircraftData) {
       setHasEditedAircraftData(hasChanges);
       if (!hasChanges) {
         setAircraftEditNote(""); // Clear note if user reverted changes
         setAircraftEditNoteError("");
+        setAircraftFieldChanges([]); // Clear field changes
       }
     }
   };
@@ -819,6 +858,7 @@ export default function DefectForm() {
         // Aircraft Edit Tracking
         Aircraft_Data_Modified: hasEditedAircraftData,
         Aircraft_Edit_Note: hasEditedAircraftData ? aircraftEditNote.trim() : "",
+        Aircraft_Field_Changes: hasEditedAircraftData ? aircraftFieldChanges : [],
 
         // Legacy aliases for backward compatibility
         contactPhone: contactPhone,
@@ -1551,6 +1591,24 @@ export default function DefectForm() {
                     <p className="text-sm text-yellow-700 mb-3">
                       You have modified the prepopulated aircraft data. Please provide a reason for the changes.
                     </p>
+                    
+                    {/* Show what fields were changed */}
+                    {aircraftFieldChanges.length > 0 && (
+                      <div className="mb-3 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
+                        <p className="text-sm font-medium text-yellow-800 mb-2">Fields Changed:</p>
+                        <ul className="text-xs text-yellow-700 space-y-1">
+                          {aircraftFieldChanges.map((change, index) => (
+                            <li key={index} className="flex justify-between">
+                              <span className="font-medium">{change.fieldLabel}:</span>
+                              <span className="ml-2">
+                                "{change.originalValue}" → "{change.newValue}"
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
                     <div>
                       <label className="block text-sm font-medium text-yellow-800 mb-1">
                         Reason for Edit <span className="text-red-500">*</span>
