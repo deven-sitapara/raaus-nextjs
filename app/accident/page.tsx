@@ -3709,7 +3709,7 @@ export default function AccidentForm() {
                                   <li key={index} className="flex justify-between">
                                     <span className="font-medium">{change.fieldLabel}:</span>
                                     <span className="ml-2">
-                                      "{change.originalValue}" → "{change.newValue}"
+                                      &quot;{change.originalValue}&quot; → &quot;{change.newValue}&quot;
                                     </span>
                                   </li>
                                 ))}
