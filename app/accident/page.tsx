@@ -90,6 +90,8 @@ interface SubmissionResponse {
 interface MemberValidationResponse {
   valid: boolean;
   warning?: string;
+  isFuzzyMatch?: boolean;
+  crmName?: string;
 }
 
 interface AircraftLookupResponse {
@@ -553,6 +555,8 @@ export default function AccidentForm() {
   >("");
   const [memberValidationMessage, setMemberValidationMessage] = useState("");
   const [isValidatingMember, setIsValidatingMember] = useState(false);
+  const [memberValidationNote, setMemberValidationNote] = useState("");
+  const [memberValidationNoteError, setMemberValidationNoteError] = useState("");
 
   // Validation states - Pilot in Command
   const [pilotValidationStatus, setPilotValidationStatus] = useState<
@@ -560,6 +564,8 @@ export default function AccidentForm() {
   >("");
   const [pilotValidationMessage, setPilotValidationMessage] = useState("");
   const [isValidatingPilot, setIsValidatingPilot] = useState(false);
+  const [pilotValidationNote, setPilotValidationNote] = useState("");
+  const [pilotValidationNoteError, setPilotValidationNoteError] = useState("");
 
   // Validation states - Maintainer
   const [maintainerValidationStatus, setMaintainerValidationStatus] =
@@ -969,10 +975,16 @@ export default function AccidentForm() {
         }
       );
 
-      if (response.data.valid) {
+      if (response.data.valid && !response.data.isFuzzyMatch) {
+        // Valid match with exact name spelling
         setMemberValidationStatus("valid");
         setMemberValidationMessage("✓ Member Number exists in system");
+      } else if (response.data.valid && response.data.isFuzzyMatch) {
+        // Valid match but with fuzzy name - treat as invalid and show warning
+        setMemberValidationStatus("invalid");
+        setMemberValidationMessage(response.data.warning || "Name spelling mismatch detected");
       } else {
+        // No match found
         setMemberValidationStatus("invalid");
         setMemberValidationMessage(
           response.data.warning || "Member Number not found"
@@ -1027,10 +1039,16 @@ export default function AccidentForm() {
         }
       );
 
-      if (response.data.valid) {
+      if (response.data.valid && !response.data.isFuzzyMatch) {
+        // Valid match with exact name spelling
         setPilotValidationStatus("valid");
         setPilotValidationMessage("✓ Member Number exists in system");
+      } else if (response.data.valid && response.data.isFuzzyMatch) {
+        // Valid match but with fuzzy name - treat as invalid and show warning
+        setPilotValidationStatus("invalid");
+        setPilotValidationMessage(response.data.warning || "Name spelling mismatch detected");
       } else {
+        // No match found
         setPilotValidationStatus("invalid");
         setPilotValidationMessage(
           response.data.warning || "Member Number not found"
@@ -1377,6 +1395,30 @@ export default function AccidentForm() {
       return;
     }
 
+    // Validate member validation note if member validation failed
+    if (memberValidationStatus === "invalid") {
+      if (!memberValidationNote.trim()) {
+        setMemberValidationNoteError("Please provide a reason for submitting with an invalid member");
+        return;
+      }
+      if (memberValidationNote.trim().length < 10) {
+        setMemberValidationNoteError("Reason must be at least 10 characters long");
+        return;
+      }
+    }
+
+    // Validate pilot validation note if pilot validation failed
+    if (pilotValidationStatus === "invalid") {
+      if (!pilotValidationNote.trim()) {
+        setPilotValidationNoteError("Please provide a reason for submitting with an invalid pilot member");
+        return;
+      }
+      if (pilotValidationNote.trim().length < 10) {
+        setPilotValidationNoteError("Reason must be at least 10 characters long");
+        return;
+      }
+    }
+
     // Store form data and show preview
     setPreviewData(data);
     setShowPreview(true);
@@ -1483,6 +1525,11 @@ export default function AccidentForm() {
         Aircraft_Data_Modified: hasEditedAircraftData,
         Aircraft_Edit_Note: hasEditedAircraftData ? aircraftEditNote.trim() : "",
         Aircraft_Field_Changes: hasEditedAircraftData ? aircraftFieldChanges : [],
+        // Member Validation Tracking
+        Member_Validation_Failed: memberValidationStatus === "invalid",
+        Member_Validation_Note: memberValidationStatus === "invalid" ? memberValidationNote.trim() : "",
+        PIC_Member_Validation_Failed: pilotValidationStatus === "invalid",
+        PIC_Member_Validation_Note: pilotValidationStatus === "invalid" ? pilotValidationNote.trim() : "",
       };
 
       formData.append("formData", JSON.stringify(submissionPayload));
@@ -1973,6 +2020,34 @@ export default function AccidentForm() {
                       />
                     </div>
                   )}
+
+                  {/* Member Validation Failure Note - Show when member validation fails */}
+                  {memberValidationStatus === "invalid" && (
+                    <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Why are you submitting with this member? *
+                        <span className="text-red-600 ml-1">Member not found - Please explain</span>
+                      </label>
+                      <Textarea
+                        placeholder="Please explain why you are submitting the form with this member number, first name, and last name even though the member was not found in the system (e.g., member recently joined, name spelling variation, etc.)"
+                        value={memberValidationNote}
+                        onChange={(e) => {
+                          setMemberValidationNote(e.target.value);
+                          if (e.target.value.trim().length > 0) {
+                            setMemberValidationNoteError("");
+                          }
+                        }}
+                        minLength={10}
+                        maxLength={500}
+                        rows={4}
+                        error={memberValidationNoteError}
+                        required
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {memberValidationNote.length}/500 characters
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Pilot in Command Section - Hidden when Person Reporting role is "Pilot in Command" */}
@@ -2187,6 +2262,34 @@ export default function AccidentForm() {
                         })}
                       />
                     </div>
+
+                    {/* Pilot Member Validation Failure Note - Show when pilot validation fails */}
+                    {pilotValidationStatus === "invalid" && (
+                      <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                          Why are you submitting with this pilot? *
+                          <span className="text-red-600 ml-1">Pilot member not found - Please explain</span>
+                        </label>
+                        <Textarea
+                          placeholder="Please explain why you are submitting the form with this pilot member number, first name, and last name even though the member was not found in the system (e.g., member recently joined, name spelling variation, etc.)"
+                          value={pilotValidationNote}
+                          onChange={(e) => {
+                            setPilotValidationNote(e.target.value);
+                            if (e.target.value.trim().length > 0) {
+                              setPilotValidationNoteError("");
+                            }
+                          }}
+                          minLength={10}
+                          maxLength={500}
+                          rows={4}
+                          error={pilotValidationNoteError}
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          {pilotValidationNote.length}/500 characters
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
