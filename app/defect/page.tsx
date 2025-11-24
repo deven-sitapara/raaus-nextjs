@@ -39,6 +39,8 @@ interface SubmissionResponse {
 interface MemberValidationResponse {
   valid: boolean;
   warning?: string;
+  isFuzzyMatch?: boolean;
+  crmName?: string;
 }
 
 interface AircraftLookupResponse {
@@ -136,6 +138,8 @@ export default function DefectForm() {
   >("");
   const [memberValidationMessage, setMemberValidationMessage] = useState("");
   const [isValidatingMember, setIsValidatingMember] = useState(false);
+  const [memberValidationNote, setMemberValidationNote] = useState("");
+  const [memberValidationNoteError, setMemberValidationNoteError] = useState("");
 
   // Validation states - Maintainer
   const [maintainerValidationStatus, setMaintainerValidationStatus] =
@@ -143,6 +147,8 @@ export default function DefectForm() {
   const [maintainerValidationMessage, setMaintainerValidationMessage] =
     useState("");
   const [isValidatingMaintainer, setIsValidatingMaintainer] = useState(false);
+  const [maintainerValidationNote, setMaintainerValidationNote] = useState("");
+  const [maintainerValidationNoteError, setMaintainerValidationNoteError] = useState("");
 
   // Defect occurrence state
   const [defectDate, setDefectDate] = useState("");
@@ -500,10 +506,16 @@ export default function DefectForm() {
         }
       );
 
-      if (response.data.valid) {
+      if (response.data.valid && !response.data.isFuzzyMatch) {
+        // Valid match with exact name spelling
         setMemberValidationStatus("valid");
         setMemberValidationMessage("✓ Member Number exists in system");
+      } else if (response.data.valid && response.data.isFuzzyMatch) {
+        // Valid match but with fuzzy name - treat as invalid and show warning
+        setMemberValidationStatus("invalid");
+        setMemberValidationMessage(response.data.warning || "Name spelling mismatch detected");
       } else {
+        // No match found
         setMemberValidationStatus("invalid");
         setMemberValidationMessage(
           response.data.warning || "Member Number not found"
@@ -558,10 +570,16 @@ export default function DefectForm() {
         }
       );
 
-      if (response.data.valid) {
+      if (response.data.valid && !response.data.isFuzzyMatch) {
+        // Valid match with exact name spelling
         setMaintainerValidationStatus("valid");
         setMaintainerValidationMessage("✓ Member Number exists in system");
+      } else if (response.data.valid && response.data.isFuzzyMatch) {
+        // Valid match but with fuzzy name - treat as invalid and show warning
+        setMaintainerValidationStatus("invalid");
+        setMaintainerValidationMessage(response.data.warning || "Name spelling mismatch detected");
       } else {
+        // No match found
         setMaintainerValidationStatus("invalid");
         setMaintainerValidationMessage(
           response.data.warning || "Member Number not found"
@@ -741,6 +759,30 @@ export default function DefectForm() {
       return;
     }
 
+    // Validate member validation note if member validation failed
+    if (memberValidationStatus === "invalid") {
+      if (!memberValidationNote.trim()) {
+        setMemberValidationNoteError("Please provide a reason for submitting with an invalid member");
+        return;
+      }
+      if (memberValidationNote.trim().length < 10) {
+        setMemberValidationNoteError("Reason must be at least 10 characters long");
+        return;
+      }
+    }
+
+    // Validate maintainer validation note if maintainer validation failed
+    if (maintainerValidationStatus === "invalid") {
+      if (!maintainerValidationNote.trim()) {
+        setMaintainerValidationNoteError("Please provide a reason for submitting with an invalid maintainer");
+        return;
+      }
+      if (maintainerValidationNote.trim().length < 10) {
+        setMaintainerValidationNoteError("Reason must be at least 10 characters long");
+        return;
+      }
+    }
+
     // Store form data and show preview
     setPreviewData(data);
     setShowPreview(true);
@@ -859,6 +901,12 @@ export default function DefectForm() {
         Aircraft_Data_Modified: hasEditedAircraftData,
         Aircraft_Edit_Note: hasEditedAircraftData ? aircraftEditNote.trim() : "",
         Aircraft_Field_Changes: hasEditedAircraftData ? aircraftFieldChanges : [],
+        
+        // Member Validation Tracking
+        Member_Validation_Failed: memberValidationStatus === "invalid",
+        Member_Validation_Note: memberValidationStatus === "invalid" ? memberValidationNote.trim() : "",
+        Maintainer_Member_Validation_Failed: maintainerValidationStatus === "invalid",
+        Maintainer_Member_Validation_Note: maintainerValidationStatus === "invalid" ? maintainerValidationNote.trim() : "",
 
         // Legacy aliases for backward compatibility
         contactPhone: contactPhone,
@@ -1276,6 +1324,62 @@ export default function DefectForm() {
                     })}
                     error={errors.Date_of_Birth?.message}
                   />
+                </div>
+              )}
+
+              {/* Member Validation Failure Note - Show when member validation fails */}
+              {memberValidationStatus === "invalid" && (
+                <div className="col-span-1 md:col-span-2 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Why are you submitting with this member? *
+                    <span className="text-red-600 ml-1">Member not found - Please explain</span>
+                  </label>
+                  <Textarea
+                    placeholder="Please explain why you are submitting the form with this member number, first name, and last name even though the member was not found in the system (e.g., member recently joined, name spelling variation, etc.)"
+                    value={memberValidationNote}
+                    onChange={(e) => {
+                      setMemberValidationNote(e.target.value);
+                      if (e.target.value.trim().length > 0) {
+                        setMemberValidationNoteError("");
+                      }
+                    }}
+                    minLength={10}
+                    maxLength={500}
+                    rows={4}
+                    error={memberValidationNoteError}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {memberValidationNote.length}/500 characters
+                  </p>
+                </div>
+              )}
+
+              {/* Maintainer Validation Failure Note - Show when maintainer validation fails */}
+              {maintainerValidationStatus === "invalid" && (
+                <div className="col-span-1 md:col-span-2 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Why are you submitting with this maintainer? *
+                    <span className="text-red-600 ml-1">Maintainer not found - Please explain</span>
+                  </label>
+                  <Textarea
+                    placeholder="Please explain why you are submitting the form with this maintainer member number, first name, and last name even though the member was not found in the system (e.g., member recently joined, name spelling variation, etc.)"
+                    value={maintainerValidationNote}
+                    onChange={(e) => {
+                      setMaintainerValidationNote(e.target.value);
+                      if (e.target.value.trim().length > 0) {
+                        setMaintainerValidationNoteError("");
+                      }
+                    }}
+                    minLength={10}
+                    maxLength={500}
+                    rows={4}
+                    error={maintainerValidationNoteError}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {maintainerValidationNote.length}/500 characters
+                  </p>
                 </div>
               )}
             </div>

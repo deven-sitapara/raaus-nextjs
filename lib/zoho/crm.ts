@@ -2,6 +2,48 @@ import axios from "axios";
 import { ZohoAuth } from "./auth";
 import { ZohoCRMResponse } from "@/types/forms";
 
+/**
+ * Calculate Levenshtein distance between two strings
+ * Used for fuzzy matching to handle minor spelling variations (e.g., "Raja" vs "Raju")
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+  const len1 = str1.length;
+  const len2 = str2.length;
+  const matrix: number[][] = Array(len1 + 1).fill(null).map(() => Array(len2 + 1).fill(0));
+
+  for (let i = 0; i <= len1; i++) matrix[i][0] = i;
+  for (let j = 0; j <= len2; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,      // deletion
+        matrix[i][j - 1] + 1,      // insertion
+        matrix[i - 1][j - 1] + cost // substitution
+      );
+    }
+  }
+
+  return matrix[len1][len2];
+}
+
+/**
+ * Check if two strings are similar enough (fuzzy matching)
+ * Returns true if similarity is >= 80%
+ */
+function isFuzzyMatch(str1: string, str2: string, threshold: number = 0.8): boolean {
+  if (str1 === str2) return true;
+  
+  const maxLen = Math.max(str1.length, str2.length);
+  if (maxLen === 0) return true;
+  
+  const distance = levenshteinDistance(str1, str2);
+  const similarity = 1 - (distance / maxLen);
+  
+  return similarity >= threshold;
+}
+
 export class ZohoCRM {
   private static apiDomain = process.env.ZOHO_CRM_API_DOMAIN || "https://www.zohoapis.com.au";
 
@@ -222,6 +264,22 @@ export class ZohoCRM {
   }
 
   /**
+   * Create a name correction note for a member
+   * Used when the system fuzzy matches a name but it's spelled differently in CRM
+   */
+  static async createNameCorrectionNote(
+    memberNumber: string,
+    recordId: string,
+    userProvidedName: string,
+    crmStoredName: string
+  ): Promise<{ success: boolean; noteId?: string; error?: string }> {
+    const noteTitle = `Name Correction - Member ${memberNumber}`;
+    const noteContent = `Name correction request:\n\nUser entered: ${userProvidedName}\nStored in CRM: ${crmStoredName}\n\nThis name variation was fuzzy matched during form submission.`;
+    
+    return this.createNote("Contacts", recordId, noteTitle, noteContent);
+  }
+
+  /**
    * Helper function to sleep/delay execution
    */
   private static sleep(ms: number): Promise<void> {
@@ -235,7 +293,7 @@ export class ZohoCRM {
     memberNumber: string,
     firstName: string,
     lastName: string
-  ): Promise<{ valid: boolean; warning?: string }> {
+  ): Promise<{ valid: boolean; warning?: string; isFuzzyMatch?: boolean; crmName?: string }> {
     const accessToken = await ZohoAuth.getAccessToken("crm");
 
     try {
@@ -318,22 +376,41 @@ export class ZohoCRM {
 
       // Check multiple matching strategies
       let nameMatches = false;
+      let hasFuzzyMatch = false;
+      let fuzzyMatchType = '';
 
       // Strategy 1: Exact match of separate fields
       const firstNameMatch = normalizedCrmFirstName === normalizedProvidedFirstName;
       const lastNameMatch = normalizedCrmLastName === normalizedProvidedLastName;
 
+      // Strategy 1b: Fuzzy match of separate fields (handles "Raja" vs "Raju", "Aara" vs "Aarnav")
+      // Using 75% threshold to allow 2-3 character differences in names
+      const firstNameFuzzyMatch = isFuzzyMatch(normalizedCrmFirstName, normalizedProvidedFirstName, 0.75);
+      const lastNameFuzzyMatch = isFuzzyMatch(normalizedCrmLastName, normalizedProvidedLastName, 0.75);
+
       // Strategy 2: Reversed match (user entered first/last swapped)
       const firstNameReversedMatch = normalizedCrmFirstName === normalizedProvidedLastName;
       const lastNameReversedMatch = normalizedCrmLastName === normalizedProvidedFirstName;
+
+      // Strategy 2b: Fuzzy reversed match
+      const firstNameReversedFuzzyMatch = isFuzzyMatch(normalizedCrmFirstName, normalizedProvidedLastName, 0.75);
+      const lastNameReversedFuzzyMatch = isFuzzyMatch(normalizedCrmLastName, normalizedProvidedFirstName, 0.75);
 
       // Strategy 3: Full name match
       const fullNameMatch = normalizedCrmFullName === normalizedProvidedFullName;
       const fullNameReversedMatch = normalizedCrmFullName === normalizedProvidedFullNameReversed;
 
+      // Strategy 3b: Fuzzy full name match
+      const fullNameFuzzyMatch = isFuzzyMatch(normalizedCrmFullName, normalizedProvidedFullName, 0.75);
+      const fullNameReversedFuzzyMatch = isFuzzyMatch(normalizedCrmFullName, normalizedProvidedFullNameReversed, 0.75);
+
       // Strategy 4: Combined name match
       const combinedMatch = normalizedCrmCombined === normalizedProvidedFullName;
       const combinedReversedMatch = normalizedCrmCombined === normalizedProvidedFullNameReversed;
+
+      // Strategy 4b: Fuzzy combined match
+      const combinedFuzzyMatch = isFuzzyMatch(normalizedCrmCombined, normalizedProvidedFullName, 0.75);
+      const combinedReversedFuzzyMatch = isFuzzyMatch(normalizedCrmCombined, normalizedProvidedFullNameReversed, 0.75);
 
       // Strategy 5: Partial match - check if names are contained (for nicknames or variations)
       const crmHasFirstName = normalizedCrmFullName.includes(normalizedProvidedFirstName) ||
@@ -344,16 +421,46 @@ export class ZohoCRM {
 
       if (firstNameMatch && lastNameMatch) {
         nameMatches = true;
+      } else if (firstNameFuzzyMatch && lastNameFuzzyMatch && !(firstNameMatch && lastNameMatch)) {
+        // Fuzzy match for both first and last names - detected name variation
+        nameMatches = true;
+        hasFuzzyMatch = true;
+        fuzzyMatchType = 'separate_names';
       } else if (firstNameReversedMatch && lastNameReversedMatch) {
         nameMatches = true;
+      } else if (firstNameReversedFuzzyMatch && lastNameReversedFuzzyMatch && !(firstNameReversedMatch && lastNameReversedMatch)) {
+        // Fuzzy match for reversed first and last names
+        nameMatches = true;
+        hasFuzzyMatch = true;
+        fuzzyMatchType = 'reversed_names';
       } else if (fullNameMatch) {
         nameMatches = true;
+      } else if (fullNameFuzzyMatch && !fullNameMatch) {
+        // Fuzzy match for full name
+        nameMatches = true;
+        hasFuzzyMatch = true;
+        fuzzyMatchType = 'full_name';
       } else if (fullNameReversedMatch) {
         nameMatches = true;
+      } else if (fullNameReversedFuzzyMatch && !fullNameReversedMatch) {
+        // Fuzzy match for reversed full name
+        nameMatches = true;
+        hasFuzzyMatch = true;
+        fuzzyMatchType = 'reversed_full_name';
       } else if (combinedMatch) {
         nameMatches = true;
+      } else if (combinedFuzzyMatch && !combinedMatch) {
+        // Fuzzy match for combined name
+        nameMatches = true;
+        hasFuzzyMatch = true;
+        fuzzyMatchType = 'combined_name';
       } else if (combinedReversedMatch) {
         nameMatches = true;
+      } else if (combinedReversedFuzzyMatch && !combinedReversedMatch) {
+        // Fuzzy match for reversed combined name
+        nameMatches = true;
+        hasFuzzyMatch = true;
+        fuzzyMatchType = 'reversed_combined_name';
       } else if (partialMatch) {
         nameMatches = true;
       }
@@ -361,10 +468,21 @@ export class ZohoCRM {
       if (!nameMatches) {
         // Provide helpful error message with the name from CRM
         const crmName = crmFullName || `${crmFirstName} ${crmLastName}`.trim() || 'Unknown';
-        console.log(`Name mismatch - CRM First: "${crmFirstName}", CRM Last: "${crmLastName}", CRM Full: "${crmFullName}", Provided: "${normalizedProvidedFullName}"`);
         return {
           valid: false,
           warning: `Member Number ${memberNumber} exists but name doesn't match. CRM has: "${crmName}"`,
+        };
+      }
+
+      // If fuzzy match detected, return warning but still valid
+      if (hasFuzzyMatch) {
+        const crmName = crmFullName || `${crmFirstName} ${crmLastName}`.trim() || 'Unknown';
+        const providedName = `${firstName} ${lastName}`.trim();
+        return {
+          valid: true,
+          warning: `⚠️ Name spelling mismatch detected. You entered: "${providedName}" but CRM has: "${crmName}". Please correct the name if this is incorrect.`,
+          isFuzzyMatch: true,
+          crmName: crmName,
         };
       }
 

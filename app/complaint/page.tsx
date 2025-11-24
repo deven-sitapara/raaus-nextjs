@@ -30,6 +30,8 @@ interface SubmissionResponse {
 interface MemberValidationResponse {
   valid: boolean;
   warning?: string;
+  isFuzzyMatch?: boolean;
+  crmName?: string;
 }
 
 const roleOptions = [
@@ -52,6 +54,8 @@ export default function ComplaintForm() {
   const [memberValidationStatus, setMemberValidationStatus] = useState<"valid" | "invalid" | "">("");
   const [memberValidationMessage, setMemberValidationMessage] = useState("");
   const [isValidatingMember, setIsValidatingMember] = useState(false);
+  const [memberValidationNote, setMemberValidationNote] = useState("");
+  const [memberValidationNoteError, setMemberValidationNoteError] = useState("");
 
   // Form data state
   const [occurrenceDate, setOccurrenceDate] = useState("");
@@ -201,10 +205,16 @@ export default function ComplaintForm() {
         }
       );
 
-      if (response.data.valid) {
+      if (response.data.valid && !response.data.isFuzzyMatch) {
+        // Valid match with exact name spelling
         setMemberValidationStatus("valid");
         setMemberValidationMessage("✓ Member Number exists in system");
+      } else if (response.data.valid && response.data.isFuzzyMatch) {
+        // Valid match but with fuzzy name - treat as invalid and show warning
+        setMemberValidationStatus("invalid");
+        setMemberValidationMessage(response.data.warning || "Name spelling mismatch detected");
       } else {
+        // No match found
         setMemberValidationStatus("invalid");
         setMemberValidationMessage(
           response.data.warning || "Member Number not found"
@@ -241,6 +251,18 @@ export default function ComplaintForm() {
     if (!wishToRemainAnonymous && contactPhone && !contactPhoneValid) {
       alert("Please enter a valid phone number for the selected country");
       return;
+    }
+
+    // Validate member validation note if member validation failed
+    if (memberValidationStatus === "invalid") {
+      if (!memberValidationNote.trim()) {
+        setMemberValidationNoteError("Please provide a reason for submitting with an invalid member");
+        return;
+      }
+      if (memberValidationNote.trim().length < 10) {
+        setMemberValidationNoteError("Reason must be at least 10 characters long");
+        return;
+      }
     }
 
     // Store form data and show preview
@@ -284,6 +306,9 @@ export default function ComplaintForm() {
         Contact_Phone: wishToRemainAnonymous ? "" : contactPhone,
         Occurrence_Date1: datetime.toISOString().slice(0, 19), // YYYY-MM-DDTHH:mm:ss
         wishToRemainAnonymous: data.wishToRemainAnonymous,
+        // Member Validation Tracking
+        Member_Validation_Failed: memberValidationStatus === "invalid",
+        Member_Validation_Note: memberValidationStatus === "invalid" ? memberValidationNote.trim() : "",
       };
 
       formData.append("formData", JSON.stringify(submissionPayload));
@@ -757,6 +782,34 @@ export default function ComplaintForm() {
                   onValidationChange={(isValid) => setContactPhoneValid(isValid)}
                   defaultCountry="AU"
                 />
+
+                {/* Member Validation Failure Note - Show when member validation fails */}
+                {memberValidationStatus === "invalid" && (
+                  <div className="col-span-1 md:col-span-2 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      Why are you submitting with this member? *
+                      <span className="text-red-600 ml-1">Member not found - Please explain</span>
+                    </label>
+                    <Textarea
+                      placeholder="Please explain why you are submitting the form with this member number, first name, and last name even though the member was not found in the system (e.g., member recently joined, name spelling variation, etc.)"
+                      value={memberValidationNote}
+                      onChange={(e) => {
+                        setMemberValidationNote(e.target.value);
+                        if (e.target.value.trim().length > 0) {
+                          setMemberValidationNoteError("");
+                        }
+                      }}
+                      minLength={10}
+                      maxLength={500}
+                      rows={4}
+                      error={memberValidationNoteError}
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {memberValidationNote.length}/500 characters
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
