@@ -87,6 +87,9 @@ export async function POST(request: NextRequest) {
     // Create aircraft edit note if data was modified
     await createAircraftEditNoteIfNeeded(recordId, data);
     
+    // Create member validation note if validation failed
+    await createMemberValidationNoteIfNeeded(recordId, data);
+    
     // Fetch occurrence ID and handle WorkDrive operations (including user attachments)
     const result = await handleOccurrenceIdAndWorkDrive(formType, recordId, files);
     
@@ -124,6 +127,182 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Create member validation note if needed
+ */
+async function createMemberValidationNoteIfNeeded(recordId: string, data: FormData): Promise<void> {
+  try {
+    // Check if member validation failed
+    let memberValidationFailed = false;
+    let memberValidationNote = '';
+    let formType = '';
+    let memberNumber = '';
+    let memberFirstName = '';
+    let memberLastName = '';
+
+    // Type-specific checks for member validation
+    const dataAsRecord = data as Record<string, any>;
+    if (dataAsRecord.Member_Validation_Failed) {
+      memberValidationFailed = true;
+      memberValidationNote = dataAsRecord.Member_Validation_Note || '';
+      memberNumber = dataAsRecord.Member_Number || dataAsRecord.memberNumber || '';
+      memberFirstName = dataAsRecord.Name1 || dataAsRecord.firstName || '';
+      memberLastName = dataAsRecord.Last_Name || dataAsRecord.lastName || '';
+      
+      // Determine form type for note title
+      if ('Accident' in dataAsRecord || 'Accident_or_Incident' in dataAsRecord) {
+        formType = 'Accident';
+      } else if ('Defect' in dataAsRecord) {
+        formType = 'Defect';
+      } else if ('Hazard' in dataAsRecord) {
+        formType = 'Hazard';
+      } else if ('Complaint' in dataAsRecord) {
+        formType = 'Complaint';
+      } else {
+        formType = 'Occurrence';
+      }
+    }
+
+    // Create note if member validation failed and user provided explanation
+    if (memberValidationFailed && memberValidationNote.trim()) {
+      const noteTitle = `Member Validation Failed - ${formType} Form`;
+
+      // Build note content
+      let noteContent = "User submitted form with member number that does not match the system record.\n\n";
+      
+      noteContent += "MEMBER DETAILS:\n";
+      noteContent += `Member Number: ${memberNumber}\n`;
+      noteContent += `First Name: ${memberFirstName}\n`;
+      noteContent += `Last Name: ${memberLastName}\n\n`;
+
+      // User's reason for submission
+      noteContent += "USER EXPLANATION:\n\n";
+      noteContent += memberValidationNote.trim() + "\n\n";
+
+      // Add metadata at the end
+      noteContent += `Submission Timestamp: ${new Date().toISOString()}\n`;
+      noteContent += `Record ID: ${recordId}\n`;
+
+      const noteResult = await ZohoCRM.createNote(
+        "Occurrence_Management",
+        recordId,
+        noteTitle,
+        noteContent
+      );
+
+      if (noteResult.success) {
+        console.log(`Member validation note created successfully with ID: ${noteResult.noteId}`);
+      } else {
+        console.error(`Failed to create member validation note: ${noteResult.error}`);
+        // Don't throw error - note creation failure shouldn't block form submission
+      }
+    }
+
+    // Check for PIC member validation failed (Accident form)
+    let picValidationFailed = false;
+    let picValidationNote = '';
+    let picMemberNumber = '';
+    let picFirstName = '';
+    let picLastName = '';
+
+    if (dataAsRecord.PIC_Member_Validation_Failed) {
+      picValidationFailed = true;
+      picValidationNote = dataAsRecord.PIC_Member_Validation_Note || '';
+      picMemberNumber = dataAsRecord.PIC_Member_Number || '';
+      picFirstName = dataAsRecord.PIC_First_Name || '';
+      picLastName = dataAsRecord.PIC_Last_Name || '';
+    }
+
+    // Create note if PIC member validation failed and user provided explanation
+    if (picValidationFailed && picValidationNote.trim()) {
+      const noteTitle = `Pilot (PIC) Member Validation Failed - ${formType} Form`;
+
+      // Build note content
+      let noteContent = "User submitted form with pilot member number that does not match the system record.\n\n";
+      
+      noteContent += "PILOT (PIC) DETAILS:\n";
+      noteContent += `Member Number: ${picMemberNumber}\n`;
+      noteContent += `First Name: ${picFirstName}\n`;
+      noteContent += `Last Name: ${picLastName}\n\n`;
+
+      // User's reason for submission
+      noteContent += "USER EXPLANATION:\n\n";
+      noteContent += picValidationNote.trim() + "\n\n";
+
+      // Add metadata at the end
+      noteContent += `Submission Timestamp: ${new Date().toISOString()}\n`;
+      noteContent += `Record ID: ${recordId}\n`;
+
+      const noteResult = await ZohoCRM.createNote(
+        "Occurrence_Management",
+        recordId,
+        noteTitle,
+        noteContent
+      );
+
+      if (noteResult.success) {
+        console.log(`Pilot validation note created successfully with ID: ${noteResult.noteId}`);
+      } else {
+        console.error(`Failed to create pilot validation note: ${noteResult.error}`);
+        // Don't throw error - note creation failure shouldn't block form submission
+      }
+    }
+
+    // Check for Maintainer member validation failed (Defect form only)
+    let maintainerValidationFailed = false;
+    let maintainerValidationNote = '';
+    let maintainerMemberNumber = '';
+    let maintainerFirstName = '';
+    let maintainerLastName = '';
+
+    if (dataAsRecord.Maintainer_Member_Validation_Failed) {
+      maintainerValidationFailed = true;
+      maintainerValidationNote = dataAsRecord.Maintainer_Member_Validation_Note || '';
+      maintainerMemberNumber = dataAsRecord.Maintainer_Member_Number || '';
+      maintainerFirstName = dataAsRecord.Maintainer_First_Name || '';
+      maintainerLastName = dataAsRecord.Maintainer_Last_Name || '';
+    }
+
+    // Create note if maintainer member validation failed and user provided explanation
+    if (maintainerValidationFailed && maintainerValidationNote.trim()) {
+      const noteTitle = `Maintainer Member Validation Failed - ${formType} Form`;
+
+      // Build note content
+      let noteContent = "User submitted form with maintainer member number that does not match the system record.\n\n";
+      
+      noteContent += "MAINTAINER DETAILS:\n";
+      noteContent += `Member Number: ${maintainerMemberNumber}\n`;
+      noteContent += `First Name: ${maintainerFirstName}\n`;
+      noteContent += `Last Name: ${maintainerLastName}\n\n`;
+
+      // User's reason for submission
+      noteContent += "USER EXPLANATION:\n\n";
+      noteContent += maintainerValidationNote.trim() + "\n\n";
+
+      // Add metadata at the end
+      noteContent += `Submission Timestamp: ${new Date().toISOString()}\n`;
+      noteContent += `Record ID: ${recordId}\n`;
+
+      const noteResult = await ZohoCRM.createNote(
+        "Occurrence_Management",
+        recordId,
+        noteTitle,
+        noteContent
+      );
+
+      if (noteResult.success) {
+        console.log(`Maintainer validation note created successfully with ID: ${noteResult.noteId}`);
+      } else {
+        console.error(`Failed to create maintainer validation note: ${noteResult.error}`);
+        // Don't throw error - note creation failure shouldn't block form submission
+      }
+    }
+  } catch (error: any) {
+    console.error("Error creating member validation note:", error);
+    // Don't throw error - note creation failure shouldn't block form submission
   }
 }
 
